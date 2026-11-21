@@ -345,62 +345,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // SMOOTH WINDOW DRAG (NATIVE + 60/144 FPS RAF)
+    // SMOOTH NATIVE WINDOW DRAG (ZERO LAG WIN32)
     // ==========================================
     const titlebar = document.getElementById('app-titlebar') || document.querySelector('.titlebar');
+    const headerBar = document.querySelector('.header-bar');
+
+    const handleWindowDragStart = (e) => {
+        if (e.button !== 0) return;
+        // Ignore clicks on buttons, inputs, links, tabs, profile badges or window controls
+        if (e.target.closest('button, a, input, select, textarea, .tab-btn, .social-btn, .sound-toggle-btn, .window-ctrl-btn, .user-profile-badge, .window-controls')) {
+            return;
+        }
+
+        e.preventDefault();
+
+        // Native Win32 window drag via Python LauncherApi (hardware-accelerated, 0 latency OS drag)
+        if (window.pywebview && window.pywebview.api && typeof window.pywebview.api.drag_window === 'function') {
+            window.pywebview.api.drag_window();
+        }
+    };
+
     if (titlebar) {
-        let isDragging = false;
-        let startX = 0;
-        let startY = 0;
-        let rafId = null;
-        let pendingPos = null;
-
-        titlebar.addEventListener('mousedown', (e) => {
-            if (e.button !== 0) return;
-            // Ignore clicks on interactive controls
-            if (e.target.closest('button, a, input, .social-btn, .sound-toggle-btn, .window-ctrl-btn')) return;
-
-            // Attempt native Win32 window drag via Python LauncherApi
-            if (window.pywebview && window.pywebview.api && window.pywebview.api.drag_window) {
-                window.pywebview.api.drag_window();
-                return;
-            }
-
-            // Fallback: smooth requestAnimationFrame-throttled move
-            startX = e.clientX;
-            startY = e.clientY;
-            isDragging = true;
-
-            const onMouseMove = (ev) => {
-                if (!isDragging) return;
-                const x = ev.screenX - startX;
-                const y = ev.screenY - startY;
-                pendingPos = [x, y];
-
-                if (!rafId) {
-                    rafId = requestAnimationFrame(() => {
-                        rafId = null;
-                        if (pendingPos && window.pywebview && window.pywebview._jsApiCallback) {
-                            window.pywebview._jsApiCallback('pywebviewMoveWindow', pendingPos, 'move');
-                        }
-                    });
-                }
-            };
-
-            const onMouseUp = () => {
-                isDragging = false;
-                pendingPos = null;
-                if (rafId) {
-                    cancelAnimationFrame(rafId);
-                    rafId = null;
-                }
-                window.removeEventListener('mousemove', onMouseMove);
-                window.removeEventListener('mouseup', onMouseUp);
-            };
-
-            window.addEventListener('mousemove', onMouseMove);
-            window.addEventListener('mouseup', onMouseUp);
-        });
+        titlebar.addEventListener('mousedown', handleWindowDragStart);
+    }
+    if (headerBar) {
+        headerBar.addEventListener('mousedown', handleWindowDragStart);
     }
 
     // ==========================================

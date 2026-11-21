@@ -103,6 +103,8 @@ html, body {
     z-index: 20;
     box-sizing: border-box;
     cursor: default;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .titlebar-left {
@@ -254,6 +256,8 @@ html, body {
     padding: 0 24px;
     z-index: 10;
     box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .brand-section {

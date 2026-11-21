@@ -1,7 +1,22 @@
 import os
 import sys
+import ctypes
+from ctypes import wintypes
 import webview
 from client_manager import SpaceRustClientManager
+
+# Initialize Win32 APIs with explicit 64-bit argument/return types for smooth zero-lag native window dragging
+user32 = ctypes.windll.user32
+user32.ReleaseCapture.restype = wintypes.BOOL
+user32.SendMessageW.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
+user32.SendMessageW.restype = wintypes.LPARAM
+user32.PostMessageW.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
+user32.PostMessageW.restype = wintypes.BOOL
+
+WM_NCLBUTTONDOWN = 0x00A1
+HTCAPTION = 2
+WM_SYSCOMMAND = 0x0112
+SC_DRAGMOVE = 0xF012
 
 class LauncherApi:
     def __init__(self):
@@ -20,15 +35,23 @@ class LauncherApi:
             self.window.destroy()
 
     def drag_window(self):
-        if self.window and hasattr(self.window, 'native'):
+        if self.window and hasattr(self.window, 'native') and self.window.native:
             try:
-                import ctypes
-                hwnd = self.window.native.Handle.ToInt64()
-                ctypes.windll.user32.ReleaseCapture()
-                ctypes.windll.user32.SendMessageW(hwnd, 0x0112, 0xF012, 0)
+                hwnd_val = int(self.window.native.Handle.ToInt64())
+                hwnd = wintypes.HWND(hwnd_val)
+                user32.ReleaseCapture()
+                user32.SendMessageW(hwnd, WM_NCLBUTTONDOWN, HTCAPTION, 0)
                 return True
             except Exception as e:
-                print(f"[Drag Error] {e}")
+                print(f"[Drag Error SendMessage] {e}")
+                try:
+                    hwnd_val = int(self.window.native.Handle.ToInt64())
+                    hwnd = wintypes.HWND(hwnd_val)
+                    user32.ReleaseCapture()
+                    user32.PostMessageW(hwnd, WM_SYSCOMMAND, SC_DRAGMOVE, 0)
+                    return True
+                except Exception as e2:
+                    print(f"[Drag Error PostMessage] {e2}")
         return False
 
     def open_game_folder(self):
