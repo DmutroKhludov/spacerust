@@ -19,6 +19,18 @@ class LauncherApi:
         if self.window:
             self.window.destroy()
 
+    def drag_window(self):
+        if self.window and hasattr(self.window, 'native'):
+            try:
+                import ctypes
+                hwnd = self.window.native.Handle.ToInt64()
+                ctypes.windll.user32.ReleaseCapture()
+                ctypes.windll.user32.SendMessageW(hwnd, 0x0112, 0xF012, 0)
+                return True
+            except Exception as e:
+                print(f"[Drag Error] {e}")
+        return False
+
     def open_game_folder(self):
         try:
             target = self.manager.game_dir
@@ -75,11 +87,11 @@ def main():
     window = webview.create_window(
         title='SpaceRust Launcher',
         url=f'file:///{html_file}',
-        width=1140,
-        height=740,
+        width=1160,
+        height=760,
         resizable=False,
         frameless=True,
-        easy_drag=True,
+        easy_drag=False,
         background_color='#0c0e12',
         js_api=api
     )

@@ -345,6 +345,65 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
+    // SMOOTH WINDOW DRAG (NATIVE + 60/144 FPS RAF)
+    // ==========================================
+    const titlebar = document.getElementById('app-titlebar') || document.querySelector('.titlebar');
+    if (titlebar) {
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
+        let rafId = null;
+        let pendingPos = null;
+
+        titlebar.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return;
+            // Ignore clicks on interactive controls
+            if (e.target.closest('button, a, input, .social-btn, .sound-toggle-btn, .window-ctrl-btn')) return;
+
+            // Attempt native Win32 window drag via Python LauncherApi
+            if (window.pywebview && window.pywebview.api && window.pywebview.api.drag_window) {
+                window.pywebview.api.drag_window();
+                return;
+            }
+
+            // Fallback: smooth requestAnimationFrame-throttled move
+            startX = e.clientX;
+            startY = e.clientY;
+            isDragging = true;
+
+            const onMouseMove = (ev) => {
+                if (!isDragging) return;
+                const x = ev.screenX - startX;
+                const y = ev.screenY - startY;
+                pendingPos = [x, y];
+
+                if (!rafId) {
+                    rafId = requestAnimationFrame(() => {
+                        rafId = null;
+                        if (pendingPos && window.pywebview && window.pywebview._jsApiCallback) {
+                            window.pywebview._jsApiCallback('pywebviewMoveWindow', pendingPos, 'move');
+                        }
+                    });
+                }
+            };
+
+            const onMouseUp = () => {
+                isDragging = false;
+                pendingPos = null;
+                if (rafId) {
+                    cancelAnimationFrame(rafId);
+                    rafId = null;
+                }
+                window.removeEventListener('mousemove', onMouseMove);
+                window.removeEventListener('mouseup', onMouseUp);
+            };
+
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('mouseup', onMouseUp);
+        });
+    }
+
+    // ==========================================
     // LAUNCH GAME ACTION
     // ==========================================
     window.updateLaunchProgress = function(text, percent) {
