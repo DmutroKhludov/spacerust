@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "net.spacerust.client.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+    "InGameHudMixin",
+    "TitleScreenMixin"
+  ],
+  "client": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "spacerust",
+  "version": "${version}",
+  "name": "SpaceRust Client",
+  "description": "Rust gameplay mechanics, custom HUD, weapons and building engine for Minecraft 1.16.5",
+  "authors": [
+    "Dimasta"
+  ],
+  "contact": {
+    "homepage": "https://spacerust.net"
+  },
+  "license": "MIT",
+  "icon": "assets/spacerust/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "client": [
+      "net.spacerust.client.SpaceRustClient"
+    ]
+  },
+  "mixins": [
+    "spacerust.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.14.0",
+    "fabric": "*",
+    "minecraft": "1.16.5"
+  }
+}

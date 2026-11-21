@@ -1,0 +1,33 @@
+# Python / PyInstaller
+__pycache__/
+*.py[cod]
+*$py.class
+build/
+dist/
+*.spec
+
+# SpaceRust Client Packages & Executables
+SpaceRust_Client/
+*.zip
+*.exe
+launcher.log
+
+# Minecraft Server Worlds, Logs & Cache
+server/world/
+server/world_nether/
+server/world_the_end/
+server/logs/
+server/cache/
+server/server.jar
+
+# Gradle / Java Mod build files
+spacerust-mod/.gradle/
+spacerust-mod/build/
+*.class
+*.jar
+!spacerust-mod/gradle/wrapper/gradle-wrapper.jar
+
+# IDE files
+.idea/
+.vscode/
+*.iml
