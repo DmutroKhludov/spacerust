@@ -26,10 +26,7 @@ def main():
     log("  SPACERUST CLIENT PACKAGER FOR FRIENDS")
     log("==================================================")
 
-    # 1. Clean / create destination folder
-    if os.path.exists(dist_dir):
-        log("Cleaning previous build folder...")
-        shutil.rmtree(dist_dir, ignore_errors=True)
+    # 1. Ensure destination folder exists
     os.makedirs(dist_dir, exist_ok=True)
 
     # 2. Copy SpaceRust.exe
@@ -48,7 +45,9 @@ def main():
 
     # 3. Copy Portable Java (JRE 8)
     jre_dst = os.path.join(dist_dir, "jre")
-    if os.path.isdir(java_src):
+    if os.path.isfile(os.path.join(jre_dst, "bin", "javaw.exe")):
+        log("Portable JRE already present, skipping re-copy.")
+    elif os.path.isdir(java_src):
         copy_folder(java_src, jre_dst)
     else:
         log(f"Warning: Java source {java_src} not found. Friend will need system Java installed.")
