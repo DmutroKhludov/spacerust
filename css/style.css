@@ -1408,6 +1408,45 @@ input:checked + .slider-round:before {
     gap: 12px;
 }
 
+.dock-nick-wrapper {
+    display: flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid var(--border-color);
+    padding: 0 12px;
+    height: 52px;
+    gap: 8px;
+    box-sizing: border-box;
+    transition: var(--transition-fast);
+}
+
+.dock-nick-wrapper:hover, .dock-nick-wrapper:focus-within {
+    border-color: var(--rust-orange);
+    background: rgba(0, 0, 0, 0.65);
+}
+
+.dock-nick-label {
+    font-family: var(--font-heading);
+    font-size: 13px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+}
+
+.dock-nick-input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #fff;
+    font-family: var(--font-heading);
+    font-size: 16px;
+    letter-spacing: 0.5px;
+    width: 125px;
+}
+
+.dock-nick-input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
 .play-button-wrap {
     position: relative;
 }

@@ -29,6 +29,18 @@ class LauncherApi:
             print(f"[Error opening folder] {e}")
             return {"status": "error", "message": str(e)}
 
+    def get_system_username(self):
+        try:
+            import getpass
+            import re
+            user = getpass.getuser()
+            clean = re.sub(r'[^a-zA-Z0-9_]', '', user)
+            if len(clean) >= 3:
+                return clean[:16]
+        except Exception:
+            pass
+        return None
+
     def launch_client(self, ram_mb=None, nickname=None):
         try:
             res = self.manager.launch(nickname=nickname, ram_mb=ram_mb)

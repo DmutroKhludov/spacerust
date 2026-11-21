@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- STATE INITIALIZATION ---
     const STATE = {
         ramMB: parseInt(localStorage.getItem('sr_ram_mb') || '6144', 10),
-        nickname: localStorage.getItem('sr_nickname') || 'Dimasta',
+        nickname: localStorage.getItem('sr_nickname') || ('Player_' + Math.floor(100 + Math.random() * 900)),
         balance: parseInt(localStorage.getItem('sr_balance') || '1450', 10),
         rank: localStorage.getItem('sr_rank') || 'VIP+',
         soundEnabled: localStorage.getItem('sr_sound_enabled') !== 'false',
@@ -36,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Bottom Dock
     const dockRamStat = document.getElementById('dock-ram-stat');
+    const dockNickInput = document.getElementById('dock-nick-input');
     const btnPlay = document.getElementById('btn-play');
     const btnPlayText = document.getElementById('btn-play-text');
     const launchProgressBar = document.getElementById('launch-progress-bar');
@@ -250,9 +251,75 @@ document.addEventListener('DOMContentLoaded', () => {
             profileAvatarImg.src = `https://mc-heads.net/avatar/${encodeURIComponent(STATE.nickname)}/64`;
         }
         if (homePlayerNick) homePlayerNick.textContent = STATE.nickname;
+        if (dockNickInput && document.activeElement !== dockNickInput) {
+            dockNickInput.value = STATE.nickname;
+        }
+        if (modalInputNick && document.activeElement !== modalInputNick) {
+            modalInputNick.value = STATE.nickname;
+        }
+        if (modalDisplayNick) modalDisplayNick.textContent = STATE.nickname;
+        if (modalAvatarPreview) {
+            modalAvatarPreview.src = `https://mc-heads.net/avatar/${encodeURIComponent(STATE.nickname)}/64`;
+        }
         const rankEl = document.querySelector('.user-rank');
         if (rankEl) rankEl.textContent = STATE.rank;
     }
+
+    // Direct Nickname Input in Bottom Dock
+    if (dockNickInput) {
+        dockNickInput.value = STATE.nickname;
+        dockNickInput.addEventListener('input', (e) => {
+            const raw = e.target.value.replace(/[^a-zA-Z0-9_]/g, '');
+            e.target.value = raw;
+            if (raw.length >= 3) {
+                STATE.nickname = raw;
+                localStorage.setItem('sr_nickname', raw);
+                if (profileNickEl) profileNickEl.textContent = raw;
+                if (homePlayerNick) homePlayerNick.textContent = raw;
+                if (profileAvatarImg) profileAvatarImg.src = `https://mc-heads.net/avatar/${encodeURIComponent(raw)}/64`;
+                if (modalDisplayNick) modalDisplayNick.textContent = raw;
+                if (modalInputNick && document.activeElement !== modalInputNick) modalInputNick.value = raw;
+                if (modalAvatarPreview) modalAvatarPreview.src = `https://mc-heads.net/avatar/${encodeURIComponent(raw)}/64`;
+            }
+        });
+        dockNickInput.addEventListener('change', (e) => {
+            const raw = e.target.value.trim();
+            if (raw.length < 3) {
+                showToast('Никнейм должен содержать минимум 3 символа!', 'error');
+                e.target.value = STATE.nickname;
+            } else {
+                showToast(`Никнейм обновлен: ${raw}`, 'success');
+            }
+        });
+    }
+
+    if (homePlayerNick) {
+        homePlayerNick.style.cursor = 'pointer';
+        homePlayerNick.title = 'Нажмите для смены ника';
+        homePlayerNick.addEventListener('click', () => {
+            if (profileBtn) profileBtn.click();
+        });
+    }
+
+    // Auto-detect Windows username on fresh start
+    async function checkSystemUsername() {
+        if (!localStorage.getItem('sr_nickname')) {
+            try {
+                if (window.pywebview && window.pywebview.api && window.pywebview.api.get_system_username) {
+                    const sysName = await window.pywebview.api.get_system_username();
+                    if (sysName && sysName.length >= 3) {
+                        STATE.nickname = sysName;
+                        localStorage.setItem('sr_nickname', sysName);
+                        updateProfileUI();
+                    }
+                }
+            } catch (err) {
+                console.log('System username lookup error:', err);
+            }
+        }
+    }
+    window.addEventListener('pywebviewready', checkSystemUsername);
+    setTimeout(checkSystemUsername, 800);
 
     // ==========================================
     // WINDOW CONTROLS (PYWEBVIEW / BROWSER)
