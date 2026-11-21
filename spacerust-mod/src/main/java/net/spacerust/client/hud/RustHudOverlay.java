@@ -34,45 +34,47 @@ public class RustHudOverlay implements HudRenderCallback {
 
         // Position: Bottom Right corner (Rust standard)
         int hudWidth = 140;
-        int barHeight = 8;
-        int startX = screenWidth - hudWidth - 16;
+        int barHeight = 9;
+        int startX = screenWidth - hudWidth - 14;
         int startY = screenHeight - 65;
 
-        // 1. HEALTH BAR (Green / Red)
+        // 1. HEALTH BAR (Green, turns Red when critical <= 25)
+        int hpColor = health <= 25 ? 0xFFE53935 : 0xFF4CAF50;
         drawRustBar(matrices, textRenderer, startX, startY, hudWidth, barHeight,
-                "HP", (int) health, maxHealth, 0xFF4caf50, 0xFF1b5e20);
+                "+  HP", (int) health, maxHealth, hpColor);
 
         // 2. HUNGER / CALORIES BAR (Orange)
         drawRustBar(matrices, textRenderer, startX, startY + 14, hudWidth, barHeight,
-                "FOOD", calories, 500, 0xFFff9800, 0xFFe65100);
+                "ЕДА", calories, 500, 0xFFFF9800);
 
         // 3. HYDRATION / WATER BAR (Cyan / Blue)
         drawRustBar(matrices, textRenderer, startX, startY + 28, hudWidth, barHeight,
-                "WATER", hydration, 250, 0xFF00bcd4, 0xFF006064);
+                "ВОДА", hydration, 250, 0xFF00BCD4);
 
         // 4. STATUS INDICATORS (Comfort / Radiation / Bleeding)
         int statusY = startY + 44;
         if (radiation > 0) {
-            String radText = "RAD " + radiation;
-            DrawableHelper.fill(matrices, startX, statusY, startX + 45, statusY + 12, 0xCCf44336);
-            textRenderer.draw(matrices, radText, startX + 4, statusY + 2, 0xFFFFFFFF);
+            String radText = "РАД " + radiation;
+            DrawableHelper.fill(matrices, startX, statusY, startX + 50, statusY + 12, 0xCCF44336);
+            textRenderer.drawWithShadow(matrices, radText, startX + 4, statusY + 2, 0xFFFFFFFF);
         } else {
-            String comfortText = comfort + "% COMFORT";
-            textRenderer.draw(matrices, comfortText, startX, statusY + 2, 0xAAFFFFFF);
+            String comfortText = comfort + "% КОМФОРТ";
+            textRenderer.drawWithShadow(matrices, comfortText, startX, statusY + 2, 0xAAFFFFFF);
         }
 
         if (isBleeding) {
-            String bleedText = "! BLEEDING";
-            DrawableHelper.fill(matrices, startX + 55, statusY, startX + 130, statusY + 12, 0xEEe53935);
-            textRenderer.draw(matrices, bleedText, startX + 60, statusY + 2, 0xFFFFFFFF);
+            String bleedText = "! КРОВОТЕЧЕНИЕ";
+            DrawableHelper.fill(matrices, startX + 60, statusY, startX + 138, statusY + 12, 0xEEE53935);
+            textRenderer.drawWithShadow(matrices, bleedText, startX + 64, statusY + 2, 0xFFFFFFFF);
         }
     }
 
     private void drawRustBar(MatrixStack matrices, TextRenderer textRenderer, int x, int y,
                             int width, int height, String label, int current, int max,
-                            int fillColor, int bgGlow) {
-        // Dark background plate
-        DrawableHelper.fill(matrices, x - 1, y - 1, x + width + 1, y + height + 1, 0xDD12161f);
+                            int fillColor) {
+        // Dark background plate with subtle border
+        DrawableHelper.fill(matrices, x - 1, y - 1, x + width + 1, y + height + 1, 0xAA0A0D12);
+        DrawableHelper.fill(matrices, x, y, x + width, y + height, 0xCC151922);
 
         // Fill bar based on percentage
         float ratio = Math.max(0.0f, Math.min(1.0f, (float) current / (float) max));
@@ -81,8 +83,12 @@ public class RustHudOverlay implements HudRenderCallback {
             DrawableHelper.fill(matrices, x, y, x + fillWidth, y + height, fillColor);
         }
 
-        // Text display: e.g. "HP 95"
-        String text = label + "  " + current;
-        textRenderer.draw(matrices, text, x + 3, y - 1, 0xFFFFFFFF);
+        // Left Label: e.g. "+ HP", "ЕДА", "ВОДА"
+        textRenderer.drawWithShadow(matrices, label, x + 3, y + (height - 8) / 2, 0xFFFFFFFF);
+
+        // Right Value: e.g. "100", "500", "250"
+        String valStr = String.valueOf(current);
+        int valW = textRenderer.getWidth(valStr);
+        textRenderer.drawWithShadow(matrices, valStr, x + width - valW - 3, y + (height - 8) / 2, 0xFFFFFFFF);
     }
 }

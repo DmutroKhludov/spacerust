@@ -15,7 +15,6 @@ import org.lwjgl.glfw.GLFW;
 
 public class SpaceRustClient implements ClientModInitializer {
     public static final String MOD_ID = "spacerust";
-    public static KeyBinding keyCrafting;
     public static KeyBinding keyMap;
     public static KeyBinding keyReload;
 
@@ -23,14 +22,7 @@ public class SpaceRustClient implements ClientModInitializer {
     public void onInitializeClient() {
         System.out.println("[SpaceRust] Initializing RustMe-like Client Engine for Minecraft 1.16.5...");
 
-        // 1. Register Rust Keybindings
-        keyCrafting = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-                "key.spacerust.crafting",
-                InputUtil.Type.KEYSYM,
-                GLFW.GLFW_KEY_Q,
-                "category.spacerust"
-        ));
-
+        // 1. Register Rust Keybindings (Q remains standard Minecraft item drop)
         keyMap = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.spacerust.map",
                 InputUtil.Type.KEYSYM,
@@ -52,13 +44,6 @@ public class SpaceRustClient implements ClientModInitializer {
 
         // 3. Register Keybind Tick Check
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            // Crafting menu on Q
-            while (keyCrafting.wasPressed()) {
-                if (client.player != null && client.currentScreen == null) {
-                    client.openScreen(new RustCraftingScreen());
-                }
-            }
-
             // Map on G
             while (keyMap.wasPressed()) {
                 if (client.player != null) {
