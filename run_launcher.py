@@ -1,27 +1,41 @@
 import os
 import sys
+import time
 import ctypes
 from ctypes import wintypes
 import webview
 from client_manager import SpaceRustClientManager
 
-# Initialize Win32 APIs with explicit 64-bit argument/return types for smooth zero-lag native window dragging
+# Initialize Win32 APIs for hardware-accelerated, zero-lag window dragging
 user32 = ctypes.windll.user32
-user32.ReleaseCapture.restype = wintypes.BOOL
-user32.SendMessageW.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
-user32.SendMessageW.restype = wintypes.LPARAM
-user32.PostMessageW.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
-user32.PostMessageW.restype = wintypes.BOOL
 
-WM_NCLBUTTONDOWN = 0x00A1
-HTCAPTION = 2
-WM_SYSCOMMAND = 0x0112
-SC_DRAGMOVE = 0xF012
+class POINT(ctypes.Structure):
+    _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]
+
+class RECT(ctypes.Structure):
+    _fields_ = [("left", ctypes.c_long), ("top", ctypes.c_long), ("right", ctypes.c_long), ("bottom", ctypes.c_long)]
+
+user32.GetCursorPos.argtypes = [ctypes.POINTER(POINT)]
+user32.GetCursorPos.restype = wintypes.BOOL
+user32.GetWindowRect.argtypes = [wintypes.HWND, ctypes.POINTER(RECT)]
+user32.GetWindowRect.restype = wintypes.BOOL
+user32.SetWindowPos.argtypes = [wintypes.HWND, wintypes.HWND, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, wintypes.UINT]
+user32.SetWindowPos.restype = wintypes.BOOL
+user32.GetAsyncKeyState.argtypes = [ctypes.c_int]
+user32.GetAsyncKeyState.restype = wintypes.SHORT
+user32.GetSystemMetrics.argtypes = [ctypes.c_int]
+user32.GetSystemMetrics.restype = ctypes.c_int
+
+SWP_NOSIZE = 0x0001
+SWP_NOZORDER = 0x0004
+SWP_NOACTIVATE = 0x0010
+SWP_FLAGS = SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE
 
 class LauncherApi:
     def __init__(self):
         self.window = None
         self.manager = SpaceRustClientManager()
+        self.is_dragging = False
 
     def set_window(self, window):
         self.window = window
@@ -35,24 +49,51 @@ class LauncherApi:
             self.window.destroy()
 
     def drag_window(self):
-        if self.window and hasattr(self.window, 'native') and self.window.native:
+        if not self.window or not hasattr(self.window, 'native') or not self.window.native:
+            return False
+        if self.is_dragging:
+            return True
+
+        self.is_dragging = True
+        try:
+            hwnd = wintypes.HWND(int(self.window.native.Handle.ToInt64()))
+
+            # Record initial physical cursor and window positions
+            pt = POINT()
+            user32.GetCursorPos(ctypes.byref(pt))
+            rect = RECT()
+            user32.GetWindowRect(hwnd, ctypes.byref(rect))
+
+            offset_x = pt.x - rect.left
+            offset_y = pt.y - rect.top
+
+            # Determine primary mouse button (support swapped mouse buttons)
+            vkey = 0x02 if user32.GetSystemMetrics(23) else 0x01
+
+            # High-performance 200 FPS drag loop directly via Win32 SetWindowPos
+            # Completely avoids IPC message bottleneck and DPI scaling mismatch
+            while user32.GetAsyncKeyState(vkey) & 0x8000:
+                user32.GetCursorPos(ctypes.byref(pt))
+                new_x = pt.x - offset_x
+                new_y = pt.y - offset_y
+                user32.SetWindowPos(hwnd, 0, new_x, new_y, 0, 0, SWP_FLAGS)
+                time.sleep(0.005)
+
+            # Sync position back to pywebview state when drag is released
             try:
-                hwnd_val = int(self.window.native.Handle.ToInt64())
-                hwnd = wintypes.HWND(hwnd_val)
-                user32.ReleaseCapture()
-                user32.SendMessageW(hwnd, WM_NCLBUTTONDOWN, HTCAPTION, 0)
-                return True
-            except Exception as e:
-                print(f"[Drag Error SendMessage] {e}")
-                try:
-                    hwnd_val = int(self.window.native.Handle.ToInt64())
-                    hwnd = wintypes.HWND(hwnd_val)
-                    user32.ReleaseCapture()
-                    user32.PostMessageW(hwnd, WM_SYSCOMMAND, SC_DRAGMOVE, 0)
-                    return True
-                except Exception as e2:
-                    print(f"[Drag Error PostMessage] {e2}")
-        return False
+                user32.GetWindowRect(hwnd, ctypes.byref(rect))
+                scale = getattr(self.window.native, '_scale', 1.0)
+                self.window.x = int(rect.left / scale)
+                self.window.y = int(rect.top / scale)
+            except Exception:
+                pass
+
+            return True
+        except Exception as e:
+            print(f"[Drag Error] {e}")
+            return False
+        finally:
+            self.is_dragging = False
 
     def open_game_folder(self):
         try:

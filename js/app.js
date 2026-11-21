@@ -350,6 +350,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const titlebar = document.getElementById('app-titlebar') || document.querySelector('.titlebar');
     const headerBar = document.querySelector('.header-bar');
 
+    const triggerDrag = () => {
+        if (window.pywebview && window.pywebview.api && typeof window.pywebview.api.drag_window === 'function') {
+            window.pywebview.api.drag_window();
+            return true;
+        }
+        return false;
+    };
+
     const handleWindowDragStart = (e) => {
         if (e.button !== 0) return;
         // Ignore clicks on buttons, inputs, links, tabs, profile badges or window controls
@@ -359,9 +367,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         e.preventDefault();
 
-        // Native Win32 window drag via Python LauncherApi (hardware-accelerated, 0 latency OS drag)
-        if (window.pywebview && window.pywebview.api && typeof window.pywebview.api.drag_window === 'function') {
-            window.pywebview.api.drag_window();
+        if (!triggerDrag()) {
+            setTimeout(triggerDrag, 25);
         }
     };
 
