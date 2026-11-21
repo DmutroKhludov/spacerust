@@ -100,6 +100,59 @@ class SpaceRustClientManager:
                     self.log(f"Could not sync mod: {e}")
                 break
 
+    def create_desktop_shortcut(self):
+        try:
+            desktop = os.path.expandvars(r'%USERPROFILE%\Desktop')
+            lnk_path = os.path.join(desktop, 'SpaceRust Launcher.lnk')
+            if getattr(sys, 'frozen', False):
+                exe_path = sys.executable
+            else:
+                exe_path = os.path.abspath(sys.argv[0])
+
+            work_dir = os.path.dirname(exe_path)
+            if not os.path.exists(lnk_path):
+                ps_script = (
+                    f'$ws = New-Object -ComObject WScript.Shell; '
+                    f'$s = $ws.CreateShortcut("{lnk_path}"); '
+                    f'$s.TargetPath = "{exe_path}"; '
+                    f'$s.WorkingDirectory = "{work_dir}"; '
+                    f'$s.IconLocation = "{exe_path},0"; '
+                    f'$s.Description = "SpaceRust 1.16.5 Launcher"; '
+                    f'$s.Save()'
+                )
+                subprocess.run(["powershell", "-NoProfile", "-Command", ps_script], capture_output=True, timeout=5)
+                self.log(f"Desktop shortcut created: {lnk_path}")
+        except Exception as e:
+            self.log(f"Could not create shortcut: {e}")
+
+    def download_file_with_progress(self, url, dest_path, notify):
+        import urllib.request
+        self.log(f"Connecting to {url}...")
+        req = urllib.request.Request(url, headers={'User-Agent': 'SpaceRustLauncher/1.0'})
+        with urllib.request.urlopen(req) as resp, open(dest_path, 'wb') as out_f:
+            total_str = resp.headers.get('Content-Length')
+            total_size = int(total_str) if total_str else 0
+            downloaded = 0
+            chunk_size = 1024 * 512
+            last_pct = -1
+
+            while True:
+                chunk = resp.read(chunk_size)
+                if not chunk:
+                    break
+                out_f.write(chunk)
+                downloaded += len(chunk)
+                if total_size > 0:
+                    pct = int((downloaded / total_size) * 85) + 5
+                    if pct != last_pct:
+                        last_pct = pct
+                        mb_done = downloaded / (1024 * 1024)
+                        mb_total = total_size / (1024 * 1024)
+                        notify(f"Загрузка: {mb_done:.0f} / {mb_total:.0f} МБ", pct)
+                else:
+                    mb_done = downloaded / (1024 * 1024)
+                    notify(f"Загрузка: {mb_done:.0f} МБ...", 50)
+
     def verify_and_prepare(self, progress_callback=None):
         def notify(stage, percent):
             self.log(f"{stage} ({percent}%)")
@@ -108,6 +161,7 @@ class SpaceRustClientManager:
 
         notify("Проверка папки SpaceRust...", 10)
         self.ensure_directories()
+        self.create_desktop_shortcut()
 
         ver_dir = os.path.join(self.game_dir, 'versions', self.version_id)
         ver_jar = os.path.join(ver_dir, f"{self.version_id}.jar")
@@ -122,7 +176,7 @@ class SpaceRustClientManager:
         # 2. Check if a portable 'data' folder exists next to the launcher exe/script
         portable_data = os.path.join(self.exe_dir, 'data')
         if os.path.isdir(portable_data):
-            notify("Первый запуск: распаковка файлов игры (10-15 сек)...", 30)
+            notify("Распаковка файлов игры из папки...", 30)
             self.log(f"Copying portable data from {portable_data} to {self.game_dir}...")
             try:
                 for item in os.listdir(portable_data):
@@ -174,39 +228,55 @@ class SpaceRustClientManager:
             notify("Клиент готов!", 100)
             return True
 
-        # 4. If no files exist at all on friend's PC
-        err_msg = (
-            "Файлы игры не найдены!\n\n"
-            "Вы запустили только лаунчер (.exe), но на этом ПК нет файлов самой игры (~1 ГБ).\n\n"
-            "КАК ЗАПУСТИТЬ ИГРУ ДРУГУ:\n"
-            "1. Отправьте другу полную папку 'SpaceRust_Client' (или архив 'SpaceRust_Client.zip')\n"
-            "2. Друг должен распаковать архив и запустить SpaceRust.exe из этой папки!\n"
-            "3. В архиве уже будут лежать папки 'data' (файлы игры) и 'jre' (Java)."
-        )
-        self.log(err_msg)
-        raise RuntimeError(err_msg)
+        # 4. Auto-download from GitHub Release (RustMe-style cloud bootstrap)
+        cloud_url = "https://github.com/DmutroKhludov/spacerust/releases/download/v1.0.0/SpaceRust-Files.zip"
+        notify("Первый запуск: подключение к серверу...", 5)
+        self.log(f"Downloading game client from {cloud_url}...")
 
-    def launch(self, nickname, ram_mb):
+        temp_zip = os.path.join(self.game_dir, 'client_download.tmp.zip')
+        try:
+            self.download_file_with_progress(cloud_url, temp_zip, notify)
+            notify("Распаковка файлов игры...", 90)
+            self.log("Extracting client package...")
+            import zipfile
+            with zipfile.ZipFile(temp_zip, 'r') as zf:
+                zf.extractall(self.game_dir)
+            if os.path.isfile(temp_zip):
+                os.remove(temp_zip)
+            self.sync_latest_mod()
+            notify("Установка завершена! Запуск...", 100)
+            return True
+        except Exception as e:
+            if os.path.isfile(temp_zip):
+                try:
+                    os.remove(temp_zip)
+                except Exception:
+                    pass
+            self.log(f"Cloud download failed: {e}")
+            raise RuntimeError(
+                f"Не удалось автоматически загрузить файлы игры:\n{e}\n\n"
+                f"Проверьте подключение к интернету."
+            )
+
+    def launch(self, nickname, ram_mb, progress_callback=None):
         """Launches the isolated SpaceRust client directly into the Rust Main Menu."""
         try:
-            # 1. Check Java FIRST
+            # 1. Check and prepare client files FIRST (downloads from cloud if needed)
+            try:
+                self.verify_and_prepare(progress_callback=progress_callback)
+            except Exception as e:
+                return {"status": "error", "message": str(e)}
+
+            # 2. Check Java (after client preparation, runtime/jre is available)
             java_exe = self.find_java()
             if not java_exe:
                 err = (
                     "Java не найдена на вашем компьютере!\n\n"
-                    "Для запуска игры требуется Java 8 (x64).\n\n"
-                    "КАК ИСПРАВИТЬ:\n"
-                    "1. Запускайте игру из распакованной папки 'SpaceRust_Client' (где рядом лежит папка 'jre')\n"
-                    "2. Либо установите Java с официального сайта: https://www.java.com"
+                    "Для запуска игры требуется Java 8 (x64).\n"
+                    "Установите Java с официального сайта: https://www.java.com"
                 )
                 self.log(err)
                 return {"status": "error", "message": err}
-
-            # 2. Check and prepare client files
-            try:
-                self.verify_and_prepare()
-            except Exception as e:
-                return {"status": "error", "message": str(e)}
 
             ram_mb = int(ram_mb) if ram_mb else 4096
 

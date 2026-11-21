@@ -41,9 +41,17 @@ class LauncherApi:
             pass
         return None
 
+    def report_progress(self, stage, percent):
+        if self.window:
+            try:
+                safe_stage = stage.replace("'", "\\'").replace('"', '\\"')
+                self.window.evaluate_js(f"window.updateLaunchProgress && window.updateLaunchProgress('{safe_stage}', {percent})")
+            except Exception:
+                pass
+
     def launch_client(self, ram_mb=None, nickname=None):
         try:
-            res = self.manager.launch(nickname=nickname, ram_mb=ram_mb)
+            res = self.manager.launch(nickname=nickname, ram_mb=ram_mb, progress_callback=self.report_progress)
             return res
         except Exception as e:
             print(f"[Launcher Launch Error] {e}")

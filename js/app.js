@@ -347,6 +347,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // LAUNCH GAME ACTION
     // ==========================================
+    window.updateLaunchProgress = function(text, percent) {
+        if (btnPlayText) btnPlayText.textContent = text.toUpperCase();
+        if (launchProgressBar) launchProgressBar.style.width = `${percent}%`;
+    };
+
     if (btnPlay) {
         btnPlay.addEventListener('click', handleLaunchGame);
     }
