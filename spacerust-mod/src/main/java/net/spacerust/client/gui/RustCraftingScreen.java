@@ -272,4 +272,13 @@ public class RustCraftingScreen extends Screen {
 
         return super.mouseClicked(mouseX, mouseY, button);
     }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_Q || keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_E || keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
+            this.onClose();
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
 }

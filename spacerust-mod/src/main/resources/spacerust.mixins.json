@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_8",
   "mixins": [
     "InGameHudMixin",
+    "KeyboardMixin",
     "TitleScreenMixin"
   ],
   "client": [
