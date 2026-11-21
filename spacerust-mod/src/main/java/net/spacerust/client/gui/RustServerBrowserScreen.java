@@ -6,12 +6,17 @@ import net.minecraft.client.gui.screen.ConnectScreen;
 import net.minecraft.client.gui.screen.DirectConnectScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.option.OptionsScreen;
-import net.minecraft.client.network.MultiplayerServerListPinger;
 import net.minecraft.client.network.ServerInfo;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.LiteralText;
 
-import java.net.UnknownHostException;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,37 +46,6 @@ public class RustServerBrowserScreen extends Screen {
             this.tags = tags;
             this.serverInfo = new ServerInfo(name, ip, false);
         }
-
-        public void updateStatsFromInfo() {
-            this.isPinging = false;
-            if (this.serverInfo.ping >= 0) {
-                this.isOnline = true;
-                this.pingMs = this.serverInfo.ping;
-                if (this.serverInfo.playerCountLabel != null) {
-                    String raw = this.serverInfo.playerCountLabel.getString();
-                    if (raw.contains("/")) {
-                        String[] parts = raw.split("/");
-                        try {
-                            this.currentPlayers = Integer.parseInt(parts[0].trim());
-                            this.maxPlayers = Integer.parseInt(parts[1].trim());
-                            this.statusText = this.currentPlayers + " / " + this.maxPlayers;
-                        } catch (Exception ignored) {
-                            this.statusText = raw;
-                        }
-                    } else {
-                        this.statusText = raw;
-                    }
-                } else {
-                    this.statusText = "0 / 20";
-                }
-            } else {
-                this.isOnline = false;
-                this.pingMs = -1;
-                this.currentPlayers = 0;
-                this.maxPlayers = 0;
-                this.statusText = "ОФФЛАЙН";
-            }
-        }
     }
 
     // Only 1 server as requested: UNLIMITED X2
@@ -86,8 +60,6 @@ public class RustServerBrowserScreen extends Screen {
         ));
     }
 
-    private final MultiplayerServerListPinger pinger = new MultiplayerServerListPinger();
-
     public RustServerBrowserScreen() {
         super(new LiteralText("SpaceRust Main Menu"));
     }
@@ -101,31 +73,130 @@ public class RustServerBrowserScreen extends Screen {
     public void refreshServers() {
         for (ServerEntry s : SERVERS) {
             s.isPinging = true;
-            s.isOnline = false;
             s.statusText = "Опрос...";
-            try {
-                this.pinger.add(s.serverInfo, s::updateStatsFromInfo);
-            } catch (UnknownHostException ignored) {
-                s.isPinging = false;
-                s.isOnline = false;
-                s.statusText = "ОФФЛАЙН";
-                s.pingMs = -1;
-            }
+            pingServerAsync(s);
         }
+    }
+
+    private static void pingServerAsync(ServerEntry s) {
+        new Thread(() -> {
+            String host = "127.0.0.1";
+            int port = 25565;
+            try {
+                if (s.ip.contains(":")) {
+                    String[] parts = s.ip.split(":");
+                    host = parts[0];
+                    port = Integer.parseInt(parts[1]);
+                } else {
+                    host = s.ip;
+                }
+
+                long start = System.currentTimeMillis();
+                try (Socket socket = new Socket()) {
+                    socket.connect(new InetSocketAddress(host, port), 2000);
+                    socket.setSoTimeout(2000);
+                    long ping = System.currentTimeMillis() - start;
+
+                    DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+                    DataInputStream in = new DataInputStream(socket.getInputStream());
+
+                    ByteArrayOutputStream b = new ByteArrayOutputStream();
+                    DataOutputStream handshake = new DataOutputStream(b);
+                    handshake.writeByte(0x00);
+                    writeVarInt(handshake, 754); // 1.16.5 protocol
+                    writeString(handshake, host);
+                    handshake.writeShort(port);
+                    writeVarInt(handshake, 1); // State 1: status
+
+                    writeVarInt(out, b.size());
+                    out.write(b.toByteArray());
+
+                    // Status request
+                    out.writeByte(0x01);
+                    out.writeByte(0x00);
+
+                    readVarInt(in);
+                    int id = readVarInt(in);
+                    if (id == 0x00) {
+                        String json = readString(in);
+                        int cur = 0;
+                        int max = 20;
+
+                        java.util.regex.Matcher mOnline = java.util.regex.Pattern.compile("\"online\"\\s*:\\s*(\\d+)").matcher(json);
+                        if (mOnline.find()) cur = Integer.parseInt(mOnline.group(1));
+
+                        java.util.regex.Matcher mMax = java.util.regex.Pattern.compile("\"max\"\\s*:\\s*(\\d+)").matcher(json);
+                        if (mMax.find()) max = Integer.parseInt(mMax.group(1));
+
+                        s.isOnline = true;
+                        s.isPinging = false;
+                        s.currentPlayers = cur;
+                        s.maxPlayers = max;
+                        s.pingMs = ping;
+                        s.statusText = cur + " / " + max;
+                        return;
+                    }
+
+                    s.isOnline = true;
+                    s.isPinging = false;
+                    s.pingMs = ping;
+                    s.statusText = "ОНЛАЙН";
+                }
+            } catch (Throwable ignored) {
+                // Completely safe - never crashes the game when server is offline!
+                s.isOnline = false;
+                s.isPinging = false;
+                s.pingMs = -1;
+                s.currentPlayers = 0;
+                s.maxPlayers = 0;
+                s.statusText = "СЕРВЕР ВЫКЛЮЧЕН";
+            }
+        }, "SpaceRust-Ping").start();
+    }
+
+    private static void writeVarInt(DataOutputStream out, int value) throws IOException {
+        while ((value & -128) != 0) {
+            out.writeByte(value & 127 | 128);
+            value >>>= 7;
+        }
+        out.writeByte(value);
+    }
+
+    private static int readVarInt(DataInputStream in) throws IOException {
+        int numRead = 0;
+        int result = 0;
+        byte read;
+        do {
+            read = in.readByte();
+            int value = (read & 0b01111111);
+            result |= (value << (7 * numRead));
+            numRead++;
+            if (numRead > 5) throw new RuntimeException("VarInt is too big");
+        } while ((read & 0b10000000) != 0);
+        return result;
+    }
+
+    private static void writeString(DataOutputStream out, String string) throws IOException {
+        byte[] bytes = string.getBytes(StandardCharsets.UTF_8);
+        writeVarInt(out, bytes.length);
+        out.write(bytes);
+    }
+
+    private static String readString(DataInputStream in) throws IOException {
+        int length = readVarInt(in);
+        byte[] bytes = new byte[length];
+        in.readFully(bytes);
+        return new String(bytes, StandardCharsets.UTF_8);
     }
 
     @Override
     public void tick() {
         super.tick();
-        try {
-            this.pinger.tick();
-        } catch (Exception ignored) {}
     }
 
     @Override
     public void removed() {
         super.removed();
-        this.pinger.cancel();
     }
 
     @Override

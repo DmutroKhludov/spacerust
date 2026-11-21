@@ -11,12 +11,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(TitleScreen.class)
 public class TitleScreenMixin {
 
-    @Inject(method = "init", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "init", at = @At("RETURN"))
     private void openRustServerBrowser(CallbackInfo ci) {
         MinecraftClient client = MinecraftClient.getInstance();
-        if (client != null) {
+        if (client != null && !(client.currentScreen instanceof RustServerBrowserScreen)) {
             client.openScreen(new RustServerBrowserScreen());
-            ci.cancel();
         }
     }
 }
