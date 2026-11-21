@@ -7,6 +7,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.spacerust.client.gui.RustCraftingScreen;
+import net.spacerust.client.gui.RustCraftingQueue;
 import net.spacerust.client.guns.GunManager;
 import net.spacerust.client.hud.GunHudOverlay;
 import net.spacerust.client.hud.RustCrosshairOverlay;
@@ -44,6 +45,9 @@ public class SpaceRustClient implements ClientModInitializer {
 
         // 3. Register Keybind Tick Check
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            // Tick crafting queue in background
+            RustCraftingQueue.tick(client);
+
             // Map on G
             while (keyMap.wasPressed()) {
                 if (client.player != null) {
