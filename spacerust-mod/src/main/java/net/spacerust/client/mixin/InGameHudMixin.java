@@ -27,4 +27,10 @@ public class InGameHudMixin {
     private void hideVanillaHotbar(float tickDelta, MatrixStack matrices, CallbackInfo ci) {
         ci.cancel();
     }
+
+    // Hide vanilla experience bar behind the Rust hotbar
+    @Inject(method = "renderExperienceBar", at = @At("HEAD"), cancellable = true)
+    private void hideVanillaExperienceBar(MatrixStack matrices, int x, CallbackInfo ci) {
+        ci.cancel();
+    }
 }

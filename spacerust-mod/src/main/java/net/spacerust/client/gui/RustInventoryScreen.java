@@ -146,7 +146,7 @@ public class RustInventoryScreen extends Screen {
         L.qcCols = Math.max(3, Math.min(5, (L.qcW + L.qcGap) / (L.qcSlot + L.qcGap)));
         L.qcGridW = L.qcCols * L.qcSlot + (L.qcCols - 1) * L.qcGap;
         L.qcStartX = L.qcX;
-        L.qcBottomY = screenH - 78;
+        L.qcBottomY = screenH - 96;
         int qcRowsVisible = Math.max(3, Math.min(5, (L.qcBottomY - 46) / (L.qcSlot + L.qcGap)));
         int qcGridH = qcRowsVisible * L.qcSlot + (qcRowsVisible - 1) * L.qcGap;
         L.qcStartY = L.qcBottomY - qcGridH;
@@ -473,7 +473,7 @@ public class RustInventoryScreen extends Screen {
 
         // 3. Hotbar clicks (6 active slots: 36..41)
         int hotbarX = RustUiHelper.getHotbarStartX(screenW);
-        int hotbarY = screenH - RustUiHelper.HOTBAR_SLOT_SIZE - 8;
+        int hotbarY = screenH - RustUiHelper.HOTBAR_SLOT_SIZE - 10;
         for (int i = 0; i < RustUiHelper.HOTBAR_SLOTS; i++) {
             int sx = hotbarX + i * (RustUiHelper.HOTBAR_SLOT_SIZE + RustUiHelper.HOTBAR_GAP);
             if (RustUiHelper.inRect(mouseX, mouseY, sx, hotbarY, RustUiHelper.HOTBAR_SLOT_SIZE, RustUiHelper.HOTBAR_SLOT_SIZE)) {

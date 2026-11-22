@@ -219,8 +219,8 @@ public final class RustUiHelper {
     }
 
     public static final int HOTBAR_SLOTS = 6;
-    public static final int HOTBAR_SLOT_SIZE = 38;
-    public static final int HOTBAR_GAP = 3;
+    public static final int HOTBAR_SLOT_SIZE = 48;
+    public static final int HOTBAR_GAP = 4;
 
     public static int getHotbarStartX(int screenW) {
         int totalW = HOTBAR_SLOTS * HOTBAR_SLOT_SIZE + (HOTBAR_SLOTS - 1) * HOTBAR_GAP;
@@ -257,7 +257,7 @@ public final class RustUiHelper {
         int slotSize = HOTBAR_SLOT_SIZE;
         int gap = HOTBAR_GAP;
         int startX = getHotbarStartX(screenW);
-        int y = screenH - slotSize - 8;
+        int y = screenH - slotSize - 10;
         int hoveredHandlerSlot = -1;
         RustFontRenderer sf = RustFontRenderer.small();
         RustFontRenderer bsf = RustFontRenderer.boldSmall();
@@ -271,29 +271,25 @@ public final class RustUiHelper {
             ItemStack stack = inv.getStack(i);
 
             // Dark translucent charcoal/olive background
-            int bg = isSelected ? 0xDD2D332B : (isHov ? 0xDD3B3E35 : 0xD0232522);
+            int bg = isSelected ? 0xD8353830 : (isHov ? 0xD0383C32 : 0xD0232522);
             DrawableHelper.fill(matrices, sx, y, sx + slotSize, y + slotSize, bg);
 
-            // Clean border
+            // Clean 1px border - active slot gets bright cream border (NO green stripe)
             if (isSelected) {
-                // Active slot: bright cream/white border + green top accent
                 drawBorder(matrices, sx, y, slotSize, slotSize, 0xFFF7EBE1);
-                DrawableHelper.fill(matrices, sx, y, sx + slotSize, y + 2, 0xFF8DC63F);
             } else {
-                drawBorder(matrices, sx, y, slotSize, slotSize, isHov ? 0x55F7EBE1 : 0x22F7EBE1);
+                drawBorder(matrices, sx, y, slotSize, slotSize, isHov ? 0x55F7EBE1 : 0x24F7EBE1);
             }
 
-            // Slot number 1..6 (subtle in corner)
-            sf.draw(matrices, String.valueOf(i + 1), sx + 6, y + 2.5f, isSelected ? 0xFFF7EBE1 : 0x55F7EBE1);
+            // Slot number 1..6 (subtle in top-left)
+            sf.draw(matrices, String.valueOf(i + 1), sx + 7, y + 3f, isSelected ? 0xFFF7EBE1 : 0x55F7EBE1);
 
             if (!stack.isEmpty()) {
-                // Item icon: nicely scaled & centered in slot
-                int itemOff = (slotSize - 20) / 2;
-                matrices.push();
-                matrices.translate(sx + itemOff, y + itemOff, 0);
-                matrices.scale(1.25f, 1.25f, 1.0f);
-                itemRenderer.renderInGuiWithOverrides(stack, 0, 0);
-                matrices.pop();
+                // Item icon: rendered directly at correct slot center coordinates
+                int itemX = sx + (slotSize - 16) / 2;
+                int itemY = y + (slotSize - 16) / 2;
+                itemRenderer.renderInGuiWithOverrides(stack, itemX, itemY);
+                itemRenderer.renderGuiItemOverlay(client.textRenderer, stack, itemX, itemY, "");
 
                 // Vertical durability bar on the LEFT edge of slot (1:1 with Rust)
                 if (stack.isDamageable()) {
@@ -301,10 +297,10 @@ public final class RustUiHelper {
                     int dmg = stack.getDamage();
                     float ratio = Math.max(0.0f, Math.min(1.0f, (maxDmg - dmg) / (float) maxDmg));
 
-                    int barX = sx + 1;
-                    int barY = y + 1;
+                    int barX = sx + 2;
+                    int barY = y + 2;
                     int barW = 3;
-                    int barH = slotSize - 2;
+                    int barH = slotSize - 4;
 
                     // Dark track behind durability
                     DrawableHelper.fill(matrices, barX, barY, barX + barW, barY + barH, 0x99181614);
@@ -320,7 +316,7 @@ public final class RustUiHelper {
                 if (stack.getCount() > 1) {
                     String countStr = "x" + stack.getCount();
                     float tw = bsf.getWidth(countStr);
-                    bsf.draw(matrices, countStr, sx + slotSize - tw - 3, y + slotSize - 11, 0xFFF7EBE1);
+                    bsf.draw(matrices, countStr, sx + slotSize - tw - 4, y + slotSize - 12, 0xFFF7EBE1);
                 }
             }
         }
@@ -336,11 +332,11 @@ public final class RustUiHelper {
         int food = client.player.getHungerManager().getFoodLevel() * 25;
         int water = 230;
 
-        int barW = 148;
-        int barH = 20;
-        int gap = 4;
-        int x = screenW - barW - 12;
-        int startY = screenH - (barH * 3 + gap * 2) - 10;
+        int barW = 188;
+        int barH = 24;
+        int gap = 5;
+        int x = screenW - barW - 14;
+        int startY = screenH - (barH * 3 + gap * 2) - 12;
 
         drawMetabolismRow(matrices, client, x, startY, barW, barH,
                 TEX_HUD_ICON_HEALTH, TEX_HUD_HEALTH_FILL, 0xFF7CB846, hp, 100);
@@ -357,9 +353,9 @@ public final class RustUiHelper {
         drawSprite(matrices, client, TEX_HUD_BAR_BG, x, y, w, h, 0xF5FFFFFF);
 
         float ratio = Math.max(0.0f, Math.min(1.0f, value / (float) max));
-        int fillAreaX = x + 20;
+        int fillAreaX = x + 24;
         int fillAreaY = y + 2;
-        int fillMaxW = w - 24;
+        int fillMaxW = w - 28;
         int fillH = h - 4;
         int fw = Math.round(fillMaxW * ratio);
         if (fw > 0) {
@@ -370,41 +366,41 @@ public final class RustUiHelper {
             }
         }
 
-        drawSprite(matrices, client, icon, x + 4, y + (h - 12) / 2, 12, 12, 0xCCE8E2D8);
+        drawSprite(matrices, client, icon, x + 5, y + (h - 14) / 2, 14, 14, 0xCCE8E2D8);
         String displayVal = (icon == TEX_HUD_ICON_HEALTH && value >= 0) ? ("+ " + value) : String.valueOf(value);
-        RustFontRenderer.bold().drawCenteredY(matrices, displayVal, x + 24, y, h, 0xFFF7EBE1);
+        RustFontRenderer.bold().drawCenteredY(matrices, displayVal, x + 28, y, h, 0xFFF7EBE1);
     }
 
     public static void drawStatusChips(MatrixStack matrices, int screenW, int screenH,
                                        int radiation, boolean isBleeding, int comfort) {
-        int barW = 148;
-        int barH = 20;
-        int gap = 4;
-        int startY = screenH - (barH * 3 + gap * 2) - 10;
-        int statusY = startY - 22;
-        int statusX = screenW - barW - 12;
-        RustFontRenderer sf = RustFontRenderer.boldSmall();
+        int barW = 188;
+        int barH = 24;
+        int gap = 5;
+        int startY = screenH - (barH * 3 + gap * 2) - 12;
+        int statusY = startY - 26;
+        int statusX = screenW - barW - 14;
+        RustFontRenderer sf = RustFontRenderer.bold();
 
-        int chipW = 68;
-        int chipH = 16;
+        int chipW = 86;
+        int chipH = 18;
         int cx = statusX;
 
         if (radiation > 0) {
             DrawableHelper.fill(matrices, cx, statusY, cx + chipW, statusY + chipH, 0xE6C73E2B);
             drawBorder(matrices, cx, statusY, chipW, chipH, 0x44FFFFFF);
-            sf.drawCenteredY(matrices, "РАД " + radiation, cx + 5, statusY, chipH, 0xFFFFFFFF);
-            cx += chipW + 4;
+            sf.drawCenteredY(matrices, "РАД " + radiation, cx + 6, statusY, chipH, 0xFFFFFFFF);
+            cx += chipW + 5;
         }
         if (isBleeding) {
             DrawableHelper.fill(matrices, cx, statusY, cx + chipW, statusY + chipH, 0xE6C73E2B);
             drawBorder(matrices, cx, statusY, chipW, chipH, 0x44FFFFFF);
-            sf.drawCenteredY(matrices, "КРОВОТОК", cx + 5, statusY, chipH, 0xFFFFFFFF);
-            cx += chipW + 4;
+            sf.drawCenteredY(matrices, "КРОВОТОК", cx + 6, statusY, chipH, 0xFFFFFFFF);
+            cx += chipW + 5;
         }
         if (comfort > 0 && radiation == 0 && !isBleeding) {
             DrawableHelper.fill(matrices, cx, statusY, cx + chipW, statusY + chipH, 0xCC3E822A);
             drawBorder(matrices, cx, statusY, chipW, chipH, 0x44FFFFFF);
-            sf.drawCenteredY(matrices, "УЮТ " + comfort + "%", cx + 5, statusY, chipH, 0xFFFFFFFF);
+            sf.drawCenteredY(matrices, "УЮТ " + comfort + "%", cx + 6, statusY, chipH, 0xFFFFFFFF);
         }
     }
 }
