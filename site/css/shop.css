@@ -319,6 +319,7 @@
 
 .product-card {
     position: relative;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -330,6 +331,56 @@
     backdrop-filter: blur(8px);
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
     transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.product-card > *:not(.product-art):not(.product-art-scrim):not(.product-badge) {
+    position: relative;
+    z-index: 2;
+}
+
+.product-art {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background-size: cover;
+    background-position: 78% 20%;
+    opacity: 0.9;
+    transition: transform 0.3s ease, opacity 0.25s ease;
+    pointer-events: none;
+}
+
+.product-card:hover .product-art {
+    transform: scale(1.04);
+    opacity: 1;
+}
+
+.product-art-scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background:
+        linear-gradient(180deg, rgba(16, 17, 21, 0.22) 0%, rgba(16, 17, 21, 0.56) 56%, rgba(15, 16, 20, 0.88) 100%),
+        linear-gradient(90deg, rgba(15, 16, 20, 0.82) 0%, rgba(15, 16, 20, 0.35) 54%, rgba(15, 16, 20, 0.05) 100%);
+}
+
+.product-card.has-art .product-preview-perks {
+    background: rgba(11, 12, 16, 0.72);
+    border-color: rgba(255, 255, 255, 0.09);
+    backdrop-filter: blur(4px);
+}
+
+.item-detail-banner {
+    width: 100%;
+    height: 190px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background-size: cover;
+    background-position: 70% 20%;
+}
+
+.item-detail-banner[hidden] {
+    display: none;
 }
 
 .product-card:hover {
@@ -346,6 +397,7 @@
     position: absolute;
     top: 12px;
     right: 12px;
+    z-index: 3;
     padding: 3px 8px;
     border-radius: 999px;
     font-size: 9.5px;
@@ -467,9 +519,10 @@
 }
 
 .product-price {
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 900;
     color: #ffffff;
+    white-space: nowrap;
 }
 
 .product-actions {
@@ -479,13 +532,14 @@
 }
 
 .btn-card-info {
-    padding: 9px 11px;
+    padding: 8px 10px;
     border-radius: 6px;
     border: 1px solid rgba(255, 255, 255, 0.14);
     background: rgba(255, 255, 255, 0.06);
     color: #e4e4e7;
     font-size: 11px;
     font-weight: 700;
+    white-space: nowrap;
     cursor: pointer;
 }
 
@@ -495,15 +549,16 @@
 }
 
 .btn-card-buy {
-    padding: 9px 14px;
+    padding: 8px 11px;
     border-radius: 6px;
     border: none;
     background: var(--amber);
     color: #18181b;
-    font-size: 11px;
+    font-size: 10.5px;
     font-weight: 900;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.03em;
     text-transform: uppercase;
+    white-space: nowrap;
     cursor: pointer;
     transition: background 0.14s ease, transform 0.12s ease;
 }

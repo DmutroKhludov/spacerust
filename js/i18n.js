@@ -12,6 +12,8 @@ window.SPACERUST_I18N = {
         'topbar.soundOff': 'Звуки интерфейса выключены',
         'topbar.settings': 'НАСТРОЙКИ',
         'topbar.minimize': 'Свернуть',
+        'topbar.maximize': 'Развернуть в окне',
+        'topbar.restore': 'Восстановить окно',
         'topbar.close': 'Закрыть',
 
         'news.kicker': 'ПАТЧИ ИГРЫ',
@@ -70,6 +72,11 @@ window.SPACERUST_I18N = {
 
         'settings.title': 'НАСТРОЙКИ',
         'settings.langGroup': 'ЯЗЫК ИНТЕРФЕЙСА',
+        'settings.windowGroup': 'РАЗМЕР ОКНА',
+        'settings.winCompact': 'Поменьше',
+        'settings.winNormal': 'Стандарт',
+        'settings.winLarge': 'Побольше',
+        'settings.winFullscreen': 'На весь экран',
         'settings.memory': 'ПАМЯТЬ',
         'settings.ramLabel': 'Выделение оперативной памяти',
         'settings.perf': 'ПРОИЗВОДИТЕЛЬНОСТЬ',
@@ -123,6 +130,8 @@ window.SPACERUST_I18N = {
         'topbar.soundOff': 'Звуки інтерфейсу вимкнено',
         'topbar.settings': 'НАЛАШТУВАННЯ',
         'topbar.minimize': 'Згорнути',
+        'topbar.maximize': 'Розгорнути у вікні',
+        'topbar.restore': 'Відновити вікно',
         'topbar.close': 'Закрити',
 
         'news.kicker': 'ПАТЧІ ГРИ',
@@ -181,6 +190,11 @@ window.SPACERUST_I18N = {
 
         'settings.title': 'НАЛАШТУВАННЯ',
         'settings.langGroup': 'МОВА ІНТЕРФЕЙСУ',
+        'settings.windowGroup': 'РОЗМІР ВІКНА',
+        'settings.winCompact': 'Менший',
+        'settings.winNormal': 'Стандарт',
+        'settings.winLarge': 'Більший',
+        'settings.winFullscreen': 'На весь екран',
         'settings.memory': 'ПАМ’ЯТЬ',
         'settings.ramLabel': 'Виділення оперативної пам’яті',
         'settings.perf': 'ПРОДУКТИВНІСТЬ',
@@ -234,6 +248,8 @@ window.SPACERUST_I18N = {
         'topbar.soundOff': 'UI sounds muted',
         'topbar.settings': 'SETTINGS',
         'topbar.minimize': 'Minimize',
+        'topbar.maximize': 'Maximize window',
+        'topbar.restore': 'Restore window',
         'topbar.close': 'Close',
 
         'news.kicker': 'GAME PATCHES',
@@ -292,6 +308,11 @@ window.SPACERUST_I18N = {
 
         'settings.title': 'SETTINGS',
         'settings.langGroup': 'LANGUAGE',
+        'settings.windowGroup': 'WINDOW SIZE',
+        'settings.winCompact': 'Compact',
+        'settings.winNormal': 'Standard',
+        'settings.winLarge': 'Large',
+        'settings.winFullscreen': 'Fullscreen',
         'settings.memory': 'MEMORY',
         'settings.ramLabel': 'RAM Allocation',
         'settings.perf': 'PERFORMANCE',

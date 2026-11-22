@@ -386,15 +386,94 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // WINDOW CONTROLS + NATIVE DRAG
+    // WINDOW CONTROLS + NATIVE DRAG + RESIZE
     // ==========================================
+    let isWindowMaximized = false;
+    const btnMaximize = $('btn-maximize');
+
+    function detectSizePreset(maximized, width) {
+        if (maximized) return 'fullscreen';
+        const w = Number(width) || window.innerWidth || 1160;
+        if (w <= 980) return 'compact';
+        if (w >= 1320) return 'large';
+        if (Math.abs(w - 1160) <= 40) return 'normal';
+        return '';
+    }
+
+    function updateWindowUIState(maximized, width) {
+        isWindowMaximized = !!maximized;
+        document.body.classList.toggle('is-maximized', isWindowMaximized);
+        if (btnMaximize) {
+            btnMaximize.title = isWindowMaximized ? t('topbar.restore') : t('topbar.maximize');
+        }
+        const activePreset = detectSizePreset(isWindowMaximized, width);
+        document.querySelectorAll('[data-win-size]').forEach((btn) => {
+            btn.classList.toggle('active', !!activePreset && btn.dataset.winSize === activePreset);
+        });
+    }
+
+    window.onWindowStateChange = function (maximized, width, height) {
+        updateWindowUIState(maximized, width);
+    };
+
+    async function syncWindowState() {
+        const a = api();
+        if (!a || !a.get_window_state) {
+            updateWindowUIState(false, window.innerWidth);
+            return;
+        }
+        try {
+            const res = await a.get_window_state();
+            if (res && res.status === 'ok') {
+                updateWindowUIState(res.maximized, res.width);
+            }
+        } catch (err) { console.log('syncWindowState error', err); }
+    }
+    window.addEventListener('pywebviewready', syncWindowState);
+    setTimeout(syncWindowState, 500);
+    window.addEventListener('resize', () => {
+        if (!isWindowMaximized) updateWindowUIState(false, window.innerWidth);
+    });
+
+    async function handleToggleMaximize() {
+        sfx('playClick');
+        const a = api();
+        if (a && a.toggle_maximize_window) {
+            const res = await a.toggle_maximize_window();
+            if (res && res.status === 'ok') updateWindowUIState(res.maximized, res.width);
+        } else {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen?.().catch(() => {});
+                updateWindowUIState(true, window.screen.width);
+            } else {
+                document.exitFullscreen?.().catch(() => {});
+                updateWindowUIState(false, window.innerWidth);
+            }
+        }
+    }
+
     $('btn-minimize')?.addEventListener('click', () => {
         const a = api();
         if (a && a.minimize_window) a.minimize_window();
     });
+    btnMaximize?.addEventListener('click', handleToggleMaximize);
     $('btn-close')?.addEventListener('click', () => {
         const a = api();
         if (a && a.close_window) a.close_window(); else window.close();
+    });
+
+    document.querySelectorAll('[data-win-size]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+            sfx('playClick');
+            const preset = btn.dataset.winSize;
+            const a = api();
+            if (a && a.set_window_preset) {
+                const res = await a.set_window_preset(preset);
+                if (res && res.status === 'ok') updateWindowUIState(res.maximized, res.width);
+            } else if (preset === 'fullscreen') {
+                handleToggleMaximize();
+            }
+        });
     });
 
     const topbar = $('app-titlebar');
@@ -404,10 +483,25 @@ document.addEventListener('DOMContentLoaded', () => {
         return false;
     };
     topbar?.addEventListener('mousedown', (e) => {
-        if (e.button !== 0) return;
+        if (e.button !== 0 || e.detail >= 2) return;
         if (e.target.closest('button, a, input')) return;
         e.preventDefault();
         if (!triggerDrag()) setTimeout(triggerDrag, 25);
+    });
+    topbar?.addEventListener('dblclick', (e) => {
+        if (e.target.closest('button, a, input')) return;
+        handleToggleMaximize();
+    });
+
+    document.querySelectorAll('.resize-edge[data-edge]').forEach((edgeEl) => {
+        edgeEl.addEventListener('mousedown', (e) => {
+            if (e.button !== 0 || isWindowMaximized) return;
+            e.preventDefault();
+            const a = api();
+            if (a && typeof a.resize_window === 'function') {
+                a.resize_window(edgeEl.dataset.edge);
+            }
+        });
     });
 
     // ==========================================
@@ -589,6 +683,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('[data-i18n-title]').forEach((el) => {
             el.title = t(el.dataset.i18nTitle);
         });
+        if (btnMaximize) {
+            btnMaximize.title = isWindowMaximized ? t('topbar.restore') : t('topbar.maximize');
+        }
         document.querySelectorAll('[data-lang]').forEach((btn) => {
             btn.classList.toggle('active', btn.dataset.lang === lang);
         });

@@ -37,6 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
             price: 199,
             tone: 'tone-green',
             icon: 'crown',
+            bgImage: 'assets/shop/priv-vip.jpg',
             badgeTone: '',
             i18n: {
                 ru: {
@@ -86,6 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
             price: 449,
             tone: 'tone-blue',
             icon: 'crown',
+            bgImage: 'assets/shop/priv-elite.svg',
             badgeTone: 'amber',
             i18n: {
                 ru: {
@@ -135,6 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
             price: 890,
             tone: 'tone-coral',
             icon: 'crown',
+            bgImage: 'assets/shop/priv-titan.svg',
             badgeTone: '',
             featured: true,
             i18n: {
@@ -180,50 +183,52 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         },
         {
-            id: 'priv-space',
+            id: 'priv-suprem',
             category: 'privileges',
             price: 1490,
             tone: 'tone-purple',
             icon: 'crown',
+            bgImage: 'assets/shop/priv-suprem.svg',
             badgeTone: 'amber',
+            featured: true,
             i18n: {
                 ru: {
-                    title: 'SPACE',
+                    title: 'SUPREM',
                     duration: 'Навсегда · Все серверы',
                     badge: 'MAX СТАТУС',
-                    shortDesc: 'Максимальная привилегия SpaceRust со всеми командами и скин-паком.',
+                    shortDesc: 'Максимальная привилегия SUPREM со всеми командами, китом и космическим скин-паком.',
                     perks: [
-                        'Все бонусы TITAN + эксклюзивный /kit space',
+                        'Все бонусы TITAN + эксклюзивный /kit suprem',
                         '12 точек /sethome и расширенный лимит клана',
                         'Ускорение крафта всех предметов на 35%',
                         'Бесплатный космический скин-пак для оружия и брони',
-                        'Фирменный префикс [SPACE] и выделение в TAB'
+                        'Фирменный префикс [SUPREM] и выделение в TAB'
                     ]
                 },
                 uk: {
-                    title: 'SPACE',
+                    title: 'SUPREM',
                     duration: 'Назавжди · Усі сервери',
                     badge: 'MAX СТАТУС',
-                    shortDesc: 'Максимальний привілей SpaceRust з усіма командами та скін-паком.',
+                    shortDesc: 'Максимальний привілей SUPREM з усіма командами, кітом і космічним скін-паком.',
                     perks: [
-                        'Усі бонуси TITAN + ексклюзивний /kit space',
+                        'Усі бонуси TITAN + ексклюзивний /kit suprem',
                         '12 точок /sethome та розширений ліміт клану',
                         'Прискорення крафту всіх предметів на 35%',
                         'Безкоштовний космічний скін-пак для зброї та броні',
-                        'Фірмовий префікс [SPACE] і виділення в TAB'
+                        'Фірмовий префікс [SUPREM] і виділення в TAB'
                     ]
                 },
                 en: {
-                    title: 'SPACE',
+                    title: 'SUPREM',
                     duration: 'Lifetime · All servers',
                     badge: 'MAX RANK',
-                    shortDesc: 'Ultimate SpaceRust rank with full command access and cosmic skin pack.',
+                    shortDesc: 'Ultimate SUPREM rank with full command access, kit, and cosmic skin pack.',
                     perks: [
-                        'All TITAN perks + exclusive /kit space',
+                        'All TITAN perks + exclusive /kit suprem',
                         '12 /sethome points & expanded clan limit',
                         '35% faster crafting for all items',
                         'Free Cosmic skin pack for weapons & armor',
-                        'Signature [SPACE] prefix & TAB highlight'
+                        'Signature [SUPREM] prefix & TAB highlight'
                     ]
                 }
             }
@@ -236,6 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
             price: 79,
             tone: 'tone-slate',
             icon: 'kit',
+            bgImage: 'assets/shop/kit-start.svg',
             badgeTone: '',
             i18n: {
                 ru: {
@@ -282,6 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
             price: 149,
             tone: 'tone-green',
             icon: 'kit',
+            bgImage: 'assets/shop/kit-farmer.svg',
             badgeTone: '',
             i18n: {
                 ru: {
@@ -328,6 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
             price: 229,
             tone: 'tone-amber',
             icon: 'gun',
+            bgImage: 'assets/shop/kit-gunsmith.svg',
             badgeTone: 'amber',
             i18n: {
                 ru: {
@@ -374,6 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
             price: 349,
             tone: 'tone-coral',
             icon: 'gun',
+            bgImage: 'assets/shop/kit-raider.svg',
             badgeTone: '',
             featured: true,
             i18n: {
@@ -421,6 +430,7 @@ document.addEventListener('DOMContentLoaded', () => {
             price: 189,
             tone: 'tone-blue',
             icon: 'kit',
+            bgImage: 'assets/shop/kit-builder.svg',
             badgeTone: '',
             i18n: {
                 ru: {
@@ -875,9 +885,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const badgeHtml = text.badge
                 ? `<span class="product-badge ${p.badgeTone}">${text.badge}</span>`
                 : '';
+            const artHtml = p.bgImage
+                ? `<div class="product-art" style="background-image: url('${p.bgImage}')"></div><div class="product-art-scrim"></div>`
+                : '';
             const perksHtml = text.perks.slice(0, 3).map((perk) => `<li>${perk}</li>`).join('');
             return `
-                <article class="product-card ${p.featured ? 'featured' : ''}">
+                <article class="product-card ${p.featured ? 'featured' : ''} ${p.bgImage ? 'has-art' : ''}">
+                    ${artHtml}
                     ${badgeHtml}
                     <div class="product-head">
                         <div class="product-icon ${p.tone}">${ICONS[p.icon] || ICONS.kit}</div>
@@ -905,6 +919,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!activeProduct) return;
         const p = activeProduct;
         const text = getProductText(p);
+
+        const bannerEl = $('item-detail-banner');
+        if (bannerEl) {
+            if (p.bgImage) {
+                bannerEl.hidden = false;
+                bannerEl.style.backgroundImage = `url('${p.bgImage}')`;
+            } else {
+                bannerEl.hidden = true;
+                bannerEl.style.backgroundImage = '';
+            }
+        }
 
         $('item-modal-title').textContent = i18n.t(CATEGORY_KEYS[p.category]).toUpperCase();
         $('item-detail-icon').className = `item-detail-icon ${p.tone}`;
