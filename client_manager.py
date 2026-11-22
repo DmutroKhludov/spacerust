@@ -135,6 +135,7 @@ class SpaceRustClientManager:
             self.log(f"Could not create shortcut: {e}")
 
     def download_file_with_progress(self, url, dest_path, notify):
+        import time
         import urllib.request
         self.log(f"Connecting to {url}...")
         req = urllib.request.Request(url, headers={'User-Agent': 'SpaceRustLauncher/1.0'})
@@ -142,29 +143,50 @@ class SpaceRustClientManager:
             total_str = resp.headers.get('Content-Length')
             total_size = int(total_str) if total_str else 0
             downloaded = 0
-            chunk_size = 1024 * 512
+            chunk_size = 1024 * 256
             last_pct = -1
+            win_start = time.monotonic()
+            win_bytes = 0
+            last_report = 0.0
+            speed_str = "0.0 МБ/с"
 
             while True:
                 if not self._pause_event.is_set():
                     pct_now = last_pct if last_pct > 0 else 0
                     notify(f"Пауза ({pct_now}%)", pct_now)
                     self._pause_event.wait()
+                    win_start = time.monotonic()
+                    win_bytes = 0
+                    last_report = 0.0
                 chunk = resp.read(chunk_size)
                 if not chunk:
                     break
                 out_f.write(chunk)
-                downloaded += len(chunk)
-                if total_size > 0:
-                    pct = int((downloaded / total_size) * 85) + 5
-                    if pct != last_pct:
-                        last_pct = pct
-                        mb_done = downloaded / (1024 * 1024)
-                        mb_total = total_size / (1024 * 1024)
-                        notify(f"Загрузка: {mb_done:.0f} / {mb_total:.0f} МБ", pct)
-                else:
+                n = len(chunk)
+                downloaded += n
+                win_bytes += n
+
+                now = time.monotonic()
+                elapsed = now - win_start
+                if elapsed >= 0.4:
+                    bps = win_bytes / elapsed
+                    if bps >= 1024 * 1024:
+                        speed_str = f"{bps / (1024 * 1024):.1f} МБ/с"
+                    else:
+                        speed_str = f"{bps / 1024:.0f} КБ/с"
+                    win_start = now
+                    win_bytes = 0
+
+                pct = int((downloaded / total_size) * 85) + 5 if total_size > 0 else 50
+                if pct != last_pct or (now - last_report) >= 0.4:
+                    last_pct = pct
+                    last_report = now
                     mb_done = downloaded / (1024 * 1024)
-                    notify(f"Загрузка: {mb_done:.0f} МБ...", 50)
+                    if total_size > 0:
+                        mb_total = total_size / (1024 * 1024)
+                        notify(f"{mb_done:.0f} / {mb_total:.0f} МБ · {speed_str}", pct)
+                    else:
+                        notify(f"{mb_done:.0f} МБ · {speed_str}", pct)
 
     def verify_and_prepare(self, progress_callback=None):
         self._pause_event.set()

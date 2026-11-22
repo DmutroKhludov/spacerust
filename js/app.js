@@ -197,7 +197,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderRam() {
         const txt = `${STATE.ramMB} MB`;
         if (ramLabel) ramLabel.textContent = txt;
-        if ($('dock-ram-stat')) $('dock-ram-stat').textContent = txt;
     }
     if (ramSlider) {
         ramSlider.value = STATE.ramMB;
@@ -296,8 +295,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function setIdleLine() {
         loadLine.classList.remove('paused', 'done');
         loadFill.style.width = '0%';
-        loadTitle.textContent = 'КЛИЕНТ ГОТОВ К ЗАПУСКУ';
-        loadStage.innerHTML = `SpaceRust-1.16.5 · ОЗУ <b id="dock-ram-stat">${STATE.ramMB} MB</b>`;
+        loadTitle.textContent = '';
+        loadStage.textContent = '';
         loadPct.textContent = '';
         btnPause.disabled = true;
         btnResume.disabled = true;
@@ -362,7 +361,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.updateLaunchProgress('Запуск Minecraft...', 100);
                     resolve({ status: 'success' });
                 } else {
-                    window.updateLaunchProgress(`Загрузка: ${Math.round(p * 1.6)} / 160 МБ`, p);
+                    const spd = (14 + Math.random() * 12).toFixed(1);
+                    window.updateLaunchProgress(`${Math.round(p * 1.6)} / 160 МБ · ${spd} МБ/с`, p);
                 }
             }, 180);
         });
