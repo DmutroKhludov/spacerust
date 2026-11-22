@@ -4,13 +4,17 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
+import net.spacerust.client.building.RustBuildingHudOverlay;
+import net.spacerust.client.building.RustBuildingManager;
 import net.spacerust.client.gui.RustCraftingScreen;
 import net.spacerust.client.gui.RustCraftingQueue;
+import net.spacerust.client.gui.RustUiHelper;
 import net.spacerust.client.guns.GunManager;
 import net.spacerust.client.hud.GunHudOverlay;
 import net.spacerust.client.hud.RustCrosshairOverlay;
@@ -44,15 +48,25 @@ public class SpaceRustClient implements ClientModInitializer {
                 "category.spacerust"
         ));
 
-        // 2. Register Custom Rust HUD Overlays
+        // 2. Register Custom Rust HUD & Building Overlays
         HudRenderCallback.EVENT.register(new RustHudOverlay());
         HudRenderCallback.EVENT.register(new RustCrosshairOverlay());
         HudRenderCallback.EVENT.register(new GunHudOverlay());
+        HudRenderCallback.EVENT.register(new RustBuildingHudOverlay());
 
-        // 3. Register Keybind Tick Check
+        // 3. Register Rust Building World Renderer (models & hologram preview)
+        RustBuildingManager.init();
+        WorldRenderEvents.LAST.register(context -> {
+            RustBuildingManager.renderAll(context.matrixStack(), context.consumers(), context.camera(), context.tickDelta());
+        });
+
+        // 4. Register Keybind Tick Check & Building Tick
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             // Tick crafting queue in background
             RustCraftingQueue.tick(client);
+
+            // Tick building manager (snapping, hologram, hover, collision)
+            RustBuildingManager.tick(client);
 
             // Map on G
             while (keyMap.wasPressed()) {
@@ -61,13 +75,18 @@ public class SpaceRustClient implements ClientModInitializer {
                 }
             }
 
-            // Reload on R
+            // Reload / Rotate on R
             while (keyReload.wasPressed()) {
                 if (client.player != null) {
-                    GunManager.GunInfo gun = GunManager.getHeldGun(client);
-                    if (gun != null) {
-                        GunManager.reload(gun);
-                        client.player.sendChatMessage("/reload"); // Server sync if plugin exists
+                    if (RustBuildingManager.isHoldingBuildingPlan(client)) {
+                        RustBuildingManager.previewYaw = (RustBuildingManager.previewYaw + 90f) % 360f;
+                        RustUiHelper.playClick(client);
+                    } else {
+                        GunManager.GunInfo gun = GunManager.getHeldGun(client);
+                        if (gun != null) {
+                            GunManager.reload(gun);
+                            client.player.sendChatMessage("/reload"); // Server sync if plugin exists
+                        }
                     }
                 }
             }

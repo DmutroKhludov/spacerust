@@ -8,6 +8,7 @@
     "InGameHudMixin",
     "InventoryScreenMixin",
     "KeyboardMixin",
+    "MinecraftClientMixin",
     "MultiplayerScreenMixin",
     "PlayerInventoryMixin",
     "PlayerListEntryMixin",
