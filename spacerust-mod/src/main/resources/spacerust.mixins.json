@@ -9,6 +9,7 @@
     "InventoryScreenMixin",
     "KeyboardMixin",
     "MultiplayerScreenMixin",
+    "PlayerInventoryMixin",
     "PlayerListEntryMixin",
     "TitleScreenMixin",
     "WindowMixin"

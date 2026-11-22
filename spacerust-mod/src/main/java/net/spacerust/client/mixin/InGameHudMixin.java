@@ -21,4 +21,10 @@ public class InGameHudMixin {
     private void hideVanillaCrosshair(MatrixStack matrices, CallbackInfo ci) {
         ci.cancel();
     }
+
+    // Hide vanilla 9-slot hotbar in favor of authentic 6-slot Rust hotbar
+    @Inject(method = "renderHotbar", at = @At("HEAD"), cancellable = true)
+    private void hideVanillaHotbar(float tickDelta, MatrixStack matrices, CallbackInfo ci) {
+        ci.cancel();
+    }
 }

@@ -35,21 +35,13 @@ public class RustHudOverlay implements HudRenderCallback {
         int screenWidth = client.getWindow().getScaledWidth();
         int screenHeight = client.getWindow().getScaledHeight();
 
-        // Draw CoilRust / Rust bottom-right metabolism bars (HP, Water, Food sprites)
+        // 1. Draw Rust 6-slot In-Game Hotbar at bottom center (1:1 with screenshot)
+        RustUiHelper.drawHotbar(matrices, client, -1, -1, screenWidth, screenHeight, client.getItemRenderer(), false);
+
+        // 2. Draw enlarged Rust bottom-right metabolism bars (HP, Water, Food sprites)
         RustUiHelper.drawMetabolismBars(matrices, client, screenWidth, screenHeight);
 
-        // Optional status chips above bars
-        int statusX = screenWidth - 114;
-        int statusY = screenHeight - 68;
-        RustFontRenderer sf = RustFontRenderer.boldSmall();
-
-        if (radiation > 0) {
-            DrawableHelper.fill(matrices, statusX, statusY, statusX + 52, statusY + 11, 0xE6C73E2B);
-            sf.drawCenteredY(matrices, "РАД " + radiation, statusX + 4, statusY, 11, 0xFFFFFFFF);
-        }
-        if (isBleeding) {
-            DrawableHelper.fill(matrices, statusX + 54, statusY, statusX + 104, statusY + 11, 0xE6C73E2B);
-            sf.drawCenteredY(matrices, "КРОВОТОК", statusX + 57, statusY, 11, 0xFFFFFFFF);
-        }
+        // 3. Draw status chips above metabolism bars
+        RustUiHelper.drawStatusChips(matrices, screenWidth, screenHeight, radiation, isBleeding, comfort);
     }
 }

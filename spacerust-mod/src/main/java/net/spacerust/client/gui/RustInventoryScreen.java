@@ -94,64 +94,63 @@ public class RustInventoryScreen extends Screen {
 
     private Layout computeLayout(int screenW, int screenH) {
         Layout L = new Layout();
-        L.containerW = Math.min(screenW - 20, 600);
+        L.containerW = Math.min(screenW - 20, 700);
         L.containerX = (screenW - L.containerW) / 2;
 
-        // Proportions matching Rust inventory_source.json (COLUMN_WIDTH 380 / GRID_WIDTH 388 / QUICK_CRAFT ~380)
-        L.col1W = Math.max(115, Math.min(176, (int) (L.containerW * 0.29f)));
+        L.col1W = Math.max(130, Math.min(185, (int) (L.containerW * 0.28f)));
         L.col1X = L.containerX;
 
-        L.slotGap = 2;
-        int centerAvail = Math.max(200, (int) (L.containerW * 0.42f));
-        L.slotSize = Math.max(21, Math.min(27, (centerAvail - 8 * L.slotGap) / 9));
-        L.gridW = 9 * L.slotSize + 8 * L.slotGap;
-        L.gridStartX = L.col1X + L.col1W + Math.max(8, (centerAvail - L.gridW) / 2);
+        L.slotGap = 3;
+        int availGridH = screenH - RustUiHelper.HOTBAR_SLOT_SIZE - 24 - 70;
+        L.slotSize = Math.max(24, Math.min(34, (availGridH - 4 * L.slotGap) / 5));
+        L.gridW = 6 * L.slotSize + 5 * L.slotGap;
+        L.gridStartX = L.col1X + L.col1W + 16;
 
-        // Anchor bottom of Inventory cleanly above the Belt/Hotbar (screenH - 34)
-        L.invBottomY = screenH - 42;
-        int gridTotalH = 3 * L.slotSize + 2 * L.slotGap;
+        // Anchor bottom of Inventory cleanly above the 6-slot Belt/Hotbar
+        L.invBottomY = screenH - RustUiHelper.HOTBAR_SLOT_SIZE - 16;
+        int gridTotalH = 5 * L.slotSize + 4 * L.slotGap;
         L.gridStartY = L.invBottomY - gridTotalH;
-        L.invSectionTopY = L.gridStartY - 15; // 14px header + 1px gap
+        L.invSectionTopY = L.gridStartY - 16;
 
         // Armor/Clothing 5 slots aligned cleanly at bottom of Column 1
-        L.eqSlotSize = Math.max(20, Math.min(25, (L.col1W - 16) / 5));
+        L.eqSlotSize = Math.max(24, Math.min(34, (L.col1W - 16) / 5));
         L.eqGap = 2;
         int eqTotalW = EQUIP_SLOTS.length * L.eqSlotSize + (EQUIP_SLOTS.length - 1) * L.eqGap;
         L.eqStartX = L.col1X + (L.col1W - eqTotalW) / 2;
         L.eqY = L.invBottomY - L.eqSlotSize;
 
-        // Selected Item window directly above ИНВЕНТАРЬ header (matching Rust's upper-center slot)
+        // Selected Item window directly above ИНВЕНТАРЬ header
         L.selW = L.gridW;
         L.selX = L.gridStartX;
-        L.selH = Math.min(110, Math.max(84, L.invSectionTopY - 34));
+        L.selH = Math.min(90, Math.max(68, L.invSectionTopY - 34));
         L.selY = L.invSectionTopY - L.selH - 6;
         L.closeSelSize = 13;
         L.closeSelX = L.selX + L.selW - L.closeSelSize - 2;
         L.closeSelY = L.selY + 1;
 
-        L.dropW = 72;
+        L.dropW = 68;
         L.dropH = 18;
         L.dropX = L.selX + L.selW - L.dropW - 6;
         L.dropY = L.selY + L.selH - L.dropH - 6;
 
-        L.splitW = 72;
+        L.splitW = 68;
         L.splitH = 18;
         L.splitX = L.dropX - L.splitW - 5;
         L.splitY = L.dropY;
 
-        // Right Column: Quick Craft (bottom-aligned above HUD bars)
-        L.qcX = L.gridStartX + L.gridW + 10;
-        L.qcW = Math.max(88, (L.containerX + L.containerW) - L.qcX);
-        L.qcSlot = 26;
+        // Right Column: Quick Craft (bottom-aligned above enlarged metabolism HUD bars)
+        L.qcX = L.gridStartX + L.gridW + 16;
+        L.qcW = Math.max(100, (L.containerX + L.containerW) - L.qcX);
+        L.qcSlot = Math.max(26, Math.min(32, L.slotSize));
         L.qcGap = 2;
-        L.qcCols = Math.max(3, Math.min(6, (L.qcW + L.qcGap) / (L.qcSlot + L.qcGap)));
+        L.qcCols = Math.max(3, Math.min(5, (L.qcW + L.qcGap) / (L.qcSlot + L.qcGap)));
         L.qcGridW = L.qcCols * L.qcSlot + (L.qcCols - 1) * L.qcGap;
         L.qcStartX = L.qcX;
-        L.qcBottomY = screenH - 58; // Just above metabolism HUD bars
+        L.qcBottomY = screenH - 78;
         int qcRowsVisible = Math.max(3, Math.min(5, (L.qcBottomY - 46) / (L.qcSlot + L.qcGap)));
         int qcGridH = qcRowsVisible * L.qcSlot + (qcRowsVisible - 1) * L.qcGap;
         L.qcStartY = L.qcBottomY - qcGridH;
-        L.qcHeaderY = L.qcStartY - 15;
+        L.qcHeaderY = L.qcStartY - 16;
 
         return L;
     }
@@ -251,13 +250,13 @@ public class RustInventoryScreen extends Screen {
         }
 
         // Header bar "ИНВЕНТАРЬ"
-        DrawableHelper.fill(matrices, L.gridStartX, L.invSectionTopY, L.gridStartX + L.gridW, L.invSectionTopY + 13, RustUiHelper.COLOR_HEADER);
-        bfSmall.drawCenteredY(matrices, "ИНВЕНТАРЬ", L.gridStartX + 5, L.invSectionTopY, 13, RustUiHelper.COLOR_TEXT_CREAM);
+        DrawableHelper.fill(matrices, L.gridStartX, L.invSectionTopY, L.gridStartX + L.gridW, L.invSectionTopY + 14, RustUiHelper.COLOR_HEADER);
+        bfSmall.drawCenteredY(matrices, "ИНВЕНТАРЬ", L.gridStartX + 6, L.invSectionTopY, 14, RustUiHelper.COLOR_TEXT_CREAM);
 
-        // 9 x 3 Inventory grid (slots 9..35)
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 9; col++) {
-                int slotId = 9 + row * 9 + col;
+        // 6 x 5 Inventory grid (30 slots: 9..35 and 42..44)
+        for (int row = 0; row < 5; row++) {
+            for (int col = 0; col < 6; col++) {
+                int slotId = RustUiHelper.getStorageHandlerSlot(row, col);
                 int sx = L.gridStartX + col * (L.slotSize + L.slotGap);
                 int sy = L.gridStartY + row * (L.slotSize + L.slotGap);
 
@@ -270,6 +269,12 @@ public class RustInventoryScreen extends Screen {
                         : (hov ? RustUiHelper.COLOR_SLOT_HOVER
                         : (stack.isEmpty() ? RustUiHelper.COLOR_SLOT_EMPTY : RustUiHelper.COLOR_SLOT_OCCUPIED));
                 DrawableHelper.fill(matrices, sx, sy, sx + L.slotSize, sy + L.slotSize, bg);
+
+                if (sel) {
+                    RustUiHelper.drawBorder(matrices, sx, sy, L.slotSize, L.slotSize, 0xFFF7EBE1);
+                } else {
+                    RustUiHelper.drawBorder(matrices, sx, sy, L.slotSize, L.slotSize, hov ? 0x44F7EBE1 : 0x18F7EBE1);
+                }
 
                 if (!stack.isEmpty()) {
                     int itemOff = (L.slotSize - 16) / 2;
@@ -453,10 +458,10 @@ public class RustInventoryScreen extends Screen {
             }
         }
 
-        // 2. Main 9x3 Inventory clicks (slots 9..35)
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 9; col++) {
-                int slotId = 9 + row * 9 + col;
+        // 2. Main 6x5 Inventory clicks (slots 9..35 and 42..44)
+        for (int row = 0; row < 5; row++) {
+            for (int col = 0; col < 6; col++) {
+                int slotId = RustUiHelper.getStorageHandlerSlot(row, col);
                 int sx = L.gridStartX + col * (L.slotSize + L.slotGap);
                 int sy = L.gridStartY + row * (L.slotSize + L.slotGap);
                 if (RustUiHelper.inRect(mouseX, mouseY, sx, sy, L.slotSize, L.slotSize)) {
@@ -466,12 +471,12 @@ public class RustInventoryScreen extends Screen {
             }
         }
 
-        // 3. Hotbar clicks (slots 36..44)
+        // 3. Hotbar clicks (6 active slots: 36..41)
         int hotbarX = RustUiHelper.getHotbarStartX(screenW);
-        int hotbarY = screenH - 28 - 6;
-        for (int i = 0; i < 9; i++) {
-            int sx = hotbarX + i * (28 + 2);
-            if (RustUiHelper.inRect(mouseX, mouseY, sx, hotbarY, 28, 28)) {
+        int hotbarY = screenH - RustUiHelper.HOTBAR_SLOT_SIZE - 8;
+        for (int i = 0; i < RustUiHelper.HOTBAR_SLOTS; i++) {
+            int sx = hotbarX + i * (RustUiHelper.HOTBAR_SLOT_SIZE + RustUiHelper.HOTBAR_GAP);
+            if (RustUiHelper.inRect(mouseX, mouseY, sx, hotbarY, RustUiHelper.HOTBAR_SLOT_SIZE, RustUiHelper.HOTBAR_SLOT_SIZE)) {
                 handleSlotClick(handler, 36 + i, button);
                 return true;
             }
@@ -517,7 +522,7 @@ public class RustInventoryScreen extends Screen {
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (this.client != null && this.client.player != null && this.client.interactionManager != null) {
-            if (hoveredHandlerSlot >= 0 && keyCode >= GLFW.GLFW_KEY_1 && keyCode <= GLFW.GLFW_KEY_9) {
+            if (hoveredHandlerSlot >= 0 && keyCode >= GLFW.GLFW_KEY_1 && keyCode <= GLFW.GLFW_KEY_6) {
                 int hotbarIdx = keyCode - GLFW.GLFW_KEY_1;
                 this.client.interactionManager.clickSlot(
                         this.client.player.playerScreenHandler.syncId,
