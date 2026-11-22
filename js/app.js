@@ -7,28 +7,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const sfx = (name) => { if (window.soundEngine && window.soundEngine[name]) window.soundEngine[name](); };
 
     // ==========================================
-    // STATE (Scrap = main currency, no default subscription)
+    // STATE (no default subscription)
     // ==========================================
     let savedRank = localStorage.getItem('sr_rank');
     if (!savedRank || savedRank === 'VIP+') {
         savedRank = 'ИГРОК';
         localStorage.setItem('sr_rank', savedRank);
     }
-    if (localStorage.getItem('sr_scrap') === null) {
-        localStorage.removeItem('sr_balance');
-        localStorage.setItem('sr_scrap', '0');
-    }
+    localStorage.removeItem('sr_balance');
+    localStorage.removeItem('sr_scrap');
+    localStorage.removeItem('sr_redeemed_codes');
 
     const STATE = {
         ramMB: parseInt(localStorage.getItem('sr_ram_mb') || '6144', 10),
         nickname: localStorage.getItem('sr_nickname') || ('Player_' + Math.floor(100 + Math.random() * 900)),
-        scrap: parseInt(localStorage.getItem('sr_scrap') || '0', 10),
         rank: savedRank,
         soundEnabled: localStorage.getItem('sr_sound_enabled') !== 'false',
         soundVolume: parseFloat(localStorage.getItem('sr_sound_vol') || '0.6'),
         animations: localStorage.getItem('sr_anim') !== 'false',
         optGC: localStorage.getItem('sr_opt_gc') !== 'false',
-        redeemedCodes: JSON.parse(localStorage.getItem('sr_redeemed_codes') || '[]'),
         isLaunching: false,
         isPaused: false
     };
@@ -45,9 +42,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const tabViews = document.querySelectorAll('.tab-view');
 
     const profileCard = $('user-profile-btn');
-    const profileBalEl = $('profile-balance');
-    const shopBalEl = $('shop-balance');
-    const modalBalEl = $('modal-scrap-balance');
     const avatarImg = $('user-avatar-img');
     const rankEl = document.querySelector('.user-rank');
     const modalRankEl = $('modal-rank-badge');
@@ -105,10 +99,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // PROFILE / ACCOUNT (nickname is locked)
     // ==========================================
     function updateProfileUI() {
-        const scrapText = `${STATE.scrap.toLocaleString('ru-RU')} Scrap`;
-        if (profileBalEl) profileBalEl.textContent = scrapText;
-        if (shopBalEl) shopBalEl.textContent = scrapText;
-        if (modalBalEl) modalBalEl.textContent = scrapText;
         if (avatarImg) avatarImg.src = avatarUrl(STATE.nickname);
         if (dockNickEl) dockNickEl.textContent = STATE.nickname;
         if (modalNick) modalNick.textContent = STATE.nickname;
@@ -150,34 +140,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.addEventListener('pywebviewready', checkSystemUsername);
     setTimeout(checkSystemUsername, 800);
-
-    // ==========================================
-    // PROMO CODES (Scrap)
-    // ==========================================
-    const promoInput = $('promo-input');
-    function redeemPromo() {
-        const code = promoInput.value.trim().toUpperCase();
-        if (!code) return showToast('Введите промокод!', 'error');
-        if (STATE.redeemedCodes.includes(code)) return showToast('Этот промокод уже активирован!', 'error');
-
-        const promos = {
-            'WIPE2026': 500,
-            'RUSTME': 300,
-            'SPACERUST': 1000
-        };
-        if (!promos[code]) return showToast('Неверный промокод или срок действия истёк', 'error');
-
-        STATE.scrap += promos[code];
-        localStorage.setItem('sr_scrap', STATE.scrap);
-        STATE.redeemedCodes.push(code);
-        localStorage.setItem('sr_redeemed_codes', JSON.stringify(STATE.redeemedCodes));
-        promoInput.value = '';
-        sfx('playSuccess');
-        updateProfileUI();
-        showToast(`Промокод активирован: +${promos[code].toLocaleString('ru-RU')} Scrap`, 'success');
-    }
-    $('promo-submit-btn')?.addEventListener('click', redeemPromo);
-    promoInput?.addEventListener('keypress', (e) => { if (e.key === 'Enter') redeemPromo(); });
 
     // ==========================================
     // SETTINGS DRAWER
@@ -495,7 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // AUDIO HOVER
     // ==========================================
-    document.querySelectorAll('button, .account-card, .patch-card, .shop-card').forEach(el => {
+    document.querySelectorAll('button, .account-card, .patch-card').forEach(el => {
         el.addEventListener('mouseenter', () => sfx('playHover'));
     });
 
