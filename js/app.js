@@ -47,9 +47,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileCard = $('user-profile-btn');
     const profileBalEl = $('profile-balance');
     const shopBalEl = $('shop-balance');
+    const modalBalEl = $('modal-scrap-balance');
     const avatarImg = $('user-avatar-img');
     const rankEl = document.querySelector('.user-rank');
-    const nickInput = $('dock-nick-input');
+    const modalRankEl = $('modal-rank-badge');
+    const dockNickEl = $('dock-nick-display');
     const soundBtn = $('sound-toggle-btn');
 
     const btnPlay = $('btn-play');
@@ -66,9 +68,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const drawerBackdrop = $('settings-backdrop');
 
     const accountModal = $('account-modal');
-    const modalInputNick = $('modal-input-nick');
     const modalAvatar = $('modal-avatar-preview');
     const modalNick = $('modal-display-nick');
+    const modalLockedNick = $('modal-locked-nick');
 
     const avatarUrl = (nick) => `https://mc-heads.net/avatar/${encodeURIComponent(nick || 'Steve')}/64`;
     [avatarImg, modalAvatar].forEach(img => {
@@ -91,10 +93,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    const openPatches = () => { sfx('playClick'); switchTab('news'); };
-    $('btn-open-changes')?.addEventListener('click', openPatches);
-    $('btn-open-more')?.addEventListener('click', openPatches);
-
     $('btn-notify')?.addEventListener('click', () => {
         sfx('playClick');
         const dot = document.querySelector('.notify-dot');
@@ -104,59 +102,31 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================
-    // PROFILE / ACCOUNT
+    // PROFILE / ACCOUNT (nickname is locked)
     // ==========================================
     function updateProfileUI() {
         const scrapText = `${STATE.scrap.toLocaleString('ru-RU')} Scrap`;
         if (profileBalEl) profileBalEl.textContent = scrapText;
         if (shopBalEl) shopBalEl.textContent = scrapText;
+        if (modalBalEl) modalBalEl.textContent = scrapText;
         if (avatarImg) avatarImg.src = avatarUrl(STATE.nickname);
-        if (nickInput && document.activeElement !== nickInput) nickInput.value = STATE.nickname;
+        if (dockNickEl) dockNickEl.textContent = STATE.nickname;
         if (modalNick) modalNick.textContent = STATE.nickname;
+        if (modalLockedNick) modalLockedNick.textContent = STATE.nickname;
         if (modalAvatar) modalAvatar.src = avatarUrl(STATE.nickname);
-        if (rankEl) {
-            rankEl.textContent = STATE.rank || 'ИГРОК';
-            rankEl.classList.toggle('has-sub', !!STATE.rank && STATE.rank !== 'ИГРОК');
-        }
-    }
-
-    function setNickname(nick) {
-        STATE.nickname = nick;
-        localStorage.setItem('sr_nickname', nick);
-        updateProfileUI();
-    }
-
-    if (nickInput) {
-        nickInput.addEventListener('click', (e) => e.stopPropagation());
-        nickInput.addEventListener('input', (e) => {
-            const raw = e.target.value.replace(/[^a-zA-Z0-9_]/g, '');
-            e.target.value = raw;
-            if (raw.length >= 3) {
-                STATE.nickname = raw;
-                localStorage.setItem('sr_nickname', raw);
-                if (avatarImg) avatarImg.src = avatarUrl(raw);
-            }
+        const rankText = STATE.rank || 'ИГРОК';
+        const hasSub = !!STATE.rank && STATE.rank !== 'ИГРОК';
+        [rankEl, modalRankEl].forEach(el => {
+            if (!el) return;
+            el.textContent = rankText;
+            el.classList.toggle('has-sub', hasSub);
         });
-        nickInput.addEventListener('change', (e) => {
-            const raw = e.target.value.trim();
-            if (raw.length < 3) {
-                showToast('Никнейм должен содержать минимум 3 символа!', 'error');
-                e.target.value = STATE.nickname;
-            } else {
-                setNickname(raw);
-                showToast(`Никнейм обновлён: ${raw}`, 'success');
-            }
-        });
-        nickInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') nickInput.blur(); });
     }
 
     function openAccountModal() {
         sfx('playClick');
-        modalInputNick.value = STATE.nickname;
-        modalNick.textContent = STATE.nickname;
-        modalAvatar.src = avatarUrl(STATE.nickname);
+        updateProfileUI();
         accountModal.classList.add('show');
-        setTimeout(() => modalInputNick.focus(), 50);
     }
     const closeAccountModal = () => accountModal.classList.remove('show');
 
@@ -164,33 +134,17 @@ document.addEventListener('DOMContentLoaded', () => {
     $('modal-account-close')?.addEventListener('click', closeAccountModal);
     accountModal?.addEventListener('click', (e) => { if (e.target === accountModal) closeAccountModal(); });
 
-    modalInputNick?.addEventListener('input', (e) => {
-        const raw = e.target.value.replace(/[^a-zA-Z0-9_]/g, '');
-        e.target.value = raw;
-        modalNick.textContent = raw || '...';
-        modalAvatar.src = avatarUrl(raw || 'Steve');
-    });
-    modalInputNick?.addEventListener('keydown', (e) => { if (e.key === 'Enter') $('modal-save-btn').click(); });
-
-    $('modal-save-btn')?.addEventListener('click', () => {
-        const nick = modalInputNick.value.trim();
-        if (nick.length < 3) {
-            showToast('Никнейм должен содержать минимум 3 символа!', 'error');
-            return;
-        }
-        setNickname(nick);
-        closeAccountModal();
-        sfx('playSuccess');
-        showToast(`Никнейм сохранён: ${nick}`, 'success');
-    });
-
     async function checkSystemUsername() {
         if (localStorage.getItem('sr_nickname')) return;
         try {
             const a = api();
             if (a && a.get_system_username) {
                 const sysName = await a.get_system_username();
-                if (sysName && sysName.length >= 3) setNickname(sysName);
+                if (sysName && sysName.length >= 3) {
+                    STATE.nickname = sysName;
+                    localStorage.setItem('sr_nickname', sysName);
+                    updateProfileUI();
+                }
             }
         } catch (err) { console.log('username lookup error', err); }
     }
@@ -244,7 +198,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const txt = `${STATE.ramMB} MB`;
         if (ramLabel) ramLabel.textContent = txt;
         if ($('dock-ram-stat')) $('dock-ram-stat').textContent = txt;
-        if ($('home-ram-val')) $('home-ram-val').textContent = txt;
     }
     if (ramSlider) {
         ramSlider.value = STATE.ramMB;
@@ -417,7 +370,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function handleLaunchGame() {
         if (STATE.isLaunching) return;
-        if (nickInput && document.activeElement === nickInput) nickInput.blur();
         if (!STATE.nickname || STATE.nickname.length < 3) {
             showToast('Укажите никнейм (минимум 3 символа)', 'error');
             return;
@@ -474,7 +426,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // AUDIO HOVER
     // ==========================================
-    document.querySelectorAll('button, .account-card, .quick-row, .patch-card, .shop-card').forEach(el => {
+    document.querySelectorAll('button, .account-card, .patch-card, .shop-card').forEach(el => {
         el.addEventListener('mouseenter', () => sfx('playHover'));
     });
 

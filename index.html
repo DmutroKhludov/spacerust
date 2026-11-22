@@ -71,67 +71,7 @@
         <!-- ===================== CONTENT ===================== -->
         <main class="content">
             <!-- ---------- TAB: HOME ---------- -->
-            <section class="tab-view active-view" id="view-home">
-                <!-- Quick status (top-right, like Rust "quick connect") -->
-                <aside class="quick-panel">
-                    <div class="quick-title">
-                        <svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7-.8 1.3z"/></svg>
-                        <span>СТАТУС КЛИЕНТА</span>
-                    </div>
-                    <div class="quick-row">
-                        <div class="quick-main">
-                            <span class="quick-name">SpaceRust 1.16.5 | Fabric</span>
-                            <div class="quick-tags">
-                                <span class="qtag">КЛИЕНТ</span>
-                                <span class="qtag">%APPDATA%\.spacerust</span>
-                                <span class="qtag ok">● ГОТОВ</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="quick-row">
-                        <div class="quick-main">
-                            <span class="quick-name">Rust UI · Крафт [Q] · HUD</span>
-                            <div class="quick-tags">
-                                <span class="qtag">МОД</span>
-                                <span class="qtag">spacerust-mod 1.0.0</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="quick-row">
-                        <div class="quick-main">
-                            <span class="quick-name">Выделено памяти: <b id="home-ram-val">6144 MB</b></span>
-                            <div class="quick-tags">
-                                <span class="qtag">JAVA</span>
-                                <span class="qtag">G1GC</span>
-                            </div>
-                        </div>
-                    </div>
-                </aside>
-
-                <!-- Devblog headline (bottom-right, like Rust main menu) -->
-                <div class="devblog">
-                    <div class="devblog-meta">
-                        <span class="devblog-date">22 НОЯБРЯ 2026 Г.</span>
-                        <span class="devblog-tag">DEVBLOG</span>
-                    </div>
-                    <h1 class="devblog-title">RUST КРАФТ И НОВЫЙ ЛАУНЧЕР</h1>
-                    <p class="devblog-text">
-                        Полноценное меню крафта на клавишу <b>Q</b> с категориями, поиском и очередью,
-                        метаболизм в стиле Rust, оружейный движок и обновлённый лаунчер с валютой <b>Scrap</b>.
-                        Нажми «Играть» — клиент сам проверит и загрузит все файлы.
-                    </p>
-                    <div class="devblog-actions">
-                        <button class="ghost-btn" id="btn-open-changes">
-                            <svg viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
-                            СПИСОК ИЗМЕНЕНИЙ
-                        </button>
-                        <button class="amber-btn" id="btn-open-more">
-                            <svg viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
-                            ПОДРОБНЕЕ
-                        </button>
-                    </div>
-                </div>
-            </section>
+            <section class="tab-view active-view" id="view-home"></section>
 
             <!-- ---------- TAB: SHOP (COMING SOON) ---------- -->
             <section class="tab-view" id="view-shop">
@@ -139,7 +79,7 @@
                     <div class="shop-head">
                         <span class="shop-kicker">МАГАЗИН SPACERUST</span>
                         <h2 class="shop-title">СКОРО ОТКРОЕТСЯ</h2>
-                        <p class="shop-desc">Здесь можно будет тратить <b>Scrap</b> на наборы, скины и привилегии. Копи скрап уже сейчас — активируй промокоды во вкладке «Патчи».</p>
+                        <p class="shop-desc">Здесь можно будет тратить <b>Scrap</b> на наборы, скины и привилегии. Копи скрап уже сейчас — активируй промокоды в профиле аккаунта.</p>
                         <div class="shop-balance">
                             <span>ВАШ БАЛАНС</span>
                             <b id="shop-balance">0 Scrap</b>
@@ -220,16 +160,6 @@
                             </ul>
                         </article>
                     </div>
-
-                    <aside class="promo-block">
-                        <div class="promo-icon">
-                            <svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.11-.31.18-.65.18-1a3 3 0 0 0-5.5-1.65l-.5.67-.5-.68A3 3 0 0 0 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2a1 1 0 1 1 0 2 1 1 0 0 1 0-2zM9 4a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 11 8.76l1-1.36 1 1.36L15.38 12 17 10.83 14.92 8H20v6z"/></svg>
-                        </div>
-                        <h4>ЕСТЬ ПРОМОКОД?</h4>
-                        <p>Введи секретный промокод и получи скрап на баланс.</p>
-                        <input type="text" id="promo-input" class="promo-input" placeholder="WIPE2026" maxlength="16" spellcheck="false">
-                        <button class="promo-btn" id="promo-submit-btn">АКТИВИРОВАТЬ</button>
-                    </aside>
                 </div>
             </section>
         </main>
@@ -237,24 +167,24 @@
         <!-- ===================== BOTTOM BAR ===================== -->
         <footer class="bottombar">
             <!-- Account (bottom-left) -->
-            <div class="account-card" id="user-profile-btn" title="Профиль игрока">
+            <div class="account-card" id="user-profile-btn" title="Личный кабинет">
                 <div class="account-avatar">
                     <img id="user-avatar-img" src="https://mc-heads.net/avatar/Steve/64" alt="">
                 </div>
                 <div class="account-info">
                     <div class="account-top">
-                        <span class="account-label">НИКНЕЙМ</span>
+                        <span class="account-label">АККАУНТ</span>
                         <span class="user-rank">ИГРОК</span>
                     </div>
-                    <input type="text" id="dock-nick-input" class="account-nick" placeholder="Никнейм" maxlength="16" spellcheck="false">
+                    <div id="dock-nick-display" class="account-nick">Steve</div>
                     <div class="account-scrap">
                         <svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7zm7.43-2.53c.04-.32.07-.64.07-.97s-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46a.5.5 0 0 0-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.5.5 0 0 0 14 2h-4a.5.5 0 0 0-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1a.5.5 0 0 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1s.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.66z"/></svg>
                         <span id="profile-balance">0 Scrap</span>
                     </div>
                 </div>
-                <button class="account-edit" id="btn-account-edit" title="Профиль">
+                <span class="account-edit" title="Открыть профиль">
                     <svg viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
-                </button>
+                </span>
             </div>
 
             <!-- Game loading line (full width) -->
@@ -355,14 +285,38 @@
                 <div class="account-modal-body">
                     <div class="account-preview-box">
                         <img id="modal-avatar-preview" class="account-preview-avatar" src="https://mc-heads.net/avatar/Steve/64" alt="">
-                        <div>
-                            <h4 id="modal-display-nick">Steve</h4>
-                            <p>Аккаунт для входа в SpaceRust</p>
+                        <div class="account-preview-meta">
+                            <div class="account-preview-top">
+                                <h4 id="modal-display-nick">Steve</h4>
+                                <span class="user-rank" id="modal-rank-badge">ИГРОК</span>
+                            </div>
+                            <p class="account-preview-scrap">Баланс: <b id="modal-scrap-balance">0 Scrap</b></p>
                         </div>
                     </div>
-                    <label class="modal-input-label" for="modal-input-nick">Игровой никнейм (3-16 символов)</label>
-                    <input type="text" id="modal-input-nick" class="modal-input" maxlength="16" spellcheck="false">
-                    <button class="modal-save-btn" id="modal-save-btn">СОХРАНИТЬ ПРОФИЛЬ</button>
+
+                    <div class="modal-nick-locked">
+                        <span class="modal-input-label">Игровой никнейм (зафиксирован)</span>
+                        <div class="locked-nick-box">
+                            <span id="modal-locked-nick">Steve</span>
+                            <svg viewBox="0 0 24 24" title="Никнейм нельзя изменить"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z"/></svg>
+                        </div>
+                    </div>
+
+                    <div class="promo-block modal-promo">
+                        <div class="promo-head-row">
+                            <div class="promo-icon">
+                                <svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.11-.31.18-.65.18-1a3 3 0 0 0-5.5-1.65l-.5.67-.5-.68A3 3 0 0 0 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2a1 1 0 1 1 0 2 1 1 0 0 1 0-2zM9 4a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 11 8.76l1-1.36 1 1.36L15.38 12 17 10.83 14.92 8H20v6z"/></svg>
+                            </div>
+                            <div>
+                                <h4>ЕСТЬ ПРОМОКОД?</h4>
+                                <p>Введи секретный промокод и получи скрап на баланс.</p>
+                            </div>
+                        </div>
+                        <div class="promo-row">
+                            <input type="text" id="promo-input" class="promo-input" placeholder="WIPE2026" maxlength="16" spellcheck="false">
+                            <button class="promo-btn" id="promo-submit-btn">АКТИВИРОВАТЬ</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
