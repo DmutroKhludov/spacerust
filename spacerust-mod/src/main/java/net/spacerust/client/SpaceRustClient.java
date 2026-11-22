@@ -6,6 +6,9 @@ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
+import net.minecraft.sound.SoundEvent;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.registry.Registry;
 import net.spacerust.client.gui.RustCraftingScreen;
 import net.spacerust.client.gui.RustCraftingQueue;
 import net.spacerust.client.guns.GunManager;
@@ -16,12 +19,15 @@ import org.lwjgl.glfw.GLFW;
 
 public class SpaceRustClient implements ClientModInitializer {
     public static final String MOD_ID = "spacerust";
+    public static final Identifier UI_CLICK_ID = new Identifier(MOD_ID, "ui_click");
+    public static final SoundEvent UI_CLICK_SOUND = new SoundEvent(UI_CLICK_ID);
     public static KeyBinding keyMap;
     public static KeyBinding keyReload;
 
     @Override
     public void onInitializeClient() {
         System.out.println("[SpaceRust] Initializing RustMe-like Client Engine for Minecraft 1.16.5...");
+        Registry.register(Registry.SOUND_EVENT, UI_CLICK_ID, UI_CLICK_SOUND);
 
         // 1. Register Rust Keybindings (Q remains standard Minecraft item drop)
         keyMap = KeyBindingHelper.registerKeyBinding(new KeyBinding(

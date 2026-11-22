@@ -1,40 +1,49 @@
 package net.spacerust.client.gui;
 
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawableHelper;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.ingame.InventoryScreen;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.LiteralText;
-import net.spacerust.client.hud.RustHudOverlay;
+import net.minecraft.util.Identifier;
 import org.lwjgl.glfw.GLFW;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
 
+/**
+ * 1:1 Rust / CoilRust Crafting Screen matching gameui.crafting.prefab,
+ * ui.blueprint.button.prefab, ui.blueprint.category.button.prefab,
+ * and ui.blueprint.craft.row.prefab.
+ */
 public class RustCraftingScreen extends Screen {
 
     public enum Category {
-        FAVORITES("ИЗБРАННОЕ"),
-        GENERAL("ОБЩЕЕ"),
-        CONSTRUCTION("КОНСТРУКЦИИ"),
-        DEPLOYABLES("ОБЪЕКТЫ"),
-        RESOURCES("РЕСУРСЫ"),
-        CLOTHING("ОДЕЖДА"),
-        TOOLS("ИНСТРУМЕНТЫ"),
-        MEDICAL("МЕДИЦИНА"),
-        WEAPONS("ОРУЖИЕ"),
-        AMMO("БОЕПРИПАСЫ"),
-        ELECTRICAL("ЭЛЕКТРИЧЕСТВО"),
-        OTHER("ПРОЧЕЕ");
+        FAVORITES("ИЗБРАННОЕ", RustUiHelper.TEX_CAT_FAV),
+        GENERAL("ОБЩЕЕ", RustUiHelper.TEX_CAT_COMMON),
+        CONSTRUCTION("КОНСТРУКЦИИ", RustUiHelper.TEX_CAT_CONSTRUCTION),
+        DEPLOYABLES("ОБЪЕКТЫ", RustUiHelper.TEX_CAT_ITEMS),
+        RESOURCES("РЕСУРСЫ", RustUiHelper.TEX_CAT_COMMON),
+        CLOTHING("ОДЕЖДА", RustUiHelper.TEX_CAT_COMMON),
+        TOOLS("ИНСТРУМЕНТЫ", RustUiHelper.TEX_CAT_TOOLS),
+        MEDICAL("МЕДИЦИНА", RustUiHelper.TEX_CAT_MEDICAL),
+        WEAPONS("ОРУЖИЕ", RustUiHelper.TEX_CAT_WEAPONS),
+        AMMO("БОЕПРИПАСЫ", RustUiHelper.TEX_CAT_AMMO),
+        ELECTRICAL("ЭЛЕКТРИЧЕСТВО", RustUiHelper.TEX_CAT_ELECTRIC),
+        OTHER("ПРОЧЕЕ", RustUiHelper.TEX_CAT_OTHER);
 
         public final String title;
-        Category(String title) { this.title = title; }
+        public final Identifier icon;
+
+        Category(String title, Identifier icon) {
+            this.title = title;
+            this.icon = icon;
+        }
     }
 
     public static class Ingredient {
@@ -86,9 +95,9 @@ public class RustCraftingScreen extends Screen {
                 "Точка возрождения после смерти. Перезарядка 5 минут.", 10.0f,
                 Arrays.asList(new Ingredient("Ткань", 30, Items.STRING))));
 
-        // CONSTRUCTION (Matches user screenshot: 11 recipes!)
+        // CONSTRUCTION
         ALL_RECIPES.add(new Recipe("build_plan", "План постройки", Category.CONSTRUCTION, Items.MAP,
-                "План постройки. Используется для создания баз - взяв в руки, нажмите на правую кнопку мыши для просмотра опций.", 30.0f,
+                "План постройки. Используется для создания баз — взяв в руки, нажмите ПКМ для просмотра опций.", 30.0f,
                 Arrays.asList(new Ingredient("Дерево", 20, Items.OAK_PLANKS))));
         ALL_RECIPES.add(new Recipe("wood_hammer", "Строительный молоток", Category.CONSTRUCTION, Items.WOODEN_AXE,
                 "Инструмент для улучшения стен базы до дерева, камня, металла или МВК.", 5.0f,
@@ -97,7 +106,7 @@ public class RustCraftingScreen extends Screen {
                 "Базовая входная дверь для закрытия проемов дома.", 15.0f,
                 Arrays.asList(new Ingredient("Дерево", 300, Items.OAK_PLANKS))));
         ALL_RECIPES.add(new Recipe("sheet_door", "Металлическая дверь", Category.CONSTRUCTION, Items.IRON_DOOR,
-                "Прочная дверь из фрагментов металла, защищает от петард и начальных рейдов.", 30.0f,
+                "Прочная дверь из фрагментов металла, защищает от начальных рейдов.", 30.0f,
                 Arrays.asList(new Ingredient("Фрагменты металла", 150, Items.IRON_INGOT))));
         ALL_RECIPES.add(new Recipe("code_lock", "Кодовый замок", Category.CONSTRUCTION, Items.LEVER,
                 "Электронный замок с 4-значным PIN-кодом для защиты дверей и ящиков.", 15.0f,
@@ -229,8 +238,15 @@ public class RustCraftingScreen extends Screen {
 
     public RustCraftingScreen() {
         super(new LiteralText("Rust Crafting"));
+        RustFontRenderer.ensureLoaded();
         List<Recipe> initList = getFilteredRecipes();
         this.selectedRecipe = initList.isEmpty() ? null : initList.get(0);
+    }
+
+    @Override
+    protected void init() {
+        super.init();
+        RustFontRenderer.ensureLoaded();
     }
 
     @Override
@@ -240,18 +256,14 @@ public class RustCraftingScreen extends Screen {
 
     private List<Recipe> getFilteredRecipes() {
         List<Recipe> list = new ArrayList<>();
-        String query = searchQuery.trim().toLowerCase();
+        String query = searchQuery.trim().toLowerCase(Locale.ROOT);
 
         for (Recipe r : ALL_RECIPES) {
-            boolean matchesCat = false;
-            if (selectedCategory == Category.FAVORITES) {
-                matchesCat = r.isFavorite;
-            } else {
-                matchesCat = r.category == selectedCategory;
-            }
-
+            boolean matchesCat = (selectedCategory == Category.FAVORITES) ? r.isFavorite : (r.category == selectedCategory);
             if (matchesCat) {
-                if (query.isEmpty() || r.name.toLowerCase().contains(query) || r.description.toLowerCase().contains(query)) {
+                if (query.isEmpty()
+                        || r.name.toLowerCase(Locale.ROOT).contains(query)
+                        || r.description.toLowerCase(Locale.ROOT).contains(query)) {
                     list.add(r);
                 }
             }
@@ -260,356 +272,367 @@ public class RustCraftingScreen extends Screen {
     }
 
     private int getCategoryCount(Category cat) {
-        if (cat == Category.FAVORITES) {
-            int count = 0;
-            for (Recipe r : ALL_RECIPES) if (r.isFavorite) count++;
-            return count;
-        }
-        int count = 0;
+        int c = 0;
         for (Recipe r : ALL_RECIPES) {
-            if (r.category == cat) count++;
+            if ((cat == Category.FAVORITES && r.isFavorite) || r.category == cat) {
+                c++;
+            }
         }
-        return count;
+        return c;
+    }
+
+    private static class Layout {
+        int panelX, panelY, panelW, panelH;
+        int leftX, leftW, bpH;
+        int catX, catW, catRowH;
+        int gridX, gridW, slotSize, slotGap, cols;
+        int searchX, searchY, searchW, searchH;
+        int rightX, rightW;
+        int favX, favY, favW, favH;
+        int btnSubX, btnAddX, btnMaxX, qtyX, qtyW, actionY, btnSize, btnMaxW;
+        int btnCraftX, btnCraftY, btnCraftW, btnCraftH;
+    }
+
+    private Layout computeLayout(int screenW, int screenH) {
+        Layout L = new Layout();
+        // Match Rust gameui.crafting.prefab centered proportions (above belt/hotbar)
+        L.panelW = Math.min(screenW - 24, 620);
+        L.panelX = (screenW - L.panelW) / 2;
+        L.panelY = 32;
+        L.panelH = screenH - 76; // leaves room for bottom hotbar/HUD bars
+
+        L.leftX = L.panelX;
+        L.leftW = Math.max(210, (int) (L.panelW * 0.45f));
+        L.bpH = L.panelH - 52; // leaves bottom 52px for Queue inside Left pane
+
+        L.catX = L.leftX;
+        L.catW = 94;
+        L.catRowH = Math.max(14, Math.min(18, (L.bpH - 2) / Category.values().length));
+
+        L.gridX = L.catX + L.catW + 3;
+        L.gridW = L.leftW - L.catW - 3;
+        L.slotSize = 32;
+        L.slotGap = 3;
+        L.cols = Math.max(3, (L.gridW - 8) / (L.slotSize + L.slotGap));
+
+        L.searchW = L.gridW;
+        L.searchH = 16;
+        L.searchX = L.gridX;
+        L.searchY = L.panelY + L.bpH - L.searchH;
+
+        L.rightX = L.leftX + L.leftW + 6;
+        L.rightW = L.panelW - L.leftW - 6;
+
+        // Favorite toggle inside header icon area
+        L.favX = L.rightX + 8;
+        L.favY = L.panelY + 42;
+        L.favW = 36;
+        L.favH = 12;
+
+        // Footer controls
+        L.btnSize = 18;
+        L.btnMaxW = 28;
+        L.qtyW = 28;
+        L.actionY = L.panelY + L.panelH - 24;
+        L.btnSubX = L.rightX + 8;
+        L.qtyX = L.btnSubX + L.btnSize + 2;
+        L.btnAddX = L.qtyX + L.qtyW + 2;
+        L.btnMaxX = L.btnAddX + L.btnSize + 3;
+
+        L.btnCraftW = 96;
+        L.btnCraftH = 20;
+        L.btnCraftX = L.rightX + L.rightW - L.btnCraftW - 8;
+        L.btnCraftY = L.actionY - 1;
+
+        return L;
     }
 
     @Override
     public void render(MatrixStack matrices, int mouseX, int mouseY, float delta) {
-        // Dark translucent background vignette
-        this.renderBackground(matrices);
+        DrawableHelper.fill(matrices, 0, 0, this.width, this.height, RustUiHelper.COLOR_BACKDROP);
+        if (this.client == null || this.client.player == null) {
+            super.render(matrices, mouseX, mouseY, delta);
+            return;
+        }
 
         int screenW = this.width;
         int screenH = this.height;
+        Layout L = computeLayout(screenW, screenH);
 
-        // TOP HEADER TAB: [->] ИНВЕНТАРЬ
-        int topTabW = 120;
-        int topTabH = 18;
-        int topTabX = (screenW - topTabW) / 2;
-        int topTabY = 4;
-        DrawableHelper.fill(matrices, topTabX, topTabY, topTabX + topTabW, topTabY + topTabH, 0xDD222730);
-        DrawableHelper.fill(matrices, topTabX, topTabY, topTabX + topTabW, topTabY + 1, 0x44FFFFFF);
-        this.textRenderer.drawWithShadow(matrices, "➔  ИНВЕНТАРЬ", topTabX + 16, topTabY + 5, 0xFFE0E5EC);
+        // Top Switch Button: [ ИНВЕНТАРЬ ]
+        RustUiHelper.drawTopSwitchButton(matrices, this.client, mouseX, mouseY, screenW, true);
 
-        // MAIN MODAL WINDOW DIMENSIONS (Matching the layout in screenshot)
-        int winX = 24;
-        int winY = 24;
-        int winW = screenW - 48;
-        int winH = screenH - 80;
-
-        // Background Modal Panel
-        DrawableHelper.fill(matrices, winX, winY, winX + winW, winY + winH, 0xD4161A20);
-        DrawableHelper.fill(matrices, winX, winY, winX + winW, winY + 1, 0x22FFFFFF);
-        DrawableHelper.fill(matrices, winX, winY + winH - 1, winX + winW, winY + winH, 0x22FFFFFF);
-        DrawableHelper.fill(matrices, winX, winY, winX + 1, winY + winH, 0x22FFFFFF);
-        DrawableHelper.fill(matrices, winX + winW - 1, winY, winX + winW, winY + winH, 0x22FFFFFF);
+        RustFontRenderer bfSmall = RustFontRenderer.boldSmall();
+        RustFontRenderer rf = RustFontRenderer.regular();
+        RustFontRenderer sf = RustFontRenderer.small();
 
         // ==========================================
-        // 1. LEFT SIDEBAR: CATEGORIES
+        // 1. LEFT: CATEGORIES (UI.Blueprint.Category.Button)
         // ==========================================
-        int catColW = 92;
-        int catColX = winX;
-        int catColY = winY;
+        DrawableHelper.fill(matrices, L.catX, L.panelY, L.catX + L.catW, L.panelY + L.bpH, 0x0BF7EBE1);
 
-        DrawableHelper.fill(matrices, catColX + catColW, winY, catColX + catColW + 1, winY + winH, 0x22FFFFFF);
+        int catY = L.panelY;
+        for (Category cat : Category.values()) {
+            boolean isSel = (cat == selectedCategory);
+            boolean isHov = RustUiHelper.inRect(mouseX, mouseY, L.catX, catY, L.catW, L.catRowH);
 
-        Category[] cats = Category.values();
-        int catItemH = 16;
-        int currentCatY = catColY + 8;
+            int bg = isSel ? RustUiHelper.COLOR_CAT_ACTIVE
+                    : (isHov ? 0x1AF7EBE1 : 0x0AF7EBE1);
+            DrawableHelper.fill(matrices, L.catX, catY, L.catX + L.catW, catY + L.catRowH - 1, bg);
 
-        for (Category cat : cats) {
-            boolean isSelected = cat == selectedCategory;
-            boolean isHovered = mouseX >= catColX && mouseX <= catColX + catColW && mouseY >= currentCatY && mouseY <= currentCatY + catItemH;
+            // Real Rust category sprite icon
+            int iconS = Math.min(11, L.catRowH - 4);
+            RustUiHelper.drawSprite(matrices, this.client, cat.icon,
+                    L.catX + 4, catY + (L.catRowH - 1 - iconS) / 2, iconS, iconS,
+                    isSel ? 0xFFF7EBE1 : 0x65F7EBE1);
 
-            int count = getCategoryCount(cat);
+            int textColor = isSel ? 0xFFF7EBE1 : (isHov ? 0xEEF7EBE1 : 0xB8F7EBE1);
+            bfSmall.drawCenteredY(matrices, bfSmall.trim(cat.title, L.catW - 34), L.catX + 18, catY, L.catRowH - 1, textColor);
 
-            if (isSelected) {
-                // RUST DISTINCTIVE SOLID BLUE ACTIVE BAR (Exact color from user screenshot #2f7eb2)
-                DrawableHelper.fill(matrices, catColX, currentCatY, catColX + catColW, currentCatY + catItemH, 0xFF2F7EB2);
-                this.textRenderer.drawWithShadow(matrices, cat.title, catColX + 6, currentCatY + 4, 0xFFFFFFFF);
-                if (count > 0) {
-                    String cntStr = String.valueOf(count);
-                    int cntW = this.textRenderer.getWidth(cntStr);
-                    this.textRenderer.drawWithShadow(matrices, cntStr, catColX + catColW - cntW - 6, currentCatY + 4, 0xFFFFFFFF);
-                }
-            } else {
-                if (isHovered) {
-                    DrawableHelper.fill(matrices, catColX, currentCatY, catColX + catColW, currentCatY + catItemH, 0x33FFFFFF);
-                }
-                this.textRenderer.drawWithShadow(matrices, cat.title, catColX + 6, currentCatY + 4, 0x88AAAAAA);
-                if (count > 0) {
-                    String cntStr = String.valueOf(count);
-                    int cntW = this.textRenderer.getWidth(cntStr);
-                    this.textRenderer.drawWithShadow(matrices, cntStr, catColX + catColW - cntW - 6, currentCatY + 4, 0x55AAAAAA);
-                }
-            }
+            String cnt = String.valueOf(getCategoryCount(cat));
+            float cw = sf.getWidth(cnt);
+            sf.drawCenteredY(matrices, cnt, L.catX + L.catW - cw - 5, catY, L.catRowH - 1, isSel ? 0xFFF7EBE1 : 0x77F7EBE1);
 
-            currentCatY += catItemH + 2;
+            catY += L.catRowH;
         }
 
         // ==========================================
-        // 2. MIDDLE COLUMN: ITEM RECIPE GRID & SEARCH
+        // 2. MIDDLE: BLUEPRINT TILES + SEARCH
         // ==========================================
-        int gridX = catColX + catColW + 1;
-        int gridW = (int) ((winW - catColW) * 0.44f);
-        int gridH = winH - 26; // Room for search at bottom
-
-        // Vertical separator line between grid and details
-        DrawableHelper.fill(matrices, gridX + gridW, winY, gridX + gridW + 1, winY + winH, 0x22FFFFFF);
+        DrawableHelper.fill(matrices, L.gridX, L.panelY, L.gridX + L.gridW, L.searchY - 2, 0x0AF7EBE1);
 
         List<Recipe> recipes = getFilteredRecipes();
-
-        int slotSize = 34;
-        int slotPadding = 4;
-        int cols = Math.max(3, (gridW - 16) / (slotSize + slotPadding));
-
-        int startSlotX = gridX + 12;
-        int startSlotY = winY + 12;
+        int gridPadX = (L.gridW - (L.cols * L.slotSize + (L.cols - 1) * L.slotGap)) / 2;
+        int gridStartY = L.panelY + 4;
+        Recipe hoveredRecipe = null;
 
         for (int i = 0; i < recipes.size(); i++) {
             Recipe r = recipes.get(i);
-            int col = i % cols;
-            int row = i / cols;
+            int col = i % L.cols;
+            int row = i / L.cols;
+            int sx = L.gridX + gridPadX + col * (L.slotSize + L.slotGap);
+            int sy = gridStartY + row * (L.slotSize + L.slotGap);
+            if (sy + L.slotSize > L.searchY - 3) break;
 
-            int sx = startSlotX + col * (slotSize + slotPadding);
-            int sy = startSlotY + row * (slotSize + slotPadding);
+            boolean isSel = (selectedRecipe == r);
+            boolean isHov = RustUiHelper.inRect(mouseX, mouseY, sx, sy, L.slotSize, L.slotSize);
+            if (isHov) hoveredRecipe = r;
 
-            if (sy + slotSize > winY + gridH) break; // clip if overflowing
+            boolean craftable = canCraftRecipe(this.client.player, r, 1);
 
-            boolean isHovered = mouseX >= sx && mouseX <= sx + slotSize && mouseY >= sy && mouseY <= sy + slotSize;
-            boolean isSelected = r == selectedRecipe;
-
-            // Slot background
-            if (isSelected) {
-                DrawableHelper.fill(matrices, sx, sy, sx + slotSize, sy + slotSize, 0x552F7EB2);
-                DrawableHelper.fill(matrices, sx, sy, sx + slotSize, sy + 1, 0xFF2F7EB2);
-                DrawableHelper.fill(matrices, sx, sy + slotSize - 1, sx + slotSize, sy + slotSize, 0xFF2F7EB2);
-                DrawableHelper.fill(matrices, sx, sy, sx + 1, sy + slotSize, 0xFF2F7EB2);
-                DrawableHelper.fill(matrices, sx + slotSize - 1, sy, sx + slotSize, sy + slotSize, 0xFF2F7EB2);
-            } else if (isHovered) {
-                DrawableHelper.fill(matrices, sx, sy, sx + slotSize, sy + slotSize, 0x33FFFFFF);
-            } else {
-                DrawableHelper.fill(matrices, sx, sy, sx + slotSize, sy + slotSize, 0x22181C22);
+            // UI.Blueprint.Button visual style
+            DrawableHelper.fill(matrices, sx, sy, sx + L.slotSize, sy + L.slotSize,
+                    isSel ? RustUiHelper.COLOR_CAT_ACTIVE
+                            : (isHov ? RustUiHelper.COLOR_SLOT_HOVER : RustUiHelper.COLOR_SLOT_OCCUPIED));
+            if (craftable && !isSel) {
+                DrawableHelper.fill(matrices, sx, sy, sx + L.slotSize, sy + L.slotSize, 0x227BC950);
             }
 
-            // Render Minecraft item stack icon in 3D centered
-            this.itemRenderer.renderInGuiWithOverrides(r.resultStack, sx + (slotSize - 16) / 2, sy + (slotSize - 16) / 2);
+            this.itemRenderer.renderInGuiWithOverrides(r.resultStack, sx + (L.slotSize - 16) / 2, sy + (L.slotSize - 16) / 2);
+
+            if (!craftable) {
+                DrawableHelper.fill(matrices, sx, sy, sx + L.slotSize, sy + L.slotSize, 0x451D1B18);
+            }
+
+            if (r.isFavorite) {
+                RustUiHelper.drawSprite(matrices, this.client, RustUiHelper.TEX_FAV_ACTIVE,
+                        sx + L.slotSize - 9, sy + 2, 7, 7, 0xFFE6E000);
+            }
         }
 
-        // SEARCH BAR AT BOTTOM OF MIDDLE GRID
-        int searchBoxX = gridX + 12;
-        int searchBoxY = winY + winH - 22;
-        int searchBoxW = gridW - 24;
-        int searchBoxH = 16;
-
-        DrawableHelper.fill(matrices, searchBoxX, searchBoxY, searchBoxX + searchBoxW, searchBoxY + searchBoxH, 0xAA101318);
-        DrawableHelper.fill(matrices, searchBoxX, searchBoxY, searchBoxX + searchBoxW, searchBoxY + 1, isSearchFocused ? 0xFF2F7EB2 : 0x22FFFFFF);
-
+        // Bottom Search field inside Blueprints column
+        DrawableHelper.fill(matrices, L.searchX, L.searchY, L.searchX + L.searchW, L.searchY + L.searchH,
+                isSearchFocused ? 0x28F7EBE1 : 0x14F7EBE1);
         if (searchQuery.isEmpty()) {
-            this.textRenderer.drawWithShadow(matrices, "Поиск...", searchBoxX + 6, searchBoxY + 4, 0x55AAAAAA);
+            rf.drawCenteredY(matrices, isSearchFocused ? "|" : "Поиск...", L.searchX + 6, L.searchY, L.searchH, 0x66F7EBE1);
         } else {
-            String cursor = (System.currentTimeMillis() / 500 % 2 == 0 && isSearchFocused) ? "|" : "";
-            this.textRenderer.drawWithShadow(matrices, searchQuery + cursor, searchBoxX + 6, searchBoxY + 4, 0xFFFFFFFF);
+            String cur = (System.currentTimeMillis() / 500 % 2 == 0 && isSearchFocused) ? "|" : "";
+            rf.drawCenteredY(matrices, rf.trim(searchQuery, L.searchW - 20) + cur,
+                    L.searchX + 6, L.searchY, L.searchH, RustUiHelper.COLOR_TEXT_CREAM);
         }
+        RustUiHelper.drawSprite(matrices, this.client, RustUiHelper.TEX_SEARCH,
+                L.searchX + L.searchW - 13, L.searchY + 3, 9, 9, 0x80F7EBE1);
 
         // ==========================================
-        // 3. RIGHT COLUMN: RECIPE DETAILS & CRAFT ACTION
+        // 3. LEFT BOTTOM: CRAFTING QUEUE
         // ==========================================
-        int detailX = gridX + gridW + 1;
-        int detailW = winW - catColW - gridW - 2;
+        RustUiHelper.drawCraftingQueue(matrices, this.client, mouseX, mouseY, L.leftX, L.panelY + L.panelH, this.itemRenderer);
+
+        // ==========================================
+        // 4. RIGHT: SELECTED BLUEPRINT (gameui.crafting.prefab)
+        // ==========================================
+        DrawableHelper.fill(matrices, L.rightX, L.panelY, L.rightX + L.rightW, L.panelY + L.panelH, RustUiHelper.COLOR_SURFACE);
 
         if (selectedRecipe != null) {
-            int curY = winY + 14;
+            // Top Information Row
+            int hdrY = L.panelY + 6;
+            int iconBoxX = L.rightX + 8;
+            int iconBoxW = 36;
+            DrawableHelper.fill(matrices, iconBoxX, hdrY, iconBoxX + iconBoxW, hdrY + 34, 0x641D201F);
+            this.itemRenderer.renderInGuiWithOverrides(selectedRecipe.resultStack, iconBoxX + 10, hdrY + 9);
 
-            // Header Row: Big Icon + Title + Stopwatch + Quantity
-            this.itemRenderer.renderInGuiWithOverrides(selectedRecipe.resultStack, detailX + 16, curY + 2);
+            // Toggle Favourite button right below icon
+            boolean favHov = RustUiHelper.inRect(mouseX, mouseY, L.favX, L.favY, L.favW, L.favH);
+            DrawableHelper.fill(matrices, L.favX, L.favY, L.favX + L.favW, L.favY + L.favH,
+                    favHov ? 0x881D201F : 0x641D201F);
+            RustUiHelper.drawSprite(matrices, this.client,
+                    selectedRecipe.isFavorite ? RustUiHelper.TEX_FAV_ACTIVE : RustUiHelper.TEX_FAV_INACTIVE,
+                    L.favX + 13, L.favY + 2, 8, 8,
+                    selectedRecipe.isFavorite ? 0xFFE6E000 : 0xBBF7EBE1);
 
-            this.textRenderer.drawWithShadow(matrices, selectedRecipe.name, detailX + 38, curY + 6, 0xFFFFFFFF);
+            // Item Title
+            RustFontRenderer.boldLarge().draw(matrices,
+                    RustFontRenderer.boldLarge().trim(selectedRecipe.name.toUpperCase(), L.rightW - 110),
+                    iconBoxX + iconBoxW + 10, hdrY + 4, RustUiHelper.COLOR_TEXT_CREAM);
+            sf.draw(matrices, selectedRecipe.category.title,
+                    iconBoxX + iconBoxW + 10, hdrY + 20, RustUiHelper.COLOR_TEXT_DIM);
 
-            // Stopwatch Time + Quantity on far right
-            String timerStr = "⏱  " + String.format(Locale.US, "%.1f", selectedRecipe.craftSeconds);
-            int timerW = this.textRenderer.getWidth(timerStr);
-            this.textRenderer.drawWithShadow(matrices, timerStr, detailX + detailW - timerW - 32, curY + 6, 0xCCFFFFFF);
-            this.textRenderer.drawWithShadow(matrices, "⚪ 1", detailX + detailW - 26, curY + 6, 0x88AAAAAA);
+            // Right Stats chips (Time & Amount)
+            int chipW = 46;
+            int chipX = L.rightX + L.rightW - chipW - 8;
+            DrawableHelper.fill(matrices, chipX, hdrY, chipX + chipW, hdrY + 15, 0x641D201F);
+            RustUiHelper.drawSprite(matrices, this.client, RustUiHelper.TEX_STOPWATCH, chipX + 4, hdrY + 3, 9, 9, RustUiHelper.COLOR_TEXT_CREAM);
+            String timeStr = String.format(Locale.US, "%.0fс", selectedRecipe.craftSeconds);
+            bfSmall.drawCenteredY(matrices, timeStr, chipX + 16, hdrY, 15, RustUiHelper.COLOR_TEXT_CREAM);
 
-            // Favorite button
-            String favText = selectedRecipe.isFavorite ? "★  В избранном" : "☆  Избранное";
-            this.textRenderer.drawWithShadow(matrices, favText, detailX + 16, curY + 26, selectedRecipe.isFavorite ? 0xFFFFD54F : 0x77AAAAAA);
+            DrawableHelper.fill(matrices, chipX, hdrY + 17, chipX + chipW, hdrY + 32, 0x641D201F);
+            bfSmall.drawCenteredY(matrices, "x" + craftQuantity, chipX + 16, hdrY + 17, 15, RustUiHelper.COLOR_TEXT_CREAM);
 
-            // Multiline Description
-            int descY = curY + 42;
-            List<String> descLines = wrapText(selectedRecipe.description, detailW - 32);
-            for (String line : descLines) {
-                this.textRenderer.drawWithShadow(matrices, line, detailX + 16, descY, 0x88B0B8C4);
-                descY += 11;
+            // Description Box (itemDesc)
+            int descTop = hdrY + 52;
+            int descH = Math.max(36, L.panelH - 165);
+            DrawableHelper.fill(matrices, L.rightX + 8, descTop, L.rightX + L.rightW - 8, descTop + descH, 0x0BF7EBE1);
+            int lineY = descTop + 6;
+            for (String line : wrapText(selectedRecipe.description, L.rightW - 28, rf)) {
+                if (lineY + 10 > descTop + descH - 4) break;
+                rf.draw(matrices, line, L.rightX + 14, lineY, RustUiHelper.COLOR_TEXT_CREAM);
+                lineY += 11;
             }
 
-            // ==========================================
-            // REQUIREMENTS TABLE (Exact match to screenshot)
-            // ==========================================
-            int tableY = winY + winH - 96;
-            int tableH = 14;
+            // Ingredients Table (UI.Blueprint.Craft.Row exact widths & colors)
+            int tableW = L.rightW - 16;
+            int tx = L.rightX + 8;
+            int colAmtW = 42;
+            int colNeedW = 48;
+            int colHaveW = 48;
+            int colNameW = tableW - colAmtW - colNeedW - colHaveW - 3;
 
-            // Table Header Bar (Dark slate grey)
-            DrawableHelper.fill(matrices, detailX + 12, tableY, detailX + detailW - 12, tableY + tableH, 0xDD12151B);
-            this.textRenderer.drawWithShadow(matrices, "СУММА", detailX + 24, tableY + 3, 0x77AAAAAA);
-            this.textRenderer.drawWithShadow(matrices, "ТИП ПРЕДМЕТА", detailX + 70, tableY + 3, 0x77AAAAAA);
-            this.textRenderer.drawWithShadow(matrices, "ВСЕГО", detailX + detailW - 110, tableY + 3, 0x77AAAAAA);
-            this.textRenderer.drawWithShadow(matrices, "ИМЕЕТСЯ", detailX + detailW - 55, tableY + 3, 0x77AAAAAA);
+            int hdrRowY = L.actionY - 76;
+            drawTableRow(matrices, tx, hdrRowY, 13, colAmtW, colNameW, colNeedW, colHaveW,
+                    "КОЛ-ВО", "ПРЕДМЕТ", "НУЖНО", "ЕСТЬ",
+                    0xAA1D201F, 0x80F7EBE1, 0x80F7EBE1, 0x80F7EBE1);
 
-            // Table Rows
-            int rowY = tableY + tableH + 4;
+            int rowY = hdrRowY + 14;
             boolean canCraft = true;
-
             for (Ingredient ing : selectedRecipe.ingredients) {
                 int totalRequired = ing.amount * craftQuantity;
                 int playerHas = countPlayerResource(this.client.player, ing.mcItem);
+                boolean enough = playerHas >= totalRequired || this.client.player.isCreative();
+                if (!enough) canCraft = false;
 
-                if (playerHas < totalRequired) {
-                    canCraft = false;
-                }
-
-                // Amount per unit
-                this.textRenderer.drawWithShadow(matrices, String.valueOf(ing.amount), detailX + 26, rowY + 3, 0xCCFFFFFF);
-
-                // Resource Name
-                this.textRenderer.drawWithShadow(matrices, ing.name, detailX + 70, rowY + 3, 0xFFE0E5EC);
-
-                // Total Required
-                this.textRenderer.drawWithShadow(matrices, String.valueOf(totalRequired), detailX + detailW - 105, rowY + 3, 0xCCFFFFFF);
-
-                // Player Has (Green if enough, Red if insufficient)
-                int hasColor = playerHas >= totalRequired ? 0xFF73C05A : 0xFFE0462C;
-                this.textRenderer.drawWithShadow(matrices, String.valueOf(playerHas), detailX + detailW - 50, rowY + 3, hasColor);
-
+                drawTableRow(matrices, tx, rowY, 14, colAmtW, colNameW, colNeedW, colHaveW,
+                        String.valueOf(ing.amount),
+                        ing.name,
+                        String.valueOf(totalRequired),
+                        String.valueOf(playerHas),
+                        RustUiHelper.COLOR_ROW_BG,
+                        0xBCF7EBE1,
+                        RustUiHelper.COLOR_GOLD_TEXT,
+                        enough ? 0xBCF7EBE1 : 0xFFE55343);
                 rowY += 15;
             }
 
-            // ==========================================
-            // QUANTITY STEPPER + "СОЗДАТЬ" BUTTON
-            // ==========================================
-            int actionY = winY + winH - 26;
+            // Footer: [-] Qty [+] [MAX] and [ СОЗДАТЬ ]
+            drawIconStepBtn(matrices, mouseX, mouseY, L.btnSubX, L.actionY, L.btnSize, L.btnSize, RustUiHelper.TEX_BTN_SUBTRACT);
 
-            // [-] button
-            int btnMinusX = detailX + 12;
-            int btnSize = 18;
-            DrawableHelper.fill(matrices, btnMinusX, actionY, btnMinusX + btnSize, actionY + btnSize, 0xCC2A303C);
-            this.textRenderer.drawWithShadow(matrices, "-", btnMinusX + 6, actionY + 5, 0xFFFFFFFF);
+            DrawableHelper.fill(matrices, L.qtyX, L.actionY, L.qtyX + L.qtyW, L.actionY + L.btnSize, RustUiHelper.COLOR_ROW_BG);
+            String qStr = String.valueOf(craftQuantity);
+            bfSmall.drawCenteredY(matrices, qStr, L.qtyX + (L.qtyW - bfSmall.getWidth(qStr)) / 2f, L.actionY, L.btnSize, RustUiHelper.COLOR_TEXT_CREAM);
 
-            // Quantity Display Box
-            int qtyBoxX = btnMinusX + btnSize + 4;
-            int qtyBoxW = 32;
-            DrawableHelper.fill(matrices, qtyBoxX, actionY, qtyBoxX + qtyBoxW, actionY + btnSize, 0xAA12151B);
-            String qtyStr = String.valueOf(craftQuantity);
-            int qtyW = this.textRenderer.getWidth(qtyStr);
-            this.textRenderer.drawWithShadow(matrices, qtyStr, qtyBoxX + (qtyBoxW - qtyW) / 2, actionY + 5, 0xFFFFFFFF);
+            drawIconStepBtn(matrices, mouseX, mouseY, L.btnAddX, L.actionY, L.btnSize, L.btnSize, RustUiHelper.TEX_BTN_ADD);
 
-            // [+] button
-            int btnPlusX = qtyBoxX + qtyBoxW + 4;
-            DrawableHelper.fill(matrices, btnPlusX, actionY, btnPlusX + btnSize, actionY + btnSize, 0xCC2A303C);
-            this.textRenderer.drawWithShadow(matrices, "+", btnPlusX + 6, actionY + 5, 0xFFFFFFFF);
+            boolean maxHov = RustUiHelper.inRect(mouseX, mouseY, L.btnMaxX, L.actionY, L.btnMaxW, L.btnSize);
+            DrawableHelper.fill(matrices, L.btnMaxX, L.actionY, L.btnMaxX + L.btnMaxW, L.actionY + L.btnSize,
+                    maxHov ? 0xCC2C302E : RustUiHelper.COLOR_ROW_BG);
+            sf.drawCenteredY(matrices, "MAX", L.btnMaxX + (L.btnMaxW - sf.getWidth("MAX")) / 2f, L.actionY, L.btnSize, RustUiHelper.COLOR_TEXT_CREAM);
 
-            // [>>] (Max craftable) button
-            int btnMaxX = btnPlusX + btnSize + 4;
-            int btnMaxW = 22;
-            DrawableHelper.fill(matrices, btnMaxX, actionY, btnMaxX + btnMaxW, actionY + btnSize, 0xCC2A303C);
-            this.textRenderer.drawWithShadow(matrices, "⏭", btnMaxX + 5, actionY + 5, 0xFFFFFFFF);
+            boolean craftHov = RustUiHelper.inRect(mouseX, mouseY, L.btnCraftX, L.btnCraftY, L.btnCraftW, L.btnCraftH);
+            int craftBg = canCraft
+                    ? (craftHov ? RustUiHelper.COLOR_CRAFT_BTN_HOV : RustUiHelper.COLOR_CRAFT_BTN)
+                    : 0x661D201F;
+            DrawableHelper.fill(matrices, L.btnCraftX, L.btnCraftY, L.btnCraftX + L.btnCraftW, L.btnCraftY + L.btnCraftH, craftBg);
 
-            // "СОЗДАТЬ" Button on far right
-            int btnCraftW = 86;
-            int btnCraftH = 22;
-            int btnCraftX = detailX + detailW - btnCraftW - 12;
-            int btnCraftY = actionY - 2;
-
-            int craftBtnColor = canCraft ? 0xDD2A303C : 0x551E222A;
-            boolean isCraftHovered = mouseX >= btnCraftX && mouseX <= btnCraftX + btnCraftW && mouseY >= btnCraftY && mouseY <= btnCraftY + btnCraftH;
-            if (canCraft && isCraftHovered) craftBtnColor = 0xFF3E4758;
-
-            DrawableHelper.fill(matrices, btnCraftX, btnCraftY, btnCraftX + btnCraftW, btnCraftY + btnCraftH, craftBtnColor);
-            DrawableHelper.fill(matrices, btnCraftX, btnCraftY, btnCraftX + btnCraftW, btnCraftY + 1, 0x33FFFFFF);
-
-            int craftTxtW = this.textRenderer.getWidth("СОЗДАТЬ");
-            int craftTxtColor = canCraft ? 0xFFFFFFFF : 0x55AAAAAA;
-            this.textRenderer.drawWithShadow(matrices, "СОЗДАТЬ", btnCraftX + (btnCraftW - craftTxtW) / 2, btnCraftY + 7, craftTxtColor);
+            String cLabel = "СОЗДАТЬ";
+            RustFontRenderer bf = RustFontRenderer.bold();
+            bf.drawCenteredY(matrices, cLabel,
+                    L.btnCraftX + (L.btnCraftW - bf.getWidth(cLabel)) / 2f,
+                    L.btnCraftY, L.btnCraftH,
+                    canCraft ? 0xFFF7EBE1 : 0x55F7EBE1);
         }
 
         // ==========================================
-        // 4. BOTTOM-LEFT: ОЧЕРЕДЬ КРАФТА
+        // 5. BOTTOM: BELT / HOTBAR + METABOLISM BARS
         // ==========================================
-        int queueY = screenH - 52;
-        this.textRenderer.drawWithShadow(matrices, "ОЧЕРЕДЬ КРАФТА", winX + 2, queueY, 0x44FFFFFF);
+        RustUiHelper.drawHotbar(matrices, this.client, mouseX, mouseY, screenW, screenH, this.itemRenderer, false);
+        RustUiHelper.drawMetabolismBars(matrices, this.client, screenW, screenH);
 
-        // Render queue boxes if any
-        if (!RustCraftingQueue.queue.isEmpty()) {
-            int qx = winX + 2;
-            int qBoxY = queueY + 12;
-            for (int i = 0; i < RustCraftingQueue.queue.size() && i < 4; i++) {
-                RustCraftingQueue.CraftTask task = RustCraftingQueue.queue.get(i);
-                int qW = 28;
-                int qH = 28;
-                DrawableHelper.fill(matrices, qx, qBoxY, qx + qW, qBoxY + qH, 0xDD1A1E24);
-                this.itemRenderer.renderInGuiWithOverrides(task.resultItem, qx + 6, qBoxY + 6);
-
-                if (i == 0) {
-                    // Current countdown timer
-                    String timeStr = String.format(Locale.US, "%.1fs", task.remainingSeconds);
-                    this.textRenderer.drawWithShadow(matrices, timeStr, qx + 2, qBoxY + qH - 8, 0xFFFFA726);
-                }
-                qx += qW + 4;
-            }
+        if (hoveredRecipe != null) {
+            int tw = Math.round(sf.getWidth(hoveredRecipe.name)) + 10;
+            int tx = Math.min(screenW - tw - 6, mouseX + 8);
+            int ty = Math.max(6, mouseY - 16);
+            DrawableHelper.fill(matrices, tx, ty, tx + tw, ty + 14, RustUiHelper.COLOR_SLOT_OCCUPIED);
+            sf.drawCenteredY(matrices, hoveredRecipe.name, tx + 5, ty, 14, RustUiHelper.COLOR_TEXT_CREAM);
         }
-
-        // ==========================================
-        // 5. BOTTOM-CENTER: 6-SLOT RUST HOTBAR
-        // ==========================================
-        int hotbarSlotSize = 22;
-        int hotbarW = 6 * hotbarSlotSize;
-        int hotbarX = (screenW - hotbarW) / 2;
-        int hotbarY = screenH - 30;
-
-        PlayerInventory inv = this.client.player.inventory;
-        for (int i = 0; i < 6; i++) {
-            int sx = hotbarX + i * hotbarSlotSize;
-            DrawableHelper.fill(matrices, sx, hotbarY, sx + hotbarSlotSize - 1, hotbarY + hotbarSlotSize - 1, 0xAA181C22);
-            DrawableHelper.fill(matrices, sx, hotbarY, sx + hotbarSlotSize - 1, hotbarY + 1, 0x22FFFFFF);
-
-            ItemStack stack = inv.getStack(i);
-            if (!stack.isEmpty()) {
-                this.itemRenderer.renderInGuiWithOverrides(stack, sx + 3, hotbarY + 3);
-                this.itemRenderer.renderGuiItemOverlay(this.textRenderer, stack, sx + 3, hotbarY + 3);
-            }
-        }
-
-        // ==========================================
-        // 6. BOTTOM-RIGHT: RUST METABOLISM HUD (Match screenshot + 55, 💧 64, 🍗 66)
-        // ==========================================
-        int hudW = 100;
-        int hudX = screenW - hudW - 14;
-        int hudY = screenH - 42;
-
-        // Health
-        int hp = (int) (this.client.player.getHealth() * 5);
-        this.textRenderer.drawWithShadow(matrices, "+  " + hp, hudX + 4, hudY, 0xFF73C05A);
-
-        // Water
-        this.textRenderer.drawWithShadow(matrices, "💧  230", hudX + 4, hudY + 12, 0xFF29B6F6);
-
-        // Food
-        int hunger = this.client.player.getHungerManager().getFoodLevel() * 25;
-        this.textRenderer.drawWithShadow(matrices, "🍗  " + hunger, hudX + 4, hudY + 24, 0xFFFFB74D);
 
         super.render(matrices, mouseX, mouseY, delta);
     }
 
-    private int countPlayerResource(PlayerEntity player, Item target) {
+    private void drawTableRow(MatrixStack matrices, int x, int y, int h,
+                              int w1, int w2, int w3, int w4,
+                              String c1, String c2, String c3, String c4,
+                              int cellBg, int colText, int colName, int colHave) {
+        RustFontRenderer sf = RustFontRenderer.small();
+        int x1 = x;
+        int x2 = x1 + w1 + 1;
+        int x3 = x2 + w2 + 1;
+        int x4 = x3 + w3 + 1;
+
+        DrawableHelper.fill(matrices, x1, y, x1 + w1, y + h, cellBg);
+        DrawableHelper.fill(matrices, x2, y, x2 + w2, y + h, cellBg);
+        DrawableHelper.fill(matrices, x3, y, x3 + w3, y + h, cellBg);
+        DrawableHelper.fill(matrices, x4, y, x4 + w4, y + h, cellBg);
+
+        sf.drawCenteredY(matrices, c1, x1 + (w1 - sf.getWidth(c1)) / 2f, y, h, colText);
+        sf.drawCenteredY(matrices, sf.trim(c2, w2 - 8), x2 + 4, y, h, colName);
+        sf.drawCenteredY(matrices, c3, x3 + (w3 - sf.getWidth(c3)) / 2f, y, h, colText);
+        sf.drawCenteredY(matrices, c4, x4 + (w4 - sf.getWidth(c4)) / 2f, y, h, colHave);
+    }
+
+    private void drawIconStepBtn(MatrixStack matrices, int mouseX, int mouseY, int x, int y, int w, int h, Identifier icon) {
+        boolean hov = RustUiHelper.inRect(mouseX, mouseY, x, y, w, h);
+        DrawableHelper.fill(matrices, x, y, x + w, y + h, hov ? 0xCC2C302E : RustUiHelper.COLOR_ROW_BG);
+        RustUiHelper.drawSprite(matrices, this.client, icon, x + 4, y + 4, w - 8, h - 8, RustUiHelper.COLOR_TEXT_CREAM);
+    }
+
+    public static boolean canCraftRecipe(PlayerEntity player, Recipe r, int qty) {
+        if (player == null || r == null) return false;
+        if (player.isCreative()) return true;
+        for (Ingredient ing : r.ingredients) {
+            if (countPlayerResource(player, ing.mcItem) < ing.amount * qty) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static int countPlayerResource(PlayerEntity player, Item target) {
         if (player == null) return 0;
         int count = 0;
-
-        // Smart resource matching
         for (int i = 0; i < player.inventory.size(); i++) {
             ItemStack stack = player.inventory.getStack(i);
             if (stack.isEmpty()) continue;
 
             if (target == Items.OAK_PLANKS) {
-                // Any wood logs or planks count as wood in Rust
                 if (stack.getItem() == Items.OAK_PLANKS || stack.getItem() == Items.BIRCH_PLANKS ||
                     stack.getItem() == Items.SPRUCE_PLANKS || stack.getItem() == Items.OAK_LOG ||
                     stack.getItem() == Items.BIRCH_LOG || stack.getItem() == Items.SPRUCE_LOG) {
@@ -626,18 +649,18 @@ public class RustCraftingScreen extends Screen {
         return count;
     }
 
-    private void deductPlayerResource(PlayerEntity player, Item target, int needed) {
+    public static void deductPlayerResource(PlayerEntity player, Item target, int needed) {
         if (player == null || player.isCreative()) return;
         int remaining = needed;
-
         for (int i = 0; i < player.inventory.size() && remaining > 0; i++) {
             ItemStack stack = player.inventory.getStack(i);
             if (stack.isEmpty()) continue;
 
-            boolean match = false;
+            boolean match;
             if (target == Items.OAK_PLANKS) {
                 match = (stack.getItem() == Items.OAK_PLANKS || stack.getItem() == Items.BIRCH_PLANKS ||
-                         stack.getItem() == Items.SPRUCE_PLANKS || stack.getItem() == Items.OAK_LOG);
+                         stack.getItem() == Items.SPRUCE_PLANKS || stack.getItem() == Items.OAK_LOG ||
+                         stack.getItem() == Items.BIRCH_LOG || stack.getItem() == Items.SPRUCE_LOG);
             } else if (target == Items.COBBLESTONE) {
                 match = (stack.getItem() == Items.COBBLESTONE || stack.getItem() == Items.STONE);
             } else {
@@ -652,13 +675,12 @@ public class RustCraftingScreen extends Screen {
         }
     }
 
-    private List<String> wrapText(String text, int maxWidth) {
+    private List<String> wrapText(String text, float maxWidth, RustFontRenderer font) {
         List<String> lines = new ArrayList<>();
         String[] words = text.split(" ");
         StringBuilder cur = new StringBuilder();
-
         for (String w : words) {
-            if (this.textRenderer.getWidth(cur + " " + w) > maxWidth) {
+            if (font.getWidth(cur + " " + w) > maxWidth) {
                 lines.add(cur.toString());
                 cur = new StringBuilder(w);
             } else {
@@ -673,163 +695,102 @@ public class RustCraftingScreen extends Screen {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button != 0) return super.mouseClicked(mouseX, mouseY, button);
-
         int screenW = this.width;
         int screenH = this.height;
+        Layout L = computeLayout(screenW, screenH);
 
-        // Top Inventory button
-        int topTabW = 120;
-        int topTabH = 18;
-        int topTabX = (screenW - topTabW) / 2;
-        if (mouseX >= topTabX && mouseX <= topTabX + topTabW && mouseY >= 4 && mouseY <= 22) {
-            this.client.openScreen(new InventoryScreen(this.client.player));
+        // Top Switch Button -> Inventory
+        if (RustUiHelper.hitTestTopSwitchButton(mouseX, mouseY, screenW)) {
+            RustUiHelper.playClick(this.client);
+            this.client.openScreen(new RustInventoryScreen());
             return true;
         }
 
-        int winX = 24;
-        int winY = 24;
-        int winW = screenW - 48;
-        int winH = screenH - 80;
+        // Queue click -> cancel task
+        int qIdx = RustUiHelper.hitTestCraftingQueue(mouseX, mouseY, L.leftX, L.panelY + L.panelH);
+        if (qIdx >= 0 && qIdx < RustCraftingQueue.queue.size()) {
+            RustCraftingQueue.queue.remove(qIdx);
+            RustUiHelper.playClick(this.client);
+            return true;
+        }
 
-        int catColW = 92;
-        int catColX = winX;
-        int catColY = winY;
-
-        // 1. Check Category Click
-        int currentCatY = catColY + 8;
-        int catItemH = 16;
+        // Categories clicks
+        int catY = L.panelY;
         for (Category cat : Category.values()) {
-            if (mouseX >= catColX && mouseX <= catColX + catColW && mouseY >= currentCatY && mouseY <= currentCatY + catItemH) {
-                this.selectedCategory = cat;
+            if (RustUiHelper.inRect(mouseX, mouseY, L.catX, catY, L.catW, L.catRowH)) {
+                selectedCategory = cat;
                 List<Recipe> list = getFilteredRecipes();
-                if (!list.isEmpty()) {
-                    this.selectedRecipe = list.get(0);
-                    this.craftQuantity = 1;
-                }
-                this.client.player.playSound(SoundEvents.UI_BUTTON_CLICK, 0.4f, 1.0f);
+                selectedRecipe = list.isEmpty() ? null : list.get(0);
+                craftQuantity = 1;
+                RustUiHelper.playClick(this.client);
                 return true;
             }
-            currentCatY += catItemH + 2;
+            catY += L.catRowH;
         }
 
-        // 2. Check Middle Grid Click
-        int gridX = catColX + catColW + 1;
-        int gridW = (int) ((winW - catColW) * 0.44f);
-        int gridH = winH - 26;
-
+        // Blueprints clicks
         List<Recipe> recipes = getFilteredRecipes();
-        int slotSize = 34;
-        int slotPadding = 4;
-        int cols = Math.max(3, (gridW - 16) / (slotSize + slotPadding));
-        int startSlotX = gridX + 12;
-        int startSlotY = winY + 12;
-
+        int gridPadX = (L.gridW - (L.cols * L.slotSize + (L.cols - 1) * L.slotGap)) / 2;
+        int gridStartY = L.panelY + 4;
         for (int i = 0; i < recipes.size(); i++) {
-            int col = i % cols;
-            int row = i / cols;
-            int sx = startSlotX + col * (slotSize + slotPadding);
-            int sy = startSlotY + row * (slotSize + slotPadding);
+            Recipe r = recipes.get(i);
+            int col = i % L.cols;
+            int row = i / L.cols;
+            int sx = L.gridX + gridPadX + col * (L.slotSize + L.slotGap);
+            int sy = gridStartY + row * (L.slotSize + L.slotGap);
+            if (sy + L.slotSize > L.searchY - 3) break;
 
-            if (sy + slotSize > winY + gridH) break;
-
-            if (mouseX >= sx && mouseX <= sx + slotSize && mouseY >= sy && mouseY <= sy + slotSize) {
-                this.selectedRecipe = recipes.get(i);
-                this.craftQuantity = 1;
-                this.client.player.playSound(SoundEvents.UI_BUTTON_CLICK, 0.4f, 1.0f);
+            if (RustUiHelper.inRect(mouseX, mouseY, sx, sy, L.slotSize, L.slotSize)) {
+                selectedRecipe = r;
+                craftQuantity = 1;
+                isSearchFocused = false;
+                RustUiHelper.playClick(this.client);
                 return true;
             }
         }
 
-        // 3. Check Search Box Click
-        int searchBoxX = gridX + 12;
-        int searchBoxY = winY + winH - 22;
-        int searchBoxW = gridW - 24;
-        int searchBoxH = 16;
-        if (mouseX >= searchBoxX && mouseX <= searchBoxX + searchBoxW && mouseY >= searchBoxY && mouseY <= searchBoxY + searchBoxH) {
-            this.isSearchFocused = true;
-            return true;
-        } else {
-            this.isSearchFocused = false;
-        }
+        // Search Box
+        isSearchFocused = RustUiHelper.inRect(mouseX, mouseY, L.searchX, L.searchY, L.searchW, L.searchH);
+        if (isSearchFocused) return true;
 
-        // 4. Check Right Details Click
-        int detailX = gridX + gridW + 1;
-        int detailW = winW - catColW - gridW - 2;
-
-        if (selectedRecipe != null) {
-            // Favorite toggle
-            if (mouseX >= detailX + 16 && mouseX <= detailX + 120 && mouseY >= winY + 38 && mouseY <= winY + 54) {
+        // Right Panel Actions
+        if (selectedRecipe != null && this.client != null && this.client.player != null) {
+            if (RustUiHelper.inRect(mouseX, mouseY, L.favX, L.favY, L.favW, L.favH)) {
                 selectedRecipe.isFavorite = !selectedRecipe.isFavorite;
-                this.client.player.playSound(SoundEvents.UI_BUTTON_CLICK, 0.4f, 1.2f);
+                RustUiHelper.playClick(this.client);
                 return true;
             }
-
-            int actionY = winY + winH - 26;
-            int btnMinusX = detailX + 12;
-            int btnSize = 18;
-
-            // [-] button
-            if (mouseX >= btnMinusX && mouseX <= btnMinusX + btnSize && mouseY >= actionY && mouseY <= actionY + btnSize) {
+            if (RustUiHelper.inRect(mouseX, mouseY, L.btnSubX, L.actionY, L.btnSize, L.btnSize)) {
                 if (craftQuantity > 1) {
                     craftQuantity--;
-                    this.client.player.playSound(SoundEvents.UI_BUTTON_CLICK, 0.3f, 1.0f);
+                    RustUiHelper.playClick(this.client);
                 }
                 return true;
             }
-
-            // [+] button
-            int qtyBoxX = btnMinusX + btnSize + 4;
-            int qtyBoxW = 32;
-            int btnPlusX = qtyBoxX + qtyBoxW + 4;
-            if (mouseX >= btnPlusX && mouseX <= btnPlusX + btnSize && mouseY >= actionY && mouseY <= actionY + btnSize) {
+            if (RustUiHelper.inRect(mouseX, mouseY, L.btnAddX, L.actionY, L.btnSize, L.btnSize)) {
                 craftQuantity++;
-                this.client.player.playSound(SoundEvents.UI_BUTTON_CLICK, 0.3f, 1.0f);
+                RustUiHelper.playClick(this.client);
                 return true;
             }
-
-            // [>>] Max button
-            int btnMaxX = btnPlusX + btnSize + 4;
-            int btnMaxW = 22;
-            if (mouseX >= btnMaxX && mouseX <= btnMaxX + btnMaxW && mouseY >= actionY && mouseY <= actionY + btnSize) {
+            if (RustUiHelper.inRect(mouseX, mouseY, L.btnMaxX, L.actionY, L.btnMaxW, L.btnSize)) {
                 int maxCan = 99;
                 for (Ingredient ing : selectedRecipe.ingredients) {
                     int has = countPlayerResource(this.client.player, ing.mcItem);
                     maxCan = Math.min(maxCan, has / ing.amount);
                 }
                 craftQuantity = Math.max(1, maxCan);
-                this.client.player.playSound(SoundEvents.UI_BUTTON_CLICK, 0.4f, 1.1f);
+                RustUiHelper.playClick(this.client);
                 return true;
             }
-
-            // "СОЗДАТЬ" button
-            int btnCraftW = 86;
-            int btnCraftH = 22;
-            int btnCraftX = detailX + detailW - btnCraftW - 12;
-            int btnCraftY = actionY - 2;
-
-            if (mouseX >= btnCraftX && mouseX <= btnCraftX + btnCraftW && mouseY >= btnCraftY && mouseY <= btnCraftY + btnCraftH) {
-                // Check materials
-                boolean canCraft = true;
-                for (Ingredient ing : selectedRecipe.ingredients) {
-                    if (countPlayerResource(this.client.player, ing.mcItem) < ing.amount * craftQuantity) {
-                        canCraft = false;
-                        break;
-                    }
-                }
-
-                if (canCraft || this.client.player.isCreative()) {
-                    // Deduct resources
+            if (RustUiHelper.inRect(mouseX, mouseY, L.btnCraftX, L.btnCraftY, L.btnCraftW, L.btnCraftH)) {
+                if (canCraftRecipe(this.client.player, selectedRecipe, craftQuantity)) {
                     for (Ingredient ing : selectedRecipe.ingredients) {
                         deductPlayerResource(this.client.player, ing.mcItem, ing.amount * craftQuantity);
                     }
-
-                    // Add to Rust Crafting Queue
                     ItemStack res = selectedRecipe.resultStack.copy();
                     res.setCount(craftQuantity);
                     RustCraftingQueue.addTask(selectedRecipe.name, res, craftQuantity, selectedRecipe.craftSeconds);
-
-                    // Sound
-                    this.client.player.playSound(SoundEvents.UI_BUTTON_CLICK, 0.6f, 1.2f);
+                    RustUiHelper.playClick(this.client);
                 }
                 return true;
             }
@@ -840,7 +801,7 @@ public class RustCraftingScreen extends Screen {
 
     @Override
     public boolean charTyped(char chr, int keyCode) {
-        if (isSearchFocused) {
+        if (isSearchFocused && chr >= 32 && chr != 127) {
             searchQuery += chr;
             return true;
         }
@@ -860,8 +821,11 @@ public class RustCraftingScreen extends Screen {
             }
         }
 
-        // Q, E or ESC toggles the menu closed!
-        if (keyCode == GLFW.GLFW_KEY_Q || keyCode == GLFW.GLFW_KEY_E || keyCode == GLFW.GLFW_KEY_ESCAPE) {
+        if (keyCode == GLFW.GLFW_KEY_E) {
+            this.client.openScreen(new RustInventoryScreen());
+            return true;
+        }
+        if (keyCode == GLFW.GLFW_KEY_Q || keyCode == GLFW.GLFW_KEY_ESCAPE) {
             this.onClose();
             return true;
         }

@@ -204,7 +204,6 @@ body.no-anim * { transition: none !important; }
     letter-spacing: 0.6px;
 }
 .icon-btn:hover, .text-btn:hover { background: rgba(255,255,255,0.16); color: #fff; }
-.icon-btn.muted { opacity: 0.4; }
 
 .notify-dot {
     position: absolute;

@@ -253,8 +253,16 @@ class SpaceRustClientManager:
 
         return None
 
+    def _file_sha256(self, path):
+        import hashlib
+        h = hashlib.sha256()
+        with open(path, 'rb') as f:
+            for chunk in iter(lambda: f.read(65536), b''):
+                h.update(chunk)
+        return h.hexdigest()
+
     def sync_latest_mod(self):
-        """Always ensure the latest spacerust-mod-1.0.0.jar is installed in .spacerust/mods"""
+        """Always ensure the latest spacerust-mod-1.0.0.jar is installed in game_dir/mods"""
         if getattr(sys, 'frozen', False):
             base_dir = getattr(sys, '_MEIPASS', self.exe_dir)
         else:
@@ -270,14 +278,125 @@ class SpaceRustClientManager:
             os.path.join(self.exe_dir, 'spacerust-mod', 'build', 'libs', 'spacerust-mod-1.0.0.jar')
         ]
 
+        cfg = self._load_config()
+        target = os.path.join(dst_mods, 'spacerust-mod-1.0.0.jar')
+
         for mod_path in candidates:
             if os.path.isfile(mod_path):
-                target = os.path.join(dst_mods, 'spacerust-mod-1.0.0.jar')
                 try:
-                    shutil.copy2(mod_path, target)
-                    self.log(f"Synced latest SpaceRust mod: {target}")
+                    bundled_hash = self._file_sha256(mod_path)
+                    need_copy = (
+                        not os.path.isfile(target)
+                        or cfg.get('last_bundled_mod_hash') != bundled_hash
+                        or (not cfg.get('remote_mod_asset_id') and self._file_sha256(target) != bundled_hash)
+                    )
+                    if need_copy:
+                        shutil.copy2(mod_path, target)
+                        self._save_config({
+                            'last_bundled_mod_hash': bundled_hash,
+                            'remote_mod_asset_id': None,
+                            'remote_mod_updated_at': None,
+                        })
+                        self.log(f"Synced latest SpaceRust mod: {target}")
                 except Exception as e:
                     self.log(f"Could not sync mod: {e}")
+                break
+
+        self.sync_menu_videos(base_dir)
+        self.check_cloud_updates()
+
+    def check_cloud_updates(self):
+        """Check GitHub Releases (latest) for updated mod JAR or menu_videos.zip."""
+        import urllib.request
+        try:
+            api_url = "https://api.github.com/repos/DmutroKhludov/spacerust/releases/latest"
+            req = urllib.request.Request(api_url, headers={'User-Agent': 'SpaceRustLauncher/1.0'})
+            with urllib.request.urlopen(req, timeout=4) as resp:
+                release = json.loads(resp.read().decode('utf-8'))
+        except Exception:
+            return
+
+        cfg = self._load_config()
+        assets = {a.get('name'): a for a in release.get('assets', []) if isinstance(a, dict)}
+
+        # 1. Check updated mod jar asset
+        mod_asset = assets.get('spacerust-mod-1.0.0.jar')
+        if mod_asset:
+            asset_id = mod_asset.get('id')
+            updated_at = mod_asset.get('updated_at')
+            dl_url = mod_asset.get('browser_download_url')
+            if dl_url and (cfg.get('remote_mod_asset_id') != asset_id or cfg.get('remote_mod_updated_at') != updated_at):
+                try:
+                    target = os.path.join(self.game_dir, 'mods', 'spacerust-mod-1.0.0.jar')
+                    tmp_mod = target + '.tmp'
+                    req = urllib.request.Request(dl_url, headers={'User-Agent': 'SpaceRustLauncher/1.0'})
+                    with urllib.request.urlopen(req, timeout=20) as r, open(tmp_mod, 'wb') as out:
+                        shutil.copyfileobj(r, out)
+                    if os.path.isfile(tmp_mod) and os.path.getsize(tmp_mod) > 1024:
+                        shutil.move(tmp_mod, target)
+                        self._save_config({
+                            'remote_mod_asset_id': asset_id,
+                            'remote_mod_updated_at': updated_at,
+                        })
+                        self.log(f"Downloaded cloud mod update ({release.get('tag_name')}): {target}")
+                except Exception as e:
+                    self.log(f"Cloud mod update failed: {e}")
+
+        # 2. Check menu_videos.zip if local menu_videos is incomplete
+        vid_dir = os.path.join(self.game_dir, 'menu_videos')
+        has_mp4 = os.path.isdir(vid_dir) and any(f.lower().endswith('.mp4') for f in os.listdir(vid_dir))
+        has_ffmpeg = os.path.isfile(os.path.join(vid_dir, 'ffmpeg.exe'))
+        vid_asset = assets.get('menu_videos.zip')
+        if vid_asset and (not has_mp4 or not has_ffmpeg):
+            dl_url = vid_asset.get('browser_download_url')
+            if dl_url:
+                tmp_zip = os.path.join(self.game_dir, 'menu_videos.tmp.zip')
+                try:
+                    import zipfile
+                    req = urllib.request.Request(dl_url, headers={'User-Agent': 'SpaceRustLauncher/1.0'})
+                    with urllib.request.urlopen(req, timeout=120) as r, open(tmp_zip, 'wb') as out:
+                        shutil.copyfileobj(r, out)
+                    os.makedirs(vid_dir, exist_ok=True)
+                    with zipfile.ZipFile(tmp_zip, 'r') as zf:
+                        zf.extractall(vid_dir)
+                    self.log(f"Downloaded cloud menu_videos update to: {vid_dir}")
+                except Exception as e:
+                    self.log(f"Cloud menu_videos update failed: {e}")
+                finally:
+                    if os.path.isfile(tmp_zip):
+                        try:
+                            os.remove(tmp_zip)
+                        except Exception:
+                            pass
+
+    def sync_menu_videos(self, base_dir=None):
+        """Ensure menu_videos (MP4 clips + ffmpeg.exe) are available inside game_dir/menu_videos"""
+        if base_dir is None:
+            base_dir = getattr(sys, '_MEIPASS', self.exe_dir) if getattr(sys, 'frozen', False) else self.exe_dir
+
+        dst_videos = os.path.join(self.game_dir, 'menu_videos')
+        os.makedirs(dst_videos, exist_ok=True)
+
+        src_candidates = [
+            os.path.join(self.exe_dir, 'menu_videos'),
+            os.path.join(base_dir, 'menu_videos'),
+            os.path.join(self.exe_dir, 'data', 'menu_videos'),
+        ]
+
+        for src_dir in src_candidates:
+            if os.path.isdir(src_dir) and os.path.abspath(src_dir) != os.path.abspath(dst_videos):
+                try:
+                    for fname in os.listdir(src_dir):
+                        low = fname.lower()
+                        if not (low.endswith('.mp4') or low == 'ffmpeg.exe'):
+                            continue
+                        src_f = os.path.join(src_dir, fname)
+                        dst_f = os.path.join(dst_videos, fname)
+                        if os.path.isfile(src_f) and (not os.path.isfile(dst_f) or os.path.getsize(src_f) != os.path.getsize(dst_f)):
+                            shutil.copy2(src_f, dst_f)
+                    self.log(f"Synced menu_videos to: {dst_videos}")
+                except Exception as e:
+                    self.log(f"Could not sync menu_videos: {e}")
                 break
 
     def create_desktop_shortcut(self):

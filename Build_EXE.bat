@@ -7,6 +7,7 @@ echo   COMPILING STANDALONE SpaceRust.exe
 echo ========================================================
 
 echo [1/3] Building latest Fabric mod JAR...
+if not defined JAVA_HOME if exist "%USERPROFILE%\.gradle\jdks\temurin-17\bin\javac.exe" set "JAVA_HOME=%USERPROFILE%\.gradle\jdks\temurin-17"
 cd spacerust-mod
 call gradlew.bat build -x test
 cd ..

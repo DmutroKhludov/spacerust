@@ -4,7 +4,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const $ = (id) => document.getElementById(id);
     const api = () => (window.pywebview && window.pywebview.api) ? window.pywebview.api : null;
-    const sfx = (name) => { if (window.soundEngine && window.soundEngine[name]) window.soundEngine[name](); };
 
     // ==========================================
     // STATE (no default subscription; promo grants privileges)
@@ -23,8 +22,6 @@ document.addEventListener('DOMContentLoaded', () => {
         rank: localStorage.getItem('sr_rank') || 'ИГРОК',
         playtimeSeconds: parseInt(localStorage.getItem('sr_playtime_sec') || '0', 10),
         redeemedCodes: JSON.parse(localStorage.getItem('sr_redeemed_codes') || '[]'),
-        soundEnabled: localStorage.getItem('sr_sound_enabled') !== 'false',
-        soundVolume: parseFloat(localStorage.getItem('sr_sound_vol') || '0.6'),
         animations: localStorage.getItem('sr_anim') !== 'false',
         optGC: localStorage.getItem('sr_opt_gc') !== 'false',
         lang: localStorage.getItem('sr_lang') || 'ru',
@@ -48,11 +45,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return str;
     }
 
-    if (window.soundEngine) {
-        window.soundEngine.setEnabled(STATE.soundEnabled);
-        window.soundEngine.setVolume(STATE.soundVolume);
-    }
-
     // ==========================================
     // DOM
     // ==========================================
@@ -64,7 +56,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const rankEl = document.querySelector('.user-rank');
     const modalRankEl = $('modal-rank-badge');
     const dockNickEl = $('dock-nick-display');
-    const soundBtn = $('sound-toggle-btn');
 
     const btnPlay = $('btn-play');
     const btnPlayText = $('btn-play-text');
@@ -103,13 +94,11 @@ document.addEventListener('DOMContentLoaded', () => {
     tabButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             if (btn.classList.contains('active')) return;
-            sfx('playClick');
             switchTab(btn.dataset.tab);
         });
     });
 
     $('btn-notify')?.addEventListener('click', () => {
-        sfx('playClick');
         const dot = document.querySelector('.notify-dot');
         if (dot) dot.remove();
         switchTab('news');
@@ -173,7 +162,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function openAccountModal() {
-        sfx('playClick');
         updateProfileUI();
         accountModal.classList.add('show');
     }
@@ -223,7 +211,6 @@ document.addEventListener('DOMContentLoaded', () => {
         STATE.redeemedCodes.push(code);
         localStorage.setItem('sr_redeemed_codes', JSON.stringify(STATE.redeemedCodes));
         promoInput.value = '';
-        sfx('playSuccess');
         updateProfileUI();
         const label = t('promo.privLabel', { rank: rewardRank });
         showToast(t('promo.activated', { label }), 'success');
@@ -234,7 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // SETTINGS DRAWER
     // ==========================================
-    const openDrawer = () => { sfx('playClick'); drawer.classList.add('show'); drawerBackdrop.classList.add('show'); };
+    const openDrawer = () => { drawer.classList.add('show'); drawerBackdrop.classList.add('show'); };
     const closeDrawer = () => { drawer.classList.remove('show'); drawerBackdrop.classList.remove('show'); };
     $('btn-settings')?.addEventListener('click', openDrawer);
     $('settings-close')?.addEventListener('click', closeDrawer);
@@ -259,20 +246,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     renderRam();
-
-    const volSlider = $('settings-volume-slider');
-    const volLabel = $('settings-volume-label');
-    if (volSlider) {
-        volSlider.value = Math.round(STATE.soundVolume * 100);
-        volLabel.textContent = `${volSlider.value}%`;
-        volSlider.addEventListener('input', (e) => {
-            const v = parseInt(e.target.value, 10);
-            STATE.soundVolume = v / 100;
-            volLabel.textContent = `${v}%`;
-            localStorage.setItem('sr_sound_vol', STATE.soundVolume);
-            if (window.soundEngine) window.soundEngine.setVolume(STATE.soundVolume);
-        });
-    }
 
     const animToggle = $('setting-gpu-accel');
     const applyAnim = () => document.body.classList.toggle('no-anim', !STATE.animations);
@@ -319,7 +292,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const res = await a.set_game_dir(newPath);
         if (res && res.status === 'ok') {
             if (gamePathInput) gamePathInput.value = res.path;
-            sfx('playSuccess');
             showToast(t('settings.folderChanged', { path: res.path }), 'success');
         } else {
             showToast((res && res.message) || t('settings.folderChangeErr'), 'error');
@@ -335,7 +307,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     $('btn-browse-folder')?.addEventListener('click', async () => {
-        sfx('playClick');
         if (STATE.isLaunching) return showToast(t('settings.waitLaunch'), 'error');
         const a = api();
         if (!a || !a.browse_game_folder) {
@@ -344,7 +315,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const res = await a.browse_game_folder();
         if (res && res.status === 'ok') {
             if (gamePathInput) gamePathInput.value = res.path;
-            sfx('playSuccess');
             showToast(t('settings.folderChanged', { path: res.path }), 'success');
         } else if (res && res.status === 'error') {
             showToast(res.message || t('settings.folderBrowseErr'), 'error');
@@ -352,38 +322,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     $('btn-reset-folder')?.addEventListener('click', async () => {
-        sfx('playClick');
         if (STATE.isLaunching) return showToast(t('settings.waitLaunch'), 'error');
         const a = api();
         if (!a || !a.reset_game_dir) return;
         const res = await a.reset_game_dir();
         if (res && res.status === 'ok') {
             if (gamePathInput) gamePathInput.value = res.path;
-            sfx('playSuccess');
             showToast(t('settings.folderReset'), 'success');
         }
     });
 
     $('btn-open-folder')?.addEventListener('click', () => {
-        sfx('playClick');
         const a = api();
         if (a && a.open_game_folder) a.open_game_folder();
         else showToast(t('settings.clientFolder', { path: gamePathInput ? gamePathInput.value : '%APPDATA%\\.spacerust' }));
     });
-
-    if (soundBtn) {
-        soundBtn.classList.toggle('muted', !STATE.soundEnabled);
-        soundBtn.addEventListener('click', () => {
-            STATE.soundEnabled = !STATE.soundEnabled;
-            localStorage.setItem('sr_sound_enabled', STATE.soundEnabled);
-            if (window.soundEngine) {
-                window.soundEngine.setEnabled(STATE.soundEnabled);
-                if (STATE.soundEnabled) sfx('playClick');
-            }
-            soundBtn.classList.toggle('muted', !STATE.soundEnabled);
-            showToast(STATE.soundEnabled ? t('topbar.soundOn') : t('topbar.soundOff'));
-        });
-    }
 
     // ==========================================
     // WINDOW CONTROLS + NATIVE DRAG + RESIZE
@@ -420,7 +373,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(syncWindowState, 500);
 
     async function handleToggleMaximize() {
-        sfx('playClick');
         const a = api();
         if (a && a.toggle_maximize_window) {
             const res = await a.toggle_maximize_window();
@@ -511,7 +463,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btnPause?.addEventListener('click', async () => {
         if (!STATE.isLaunching || STATE.isPaused) return;
-        sfx('playClick');
         setPaused(true);
         const a = api();
         if (a && a.pause_download) await a.pause_download();
@@ -520,7 +471,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btnResume?.addEventListener('click', async () => {
         if (!STATE.isLaunching || !STATE.isPaused) return;
-        sfx('playClick');
         setPaused(false);
         const a = api();
         if (a && a.resume_download) await a.resume_download();
@@ -564,7 +514,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         STATE.isLaunching = true;
-        sfx('playLaunch');
         btnPlay.classList.add('loading-state');
         loadLine.classList.remove('done', 'paused');
         btnPause.disabled = false;
@@ -596,7 +545,6 @@ document.addEventListener('DOMContentLoaded', () => {
             btnPlayText.textContent = t('play.stageRunning');
             btnPause.disabled = true;
             btnResume.disabled = true;
-            sfx('playSuccess');
             showToast(t('play.toastLaunched'), 'success');
             finishLaunch(4000);
         } catch (err) {
@@ -610,13 +558,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     btnPlay?.addEventListener('click', handleLaunchGame);
-
-    // ==========================================
-    // AUDIO HOVER
-    // ==========================================
-    document.querySelectorAll('button, .account-card, .patch-card').forEach(el => {
-        el.addEventListener('mouseenter', () => sfx('playHover'));
-    });
 
     // ==========================================
     // TOASTS
@@ -689,7 +630,6 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', () => {
             const nextLang = btn.dataset.lang;
             if (!nextLang || nextLang === STATE.lang) return;
-            sfx('playClick');
             applyLanguage(nextLang, true);
         });
     });

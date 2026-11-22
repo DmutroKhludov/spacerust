@@ -4,8 +4,12 @@
   "package": "net.spacerust.client.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
+    "AbstractClientPlayerEntityMixin",
     "InGameHudMixin",
+    "InventoryScreenMixin",
     "KeyboardMixin",
+    "MultiplayerScreenMixin",
+    "PlayerListEntryMixin",
     "TitleScreenMixin",
     "WindowMixin"
   ],

@@ -56,7 +56,7 @@ def main():
     data_dst = os.path.join(dist_dir, "data")
     os.makedirs(data_dst, exist_ok=True)
 
-    items_to_copy = ["assets", "libraries", "versions", "mods", "options.txt"]
+    items_to_copy = ["assets", "libraries", "versions", "mods", "menu_videos", "options.txt"]
     for item in items_to_copy:
         src_path = os.path.join(appdata_spacerust, item)
         dst_path = os.path.join(data_dst, item)
@@ -78,8 +78,8 @@ def main():
             "ПРИМЕЧАНИЯ:\n"
             "• При первом запуске клиент распакует файлы игры (~10-15 сек).\n"
             "• Java и все необходимые моды уже встроены в эту папку.\n"
-            "• Для игры по сети используйте кнопку [ ПОДКЛЮЧЕНИЕ ПО IP ]\n"
-            "  в главном меню игры и введите IP адрес сервера хоста.\n"
+            "• Для игры с друзьями подключитесь к сети Radmin VPN хоста\n"
+            "  и нажмите «ИГРАТЬ» на сервере SpaceRust в главном меню.\n"
         )
     log("Created instruction file: ИНСТРУКЦИЯ.txt")
 

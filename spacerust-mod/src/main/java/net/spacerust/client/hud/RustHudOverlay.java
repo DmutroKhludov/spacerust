@@ -2,9 +2,10 @@ package net.spacerust.client.hud;
 
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawableHelper;
 import net.minecraft.client.util.math.MatrixStack;
+import net.spacerust.client.gui.RustFontRenderer;
+import net.spacerust.client.gui.RustUiHelper;
 
 public class RustHudOverlay implements HudRenderCallback {
     // Rust metabolism stats (can be updated from packets or player status)
@@ -22,73 +23,33 @@ public class RustHudOverlay implements HudRenderCallback {
         if (client == null || client.player == null || client.options.hudHidden) {
             return;
         }
+        // Avoid drawing HUD bars twice when Rust inventory/crafting screen already renders them
+        if (client.currentScreen != null) {
+            return;
+        }
 
-        // Sync health with player health if alive
-        health = client.player.getHealth() * 5.0f; // Scale 20 vanilla hearts -> 100 Rust HP
-        int hunger = client.player.getHungerManager().getFoodLevel() * 25; // Scale 20 -> 500 Rust calories
-        calories = hunger;
+        RustFontRenderer.ensureLoaded();
+        health = client.player.getHealth() * 5.0f;
+        calories = client.player.getHungerManager().getFoodLevel() * 25;
 
         int screenWidth = client.getWindow().getScaledWidth();
         int screenHeight = client.getWindow().getScaledHeight();
-        TextRenderer textRenderer = client.textRenderer;
 
-        // Position: Bottom Right corner (Rust standard)
-        int hudWidth = 140;
-        int barHeight = 9;
-        int startX = screenWidth - hudWidth - 14;
-        int startY = screenHeight - 65;
+        // Draw CoilRust / Rust bottom-right metabolism bars (HP, Water, Food sprites)
+        RustUiHelper.drawMetabolismBars(matrices, client, screenWidth, screenHeight);
 
-        // 1. HEALTH BAR (Green, turns Red when critical <= 25)
-        int hpColor = health <= 25 ? 0xFFE53935 : 0xFF4CAF50;
-        drawRustBar(matrices, textRenderer, startX, startY, hudWidth, barHeight,
-                "+  HP", (int) health, maxHealth, hpColor);
+        // Optional status chips above bars
+        int statusX = screenWidth - 114;
+        int statusY = screenHeight - 68;
+        RustFontRenderer sf = RustFontRenderer.boldSmall();
 
-        // 2. HUNGER / CALORIES BAR (Orange)
-        drawRustBar(matrices, textRenderer, startX, startY + 14, hudWidth, barHeight,
-                "ЕДА", calories, 500, 0xFFFF9800);
-
-        // 3. HYDRATION / WATER BAR (Cyan / Blue)
-        drawRustBar(matrices, textRenderer, startX, startY + 28, hudWidth, barHeight,
-                "ВОДА", hydration, 250, 0xFF00BCD4);
-
-        // 4. STATUS INDICATORS (Comfort / Radiation / Bleeding)
-        int statusY = startY + 44;
         if (radiation > 0) {
-            String radText = "РАД " + radiation;
-            DrawableHelper.fill(matrices, startX, statusY, startX + 50, statusY + 12, 0xCCF44336);
-            textRenderer.drawWithShadow(matrices, radText, startX + 4, statusY + 2, 0xFFFFFFFF);
-        } else {
-            String comfortText = comfort + "% КОМФОРТ";
-            textRenderer.drawWithShadow(matrices, comfortText, startX, statusY + 2, 0xAAFFFFFF);
+            DrawableHelper.fill(matrices, statusX, statusY, statusX + 52, statusY + 11, 0xE6C73E2B);
+            sf.drawCenteredY(matrices, "РАД " + radiation, statusX + 4, statusY, 11, 0xFFFFFFFF);
         }
-
         if (isBleeding) {
-            String bleedText = "! КРОВОТЕЧЕНИЕ";
-            DrawableHelper.fill(matrices, startX + 60, statusY, startX + 138, statusY + 12, 0xEEE53935);
-            textRenderer.drawWithShadow(matrices, bleedText, startX + 64, statusY + 2, 0xFFFFFFFF);
+            DrawableHelper.fill(matrices, statusX + 54, statusY, statusX + 104, statusY + 11, 0xE6C73E2B);
+            sf.drawCenteredY(matrices, "КРОВОТОК", statusX + 57, statusY, 11, 0xFFFFFFFF);
         }
-    }
-
-    private void drawRustBar(MatrixStack matrices, TextRenderer textRenderer, int x, int y,
-                            int width, int height, String label, int current, int max,
-                            int fillColor) {
-        // Dark background plate with subtle border
-        DrawableHelper.fill(matrices, x - 1, y - 1, x + width + 1, y + height + 1, 0xAA0A0D12);
-        DrawableHelper.fill(matrices, x, y, x + width, y + height, 0xCC151922);
-
-        // Fill bar based on percentage
-        float ratio = Math.max(0.0f, Math.min(1.0f, (float) current / (float) max));
-        int fillWidth = (int) (width * ratio);
-        if (fillWidth > 0) {
-            DrawableHelper.fill(matrices, x, y, x + fillWidth, y + height, fillColor);
-        }
-
-        // Left Label: e.g. "+ HP", "ЕДА", "ВОДА"
-        textRenderer.drawWithShadow(matrices, label, x + 3, y + (height - 8) / 2, 0xFFFFFFFF);
-
-        // Right Value: e.g. "100", "500", "250"
-        String valStr = String.valueOf(current);
-        int valW = textRenderer.getWidth(valStr);
-        textRenderer.drawWithShadow(matrices, valStr, x + width - valW - 3, y + (height - 8) / 2, 0xFFFFFFFF);
     }
 }
