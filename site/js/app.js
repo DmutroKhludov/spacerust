@@ -363,21 +363,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function configureDownloadLink() {
         if (!dlDirectLink) return;
+        const host = window.location.hostname;
+        const isLocal = window.location.protocol === 'file:' || host === '127.0.0.1' || host === 'localhost';
+
         if (window.location.protocol === 'file:') {
             dlDirectLink.href = '../SpaceRust.exe';
             dlDirectLink.setAttribute('download', 'SpaceRust.exe');
             return;
         }
 
-        try {
-            const resp = await fetch('../SpaceRust.exe', { method: 'HEAD' });
-            if (resp.ok) {
-                dlDirectLink.href = '../SpaceRust.exe';
-                dlDirectLink.setAttribute('download', 'SpaceRust.exe');
-                return;
+        if (isLocal) {
+            try {
+                const resp = await fetch('../SpaceRust.exe', { method: 'HEAD' });
+                if (resp.ok) {
+                    dlDirectLink.href = '../SpaceRust.exe';
+                    dlDirectLink.setAttribute('download', 'SpaceRust.exe');
+                    return;
+                }
+            } catch {
+                // Fall back to GitHub Releases when SpaceRust.exe is not hosted alongside /site
             }
-        } catch {
-            // Fall back to GitHub Releases when SpaceRust.exe is not hosted alongside /site
         }
 
         dlDirectLink.href = GITHUB_EXE_URL;
