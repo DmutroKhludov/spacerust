@@ -8,6 +8,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.screen.PlayerScreenHandler;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.text.LiteralText;
+import net.minecraft.util.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -24,11 +25,17 @@ import java.util.List;
  */
 public class RustInventoryScreen extends Screen {
 
-    // PlayerScreenHandler slot indices: Helmet, Chest, Legs, Boots, Offhand
-    private static final int[] EQUIP_SLOTS = {5, 6, 7, 8, 45};
+    // Armor layer: Helmet (5), Chest (6), Legs (7), Boots (8), Hands/Shield (45)
+    public static final int[] ARMOR_SLOTS = {5, 6, 7, 8, 45};
+    public static final String[] ARMOR_LABELS = {"ШЛЕМ", "ГРУДЬ", "НОГИ", "ОБУВЬ", "РУКИ"};
+
+    // Clothing layer: Head (33), Torso (34), Pants (35), Gloves (42), Boots/Feet (43)
+    public static final int[] CLOTHING_SLOTS = {33, 34, 35, 42, 43};
+    public static final String[] CLOTHING_LABELS = {"ГОЛОВА", "ТОРС", "ШТАНЫ", "ПЕРЧАТКИ", "ОБУВЬ"};
 
     private int selectedHandlerSlot = -1;
     private int hoveredHandlerSlot = -1;
+    private String hoveredEquipTip = null;
 
     public RustInventoryScreen() {
         super(new LiteralText("Rust Inventory"));
@@ -94,35 +101,38 @@ public class RustInventoryScreen extends Screen {
 
     private Layout computeLayout(int screenW, int screenH) {
         Layout L = new Layout();
-        L.containerW = Math.min(screenW - 20, 700);
-        L.containerX = (screenW - L.containerW) / 2;
-
-        L.col1W = Math.max(130, Math.min(185, (int) (L.containerW * 0.28f)));
-        L.col1X = L.containerX;
-
-        L.slotGap = 3;
-        int availGridH = screenH - RustUiHelper.HOTBAR_SLOT_SIZE - 24 - 70;
-        L.slotSize = Math.max(24, Math.min(34, (availGridH - 4 * L.slotGap) / 5));
+        L.slotGap = 4;
+        L.slotSize = 48; // 48px slot size for 24-slot inventory (matches the 48px hotbar!)
+        int availGridH = screenH - RustUiHelper.HOTBAR_SLOT_SIZE - 20 - 70;
+        if ((availGridH - 3 * L.slotGap) / 4 < L.slotSize) {
+            L.slotSize = Math.max(36, (availGridH - 3 * L.slotGap) / 4);
+        }
         L.gridW = 6 * L.slotSize + 5 * L.slotGap;
-        L.gridStartX = L.col1X + L.col1W + 16;
+        // Center the 24-slot main grid directly aligned with the 6-slot hotbar
+        L.gridStartX = (screenW - L.gridW) / 2;
 
         // Anchor bottom of Inventory cleanly above the 6-slot Belt/Hotbar
-        L.invBottomY = screenH - RustUiHelper.HOTBAR_SLOT_SIZE - 16;
-        int gridTotalH = 5 * L.slotSize + 4 * L.slotGap;
+        L.invBottomY = screenH - RustUiHelper.HOTBAR_SLOT_SIZE - 20;
+        int gridTotalH = 4 * L.slotSize + 3 * L.slotGap;
         L.gridStartY = L.invBottomY - gridTotalH;
-        L.invSectionTopY = L.gridStartY - 16;
+        L.invSectionTopY = L.gridStartY - 18;
 
-        // Armor/Clothing 5 slots aligned cleanly at bottom of Column 1
-        L.eqSlotSize = Math.max(24, Math.min(34, (L.col1W - 16) / 5));
+        // Column 1 (Left): Player Name, Stats, 3D Model, Armor & Clothing
+        int spacing = 16;
+        L.col1W = Math.max(160, Math.min(220, L.gridStartX - spacing - 10));
+        L.col1X = Math.max(10, L.gridStartX - spacing - L.col1W);
+
+        // Armor & Clothing 5 slots aligned in Column 1
+        L.eqSlotSize = Math.max(26, Math.min(36, (L.col1W - 16) / 5));
         L.eqGap = 2;
-        int eqTotalW = EQUIP_SLOTS.length * L.eqSlotSize + (EQUIP_SLOTS.length - 1) * L.eqGap;
+        int eqTotalW = 5 * L.eqSlotSize + 4 * L.eqGap;
         L.eqStartX = L.col1X + (L.col1W - eqTotalW) / 2;
         L.eqY = L.invBottomY - L.eqSlotSize;
 
         // Selected Item window directly above ИНВЕНТАРЬ header
         L.selW = L.gridW;
         L.selX = L.gridStartX;
-        L.selH = Math.min(90, Math.max(68, L.invSectionTopY - 34));
+        L.selH = Math.min(84, Math.max(64, L.invSectionTopY - 34));
         L.selY = L.invSectionTopY - L.selH - 6;
         L.closeSelSize = 13;
         L.closeSelX = L.selX + L.selW - L.closeSelSize - 2;
@@ -138,16 +148,16 @@ public class RustInventoryScreen extends Screen {
         L.splitX = L.dropX - L.splitW - 5;
         L.splitY = L.dropY;
 
-        // Right Column: Quick Craft (bottom-aligned above enlarged metabolism HUD bars)
-        L.qcX = L.gridStartX + L.gridW + 16;
-        L.qcW = Math.max(100, (L.containerX + L.containerW) - L.qcX);
-        L.qcSlot = Math.max(26, Math.min(32, L.slotSize));
+        // Right Column: Quick Craft
+        L.qcX = L.gridStartX + L.gridW + spacing;
+        L.qcW = Math.max(100, Math.min(220, screenW - 10 - L.qcX));
+        L.qcSlot = Math.max(28, Math.min(36, L.slotSize - 8));
         L.qcGap = 2;
         L.qcCols = Math.max(3, Math.min(5, (L.qcW + L.qcGap) / (L.qcSlot + L.qcGap)));
         L.qcGridW = L.qcCols * L.qcSlot + (L.qcCols - 1) * L.qcGap;
         L.qcStartX = L.qcX;
-        L.qcBottomY = screenH - 96;
-        int qcRowsVisible = Math.max(3, Math.min(5, (L.qcBottomY - 46) / (L.qcSlot + L.qcGap)));
+        L.qcBottomY = L.invBottomY;
+        int qcRowsVisible = Math.max(3, Math.min(6, (L.qcBottomY - 46) / (L.qcSlot + L.qcGap)));
         int qcGridH = qcRowsVisible * L.qcSlot + (qcRowsVisible - 1) * L.qcGap;
         L.qcStartY = L.qcBottomY - qcGridH;
         L.qcHeaderY = L.qcStartY - 16;
@@ -179,29 +189,15 @@ public class RustInventoryScreen extends Screen {
         RustUiHelper.drawTopSwitchButton(matrices, this.client, mouseX, mouseY, screenW, false);
 
         // ======================================================
-        // 1. LEFT COLUMN: PLAYER NAME, STAT_WASH, 3D MODEL, WEAR
+        // 1. LEFT COLUMN: PLAYER NAME, STAT_WASH, 3D MODEL, ARMOR & CLOTHING
         // ======================================================
         String playerName = this.client.player.getName().getString().toUpperCase();
         float nameW = bf.getWidth(playerName);
         bf.draw(matrices, playerName, L.col1X + (L.col1W - nameW) / 2f, 34, RustUiHelper.COLOR_TEXT_CREAM);
 
-        // 3D Player Entity Preview (no heavy box border, subtle floor wash)
-        int previewCenterX = L.col1X + L.col1W / 2;
-        int previewBottomY = L.eqY - 14;
-        int previewAvailH = Math.max(60, previewBottomY - 50);
-        int entityScale = Math.max(24, Math.min(44, (int) (previewAvailH * 0.42f)));
-        InventoryScreen.drawEntity(
-                previewCenterX,
-                previewBottomY,
-                entityScale,
-                (float) (previewCenterX - mouseX),
-                (float) (previewBottomY - entityScale * 1.6f - mouseY),
-                this.client.player
-        );
-
-        // Armor Protection stat_wash row (matching inventory_source.json statRows)
+        // Armor Protection stat_wash row
         int armorPts = this.client.player.getArmor();
-        int statY = 52;
+        int statY = 50;
         int statW = 54;
         int statH = 14;
         int statX = L.col1X + 4;
@@ -212,33 +208,99 @@ public class RustInventoryScreen extends Screen {
         bfSmall.drawCenteredY(matrices, armorPts > 0 ? (armorPts * 5 + "%") : "0",
                 statX + 14, statY, statH, armorPts > 0 ? RustUiHelper.COLOR_TEXT_CREAM : 0x55F7EBE1);
 
-        // 5 Wear / Clothing Slots
-        for (int i = 0; i < EQUIP_SLOTS.length; i++) {
-            int slotId = EQUIP_SLOTS[i];
-            int sx = L.eqStartX + i * (L.eqSlotSize + L.eqGap);
-            boolean hov = RustUiHelper.inRect(mouseX, mouseY, sx, L.eqY, L.eqSlotSize, L.eqSlotSize);
-            if (hov) hoveredHandlerSlot = slotId;
+        // Layer 2: ОДЕЖДА (Clothing: 5 slots)
+        int clothingSlotY = L.eqY;
+        int clothingHeaderY = clothingSlotY - 14;
+
+        // Layer 1: БРОНЯ (Armor: 5 slots)
+        int armorSlotY = clothingHeaderY - L.eqSlotSize - 4;
+        int armorHeaderY = armorSlotY - 14;
+
+        // 3D Player Entity Preview (positioned above the armor layer)
+        int previewCenterX = L.col1X + L.col1W / 2;
+        int previewBottomY = armorHeaderY - 8;
+        int previewAvailH = Math.max(50, previewBottomY - 50);
+        int entityScale = Math.max(22, Math.min(40, (int) (previewAvailH * 0.42f)));
+        InventoryScreen.drawEntity(
+                previewCenterX,
+                previewBottomY,
+                entityScale,
+                (float) (previewCenterX - mouseX),
+                (float) (previewBottomY - entityScale * 1.6f - mouseY),
+                this.client.player
+        );
+
+        int totalEqW = 5 * L.eqSlotSize + 4 * L.eqGap;
+        int eqStartX = L.col1X + (L.col1W - totalEqW) / 2;
+        hoveredEquipTip = null;
+
+        // 1. БРОНЯ
+        DrawableHelper.fill(matrices, eqStartX, armorHeaderY, eqStartX + totalEqW, armorHeaderY + 12, RustUiHelper.COLOR_HEADER);
+        bfSmall.drawCenteredY(matrices, "БРОНЯ", eqStartX + 4, armorHeaderY, 12, RustUiHelper.COLOR_TEXT_CREAM);
+
+        for (int i = 0; i < ARMOR_SLOTS.length; i++) {
+            int slotId = ARMOR_SLOTS[i];
+            int sx = eqStartX + i * (L.eqSlotSize + L.eqGap);
+            boolean hov = RustUiHelper.inRect(mouseX, mouseY, sx, armorSlotY, L.eqSlotSize, L.eqSlotSize);
+            if (hov) {
+                hoveredHandlerSlot = slotId;
+                hoveredEquipTip = "Броня: " + ARMOR_LABELS[i];
+            }
 
             ItemStack stack = handler.getSlot(slotId).getStack();
             boolean sel = (selectedHandlerSlot == slotId);
             int bg = sel ? RustUiHelper.COLOR_SELECTED_BLUE
                     : (hov ? RustUiHelper.COLOR_SLOT_HOVER
                     : (stack.isEmpty() ? RustUiHelper.COLOR_SLOT_EMPTY : RustUiHelper.COLOR_SLOT_OCCUPIED));
-            DrawableHelper.fill(matrices, sx, L.eqY, sx + L.eqSlotSize, L.eqY + L.eqSlotSize, bg);
+            DrawableHelper.fill(matrices, sx, armorSlotY, sx + L.eqSlotSize, armorSlotY + L.eqSlotSize, bg);
+            RustUiHelper.drawBorder(matrices, sx, armorSlotY, L.eqSlotSize, L.eqSlotSize, sel ? 0xFFF7EBE1 : (hov ? 0x55F7EBE1 : 0x24F7EBE1));
 
             if (stack.isEmpty()) {
-                RustUiHelper.drawSprite(matrices, this.client,
-                        i == 4 ? RustUiHelper.TEX_SHIELD : RustUiHelper.TEX_ARMOR,
-                        sx + (L.eqSlotSize - 10) / 2, L.eqY + (L.eqSlotSize - 10) / 2, 10, 10, 0x2AF7EBE1);
+                Identifier icon = (i == 4) ? RustUiHelper.TEX_SHIELD : RustUiHelper.TEX_ARMOR;
+                RustUiHelper.drawSprite(matrices, this.client, icon,
+                        sx + (L.eqSlotSize - 12) / 2, armorSlotY + (L.eqSlotSize - 12) / 2, 12, 12, 0x33F7EBE1);
+                sf.drawCenteredY(matrices, ARMOR_LABELS[i].substring(0, 1), sx + 3, armorSlotY + 1, 8, 0x44F7EBE1);
             } else {
                 int itemOff = (L.eqSlotSize - 16) / 2;
-                this.itemRenderer.renderInGuiWithOverrides(stack, sx + itemOff, L.eqY + itemOff);
-                this.itemRenderer.renderGuiItemOverlay(this.client.textRenderer, stack, sx + itemOff, L.eqY + itemOff);
+                this.itemRenderer.renderInGuiWithOverrides(stack, sx + itemOff, armorSlotY + itemOff);
+                this.itemRenderer.renderGuiItemOverlay(this.client.textRenderer, stack, sx + itemOff, armorSlotY + itemOff);
+            }
+        }
+
+        // 2. ОДЕЖДА
+        DrawableHelper.fill(matrices, eqStartX, clothingHeaderY, eqStartX + totalEqW, clothingHeaderY + 12, RustUiHelper.COLOR_HEADER);
+        bfSmall.drawCenteredY(matrices, "ОДЕЖДА", eqStartX + 4, clothingHeaderY, 12, RustUiHelper.COLOR_TEXT_CREAM);
+
+        for (int i = 0; i < CLOTHING_SLOTS.length; i++) {
+            int slotId = CLOTHING_SLOTS[i];
+            int sx = eqStartX + i * (L.eqSlotSize + L.eqGap);
+            boolean hov = RustUiHelper.inRect(mouseX, mouseY, sx, clothingSlotY, L.eqSlotSize, L.eqSlotSize);
+            if (hov) {
+                hoveredHandlerSlot = slotId;
+                hoveredEquipTip = "Одежда: " + CLOTHING_LABELS[i];
+            }
+
+            ItemStack stack = handler.getSlot(slotId).getStack();
+            boolean sel = (selectedHandlerSlot == slotId);
+            int bg = sel ? RustUiHelper.COLOR_SELECTED_BLUE
+                    : (hov ? RustUiHelper.COLOR_SLOT_HOVER
+                    : (stack.isEmpty() ? RustUiHelper.COLOR_SLOT_EMPTY : RustUiHelper.COLOR_SLOT_OCCUPIED));
+            DrawableHelper.fill(matrices, sx, clothingSlotY, sx + L.eqSlotSize, clothingSlotY + L.eqSlotSize, bg);
+            RustUiHelper.drawBorder(matrices, sx, clothingSlotY, L.eqSlotSize, L.eqSlotSize, sel ? 0xFFF7EBE1 : (hov ? 0x55F7EBE1 : 0x24F7EBE1));
+
+            if (stack.isEmpty()) {
+                RustUiHelper.drawSprite(matrices, this.client, RustUiHelper.TEX_ARMOR,
+                        sx + (L.eqSlotSize - 12) / 2, clothingSlotY + (L.eqSlotSize - 12) / 2, 12, 12, 0x22F7EBE1);
+                sf.drawCenteredY(matrices, CLOTHING_LABELS[i].substring(0, 1), sx + 3, clothingSlotY + 1, 8, 0x33F7EBE1);
+            } else {
+                int itemOff = (L.eqSlotSize - 16) / 2;
+                this.itemRenderer.renderInGuiWithOverrides(stack, sx + itemOff, clothingSlotY + itemOff);
+                this.itemRenderer.renderGuiItemOverlay(this.client.textRenderer, stack, sx + itemOff, clothingSlotY + itemOff);
             }
         }
 
         // ======================================================
-        // 2. CENTER COLUMN: SELECTED ITEM PANEL + 9x3 INVENTORY
+        // 2. CENTER COLUMN: SELECTED ITEM PANEL + 24 INVENTORY
         // ======================================================
         if (selectedHandlerSlot >= 0) {
             ItemStack selStack = handler.getSlot(selectedHandlerSlot).getStack();
@@ -249,14 +311,14 @@ public class RustInventoryScreen extends Screen {
             }
         }
 
-        // Header bar "ИНВЕНТАРЬ"
+        // Header bar "ИНВЕНТАРЬ (24)"
         DrawableHelper.fill(matrices, L.gridStartX, L.invSectionTopY, L.gridStartX + L.gridW, L.invSectionTopY + 14, RustUiHelper.COLOR_HEADER);
-        bfSmall.drawCenteredY(matrices, "ИНВЕНТАРЬ", L.gridStartX + 6, L.invSectionTopY, 14, RustUiHelper.COLOR_TEXT_CREAM);
+        bfSmall.drawCenteredY(matrices, "ИНВЕНТАРЬ (24)", L.gridStartX + 6, L.invSectionTopY, 14, RustUiHelper.COLOR_TEXT_CREAM);
 
-        // 6 x 5 Inventory grid (30 slots: 9..35 and 42..44)
-        for (int row = 0; row < 5; row++) {
+        // 6 x 4 Inventory grid (24 slots: 9..32)
+        for (int row = 0; row < 4; row++) {
             for (int col = 0; col < 6; col++) {
-                int slotId = RustUiHelper.getStorageHandlerSlot(row, col);
+                int slotId = 9 + row * 6 + col;
                 int sx = L.gridStartX + col * (L.slotSize + L.slotGap);
                 int sy = L.gridStartY + row * (L.slotSize + L.slotGap);
 
@@ -280,6 +342,29 @@ public class RustInventoryScreen extends Screen {
                     int itemOff = (L.slotSize - 16) / 2;
                     this.itemRenderer.renderInGuiWithOverrides(stack, sx + itemOff, sy + itemOff);
                     this.itemRenderer.renderGuiItemOverlay(this.client.textRenderer, stack, sx + itemOff, sy + itemOff);
+
+                    // Vertical durability bar on left edge
+                    if (stack.isDamageable()) {
+                        int maxDmg = stack.getMaxDamage();
+                        int dmg = stack.getDamage();
+                        float ratio = Math.max(0.0f, Math.min(1.0f, (maxDmg - dmg) / (float) maxDmg));
+                        int barX = sx + 2;
+                        int barY = sy + 2;
+                        int barW = 3;
+                        int barH = L.slotSize - 4;
+                        DrawableHelper.fill(matrices, barX, barY, barX + barW, barY + barH, 0x99181614);
+                        int filledH = Math.round(barH * ratio);
+                        if (filledH > 0) {
+                            int durColor = (ratio > 0.5f) ? 0xFF8DC63F : ((ratio > 0.2f) ? 0xFFE5A823 : 0xFFD3362D);
+                            DrawableHelper.fill(matrices, barX, barY + (barH - filledH), barX + barW, barY + barH, durColor);
+                        }
+                    }
+
+                    if (stack.getCount() > 1) {
+                        String countStr = "x" + stack.getCount();
+                        float tw = bfSmall.getWidth(countStr);
+                        bfSmall.draw(matrices, countStr, sx + L.slotSize - tw - 3, sy + L.slotSize - 11, 0xFFF7EBE1);
+                    }
                 }
             }
         }
@@ -338,6 +423,12 @@ public class RustInventoryScreen extends Screen {
             ItemStack hs = handler.getSlot(hoveredHandlerSlot).getStack();
             if (!hs.isEmpty()) {
                 this.renderTooltip(matrices, hs, mouseX, mouseY);
+            } else if (hoveredEquipTip != null) {
+                int tw = Math.round(sf.getWidth(hoveredEquipTip)) + 12;
+                int tx = Math.min(screenW - tw - 6, mouseX + 8);
+                int ty = Math.max(6, mouseY - 16);
+                DrawableHelper.fill(matrices, tx, ty, tx + tw, ty + 14, RustUiHelper.COLOR_SLOT_OCCUPIED);
+                sf.drawCenteredY(matrices, hoveredEquipTip, tx + 6, ty, 14, RustUiHelper.COLOR_TEXT_CREAM);
             }
         }
 
@@ -449,19 +540,33 @@ public class RustInventoryScreen extends Screen {
             }
         }
 
-        // 1. Armor / Offhand slot clicks
-        for (int i = 0; i < EQUIP_SLOTS.length; i++) {
-            int sx = L.eqStartX + i * (L.eqSlotSize + L.eqGap);
-            if (RustUiHelper.inRect(mouseX, mouseY, sx, L.eqY, L.eqSlotSize, L.eqSlotSize)) {
-                handleSlotClick(handler, EQUIP_SLOTS[i], button);
+        // 1. Armor & Clothing slot clicks
+        int clothingSlotY = L.eqY;
+        int clothingHeaderY = clothingSlotY - 14;
+        int armorSlotY = clothingHeaderY - L.eqSlotSize - 4;
+        int totalEqW = 5 * L.eqSlotSize + 4 * L.eqGap;
+        int eqStartX = L.col1X + (L.col1W - totalEqW) / 2;
+
+        for (int i = 0; i < ARMOR_SLOTS.length; i++) {
+            int sx = eqStartX + i * (L.eqSlotSize + L.eqGap);
+            if (RustUiHelper.inRect(mouseX, mouseY, sx, armorSlotY, L.eqSlotSize, L.eqSlotSize)) {
+                handleSlotClick(handler, ARMOR_SLOTS[i], button);
                 return true;
             }
         }
 
-        // 2. Main 6x5 Inventory clicks (slots 9..35 and 42..44)
-        for (int row = 0; row < 5; row++) {
+        for (int i = 0; i < CLOTHING_SLOTS.length; i++) {
+            int sx = eqStartX + i * (L.eqSlotSize + L.eqGap);
+            if (RustUiHelper.inRect(mouseX, mouseY, sx, clothingSlotY, L.eqSlotSize, L.eqSlotSize)) {
+                handleSlotClick(handler, CLOTHING_SLOTS[i], button);
+                return true;
+            }
+        }
+
+        // 2. Main 6x4 Inventory clicks (24 slots: 9..32)
+        for (int row = 0; row < 4; row++) {
             for (int col = 0; col < 6; col++) {
-                int slotId = RustUiHelper.getStorageHandlerSlot(row, col);
+                int slotId = 9 + row * 6 + col;
                 int sx = L.gridStartX + col * (L.slotSize + L.slotGap);
                 int sy = L.gridStartY + row * (L.slotSize + L.slotGap);
                 if (RustUiHelper.inRect(mouseX, mouseY, sx, sy, L.slotSize, L.slotSize)) {
