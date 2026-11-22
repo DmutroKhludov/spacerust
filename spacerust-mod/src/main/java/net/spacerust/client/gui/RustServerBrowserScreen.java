@@ -87,12 +87,12 @@ public class RustServerBrowserScreen extends Screen {
         public final String name;
         public final String map;
         public final String region;
-        public final String ip;
+        public String ip;
         public final String modeBadge;
         public final String wipeTag;
         public final String[] tags;
         public final boolean isModded;
-        public final ServerInfo serverInfo;
+        public ServerInfo serverInfo;
         public boolean isFavorite = true;
         public boolean inHistory = true;
 
@@ -135,6 +135,14 @@ public class RustServerBrowserScreen extends Screen {
             }
         } catch (Exception ignored) {
         }
+
+        // Auto-detect if local server is running on 127.0.0.1:25565
+        try (Socket test = new Socket()) {
+            test.connect(new InetSocketAddress("127.0.0.1", 25565), 150);
+            return "127.0.0.1:25565";
+        } catch (Exception ignored) {
+        }
+
         return defaultIp;
     }
 
@@ -194,7 +202,17 @@ public class RustServerBrowserScreen extends Screen {
     }
 
     public void refreshServers() {
+        String curIp = resolveDefaultServerIp();
         for (ServerEntry s : SERVERS) {
+            s.ip = curIp;
+            s.serverInfo = new ServerInfo(s.name, curIp, false);
+            s.isPinging = true;
+            s.statusText = "Опрос...";
+            pingServerAsync(s);
+        }
+        for (ServerEntry s : RECENT_SERVERS) {
+            s.ip = curIp;
+            s.serverInfo = new ServerInfo(s.name, curIp, false);
             s.isPinging = true;
             s.statusText = "Опрос...";
             pingServerAsync(s);
