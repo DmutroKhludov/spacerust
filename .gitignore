@@ -11,6 +11,7 @@ SpaceRust_Client/
 *.zip
 *.exe
 launcher.log
+*.log
 
 # Minecraft Server Worlds, Logs & Cache
 server/world/
