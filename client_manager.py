@@ -429,7 +429,7 @@ class SpaceRustClientManager:
         import urllib.request
         self.log(f"Connecting to {url}...")
         req = urllib.request.Request(url, headers={'User-Agent': 'SpaceRustLauncher/1.0'})
-        with urllib.request.urlopen(req) as resp, open(dest_path, 'wb') as out_f:
+        with urllib.request.urlopen(req, timeout=30) as resp, open(dest_path, 'wb') as out_f:
             total_str = resp.headers.get('Content-Length')
             total_size = int(total_str) if total_str else 0
             downloaded = 0

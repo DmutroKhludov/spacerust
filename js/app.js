@@ -399,18 +399,35 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const topbar = $('app-titlebar');
-    const triggerDrag = () => {
-        const a = api();
-        if (a && typeof a.drag_window === 'function') { a.drag_window(); return true; }
-        return false;
-    };
+    let dragPending = null;
+
     topbar?.addEventListener('mousedown', (e) => {
         if (e.button !== 0 || e.detail >= 2) return;
         if (e.target.closest('button, a, input')) return;
-        e.preventDefault();
-        if (!triggerDrag()) setTimeout(triggerDrag, 25);
+        dragPending = { x: e.clientX, y: e.clientY };
     });
+
+    window.addEventListener('mousemove', (e) => {
+        if (!dragPending) return;
+        if ((e.buttons & 1) === 0) {
+            dragPending = null;
+            return;
+        }
+        const dx = Math.abs(e.clientX - dragPending.x);
+        const dy = Math.abs(e.clientY - dragPending.y);
+        if (dx >= 4 || dy >= 4) {
+            dragPending = null;
+            const a = api();
+            if (a && typeof a.drag_window === 'function') a.drag_window();
+        }
+    });
+
+    window.addEventListener('mouseup', () => {
+        dragPending = null;
+    });
+
     topbar?.addEventListener('dblclick', (e) => {
+        dragPending = null;
         if (e.target.closest('button, a, input')) return;
         handleToggleMaximize();
     });
@@ -532,8 +549,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 STATE.isLaunching = false;
                 setPaused(false);
                 setIdleLine();
-                showToast(t('play.toastErr'), 'error');
-                alert(t('play.alertErr', { msg: res.message }));
+                const shortErr = String(res.message || '').split('\n')[0] || t('play.toastErr');
+                if (loadStage) loadStage.textContent = shortErr;
+                showToast(shortErr, 'error');
                 return;
             }
 
@@ -554,7 +572,7 @@ document.addEventListener('DOMContentLoaded', () => {
             STATE.isLaunching = false;
             setPaused(false);
             setIdleLine();
-            alert(t('play.alertConnErr', { err }));
+            showToast(t('play.toastErr'), 'error');
         }
     }
     btnPlay?.addEventListener('click', handleLaunchGame);
