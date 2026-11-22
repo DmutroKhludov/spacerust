@@ -770,6 +770,55 @@ body.no-anim .btn-play::after, body.no-anim .btn-play.loading-state { animation:
 }
 .locked-nick-box svg { width: 15px; height: 15px; color: var(--text-muted); }
 
+.promo-block.modal-promo {
+    margin-top: 2px;
+    padding: 14px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.promo-head-row { display: flex; align-items: center; gap: 10px; }
+.promo-icon {
+    width: 38px; height: 38px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(201,144,47,0.18);
+    color: var(--amber-bright);
+}
+.promo-icon svg { width: 20px; height: 20px; }
+.promo-head-row h4 { font-family: var(--font-cond); font-weight: 800; font-size: 16px; color: #f1ece4; }
+.promo-head-row p { font-size: 12px; color: var(--text-dim); margin: 0; }
+.promo-row { display: flex; gap: 6px; }
+.promo-input {
+    flex: 1; min-width: 0;
+    height: 36px;
+    padding: 0 12px;
+    background: rgba(0,0,0,0.45);
+    border: 1px solid var(--line-strong);
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+.promo-input:focus { border-color: var(--amber); }
+.promo-btn {
+    height: 36px;
+    padding: 0 14px;
+    flex-shrink: 0;
+    background: var(--amber);
+    color: #fff;
+    font-family: var(--font-cond);
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 0.8px;
+    transition: background 0.15s ease;
+}
+.promo-btn:hover { background: var(--amber-bright); }
+
 /* =========================================================
    TOASTS
    ========================================================= */

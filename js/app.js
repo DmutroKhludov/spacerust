@@ -7,21 +7,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const sfx = (name) => { if (window.soundEngine && window.soundEngine[name]) window.soundEngine[name](); };
 
     // ==========================================
-    // STATE (no default subscription)
+    // STATE (no default subscription; promo grants privileges)
     // ==========================================
-    let savedRank = localStorage.getItem('sr_rank');
-    if (!savedRank || savedRank === 'VIP+') {
-        savedRank = 'ИГРОК';
-        localStorage.setItem('sr_rank', savedRank);
+    if (!localStorage.getItem('sr_sub_migrated')) {
+        localStorage.setItem('sr_rank', 'ИГРОК');
+        localStorage.removeItem('sr_redeemed_codes');
+        localStorage.setItem('sr_sub_migrated', '1');
     }
     localStorage.removeItem('sr_balance');
     localStorage.removeItem('sr_scrap');
-    localStorage.removeItem('sr_redeemed_codes');
 
     const STATE = {
         ramMB: parseInt(localStorage.getItem('sr_ram_mb') || '6144', 10),
         nickname: localStorage.getItem('sr_nickname') || ('Player_' + Math.floor(100 + Math.random() * 900)),
-        rank: savedRank,
+        rank: localStorage.getItem('sr_rank') || 'ИГРОК',
+        redeemedCodes: JSON.parse(localStorage.getItem('sr_redeemed_codes') || '[]'),
         soundEnabled: localStorage.getItem('sr_sound_enabled') !== 'false',
         soundVolume: parseFloat(localStorage.getItem('sr_sound_vol') || '0.6'),
         animations: localStorage.getItem('sr_anim') !== 'false',
@@ -65,6 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalAvatar = $('modal-avatar-preview');
     const modalNick = $('modal-display-nick');
     const modalLockedNick = $('modal-locked-nick');
+    const modalSubStatus = $('modal-sub-status');
 
     const avatarUrl = (nick) => `https://mc-heads.net/avatar/${encodeURIComponent(nick || 'Steve')}/64`;
     [avatarImg, modalAvatar].forEach(img => {
@@ -106,6 +107,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (modalAvatar) modalAvatar.src = avatarUrl(STATE.nickname);
         const rankText = STATE.rank || 'ИГРОК';
         const hasSub = !!STATE.rank && STATE.rank !== 'ИГРОК';
+        if (modalSubStatus) {
+            modalSubStatus.textContent = hasSub ? `Активна привилегия: ${rankText}` : 'Нет активной подписки';
+        }
         [rankEl, modalRankEl].forEach(el => {
             if (!el) return;
             el.textContent = rankText;
@@ -140,6 +144,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.addEventListener('pywebviewready', checkSystemUsername);
     setTimeout(checkSystemUsername, 800);
+
+    // ==========================================
+    // PROMO CODES (PRIVILEGES)
+    // ==========================================
+    const promoInput = $('promo-input');
+    function redeemPromo() {
+        const code = promoInput.value.trim().toUpperCase();
+        if (!code) return showToast('Введите промокод!', 'error');
+        if (STATE.redeemedCodes.includes(code)) return showToast('Этот промокод уже активирован!', 'error');
+
+        const promos = {
+            'WIPE2026': { rank: 'VIP', label: 'Привилегия VIP' },
+            'SPACEVIP': { rank: 'VIP+', label: 'Привилегия VIP+' },
+            'RUSTME': { rank: 'PREMIUM', label: 'Привилегия PREMIUM' },
+            'SPACERUST': { rank: 'ELITE', label: 'Привилегия ELITE' }
+        };
+        const reward = promos[code];
+        if (!reward) return showToast('Неверный промокод или срок действия истёк', 'error');
+
+        STATE.rank = reward.rank;
+        localStorage.setItem('sr_rank', STATE.rank);
+        STATE.redeemedCodes.push(code);
+        localStorage.setItem('sr_redeemed_codes', JSON.stringify(STATE.redeemedCodes));
+        promoInput.value = '';
+        sfx('playSuccess');
+        updateProfileUI();
+        showToast(`Промокод активирован: ${reward.label}!`, 'success');
+    }
+    $('promo-submit-btn')?.addEventListener('click', redeemPromo);
+    promoInput?.addEventListener('keypress', (e) => { if (e.key === 'Enter') redeemPromo(); });
 
     // ==========================================
     // SETTINGS DRAWER
