@@ -1,5 +1,5 @@
 /**
- * SpaceRust Website — Registration-gated Launcher Download
+ * SpaceRust Website — Launcher Download & Account Registration
  */
 document.addEventListener('DOMContentLoaded', () => {
     const $ = (id) => document.getElementById(id);
@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnRegister = $('btn-register');
     const btnRegisterText = $('btn-register-text');
     const btnDownload = $('btn-download');
-    const downloadHint = $('download-hint');
     const btnShop = $('btn-shop');
 
     const heroUserBar = $('hero-user-bar');
@@ -48,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <h4>2. Аккаунт игрока</h4>
                 <p>Пользователь несёт ответственность за сохранность пароля и выбор игрового никнейма. Запрещено использовать никнеймы, нарушающие правила проекта.</p>
                 <h4>3. Доступ к лаунчеру</h4>
-                <p>Доступ к загрузке лаунчера SpaceRust предоставляется бесплатно после завершения регистрации аккаунта на сайте.</p>
+                <p>Лаунчер SpaceRust предоставляется бесплатно и доступен для скачивания на сайте в любое время.</p>
             `
         },
         privacy: {
@@ -153,10 +152,6 @@ document.addEventListener('DOMContentLoaded', () => {
             btnRegister.classList.add('authed');
             btnRegisterText.textContent = `АККАУНТ: ${user.nickname}`;
 
-            btnDownload.classList.remove('locked');
-            btnDownload.setAttribute('aria-disabled', 'false');
-            downloadHint.classList.add('hidden');
-
             const avatarUrl = resolveAvatarUrl(user.nickname);
             heroUserBar.hidden = false;
             heroUserNick.textContent = user.nickname;
@@ -170,10 +165,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             btnRegister.classList.remove('authed');
             btnRegisterText.textContent = 'ЗАРЕГИСТРИРОВАТЬСЯ';
-
-            btnDownload.classList.add('locked');
-            btnDownload.setAttribute('aria-disabled', 'true');
-            downloadHint.classList.remove('hidden');
 
             heroUserBar.hidden = true;
         }
@@ -220,15 +211,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     btnDownload.addEventListener('click', () => {
-        if (!getCurrentUser()) {
-            btnDownload.classList.remove('shake');
-            void btnDownload.offsetWidth;
-            btnDownload.classList.add('shake');
-            showToast('Сначала зарегистрируйтесь, чтобы скачать лаунчер', 'warn');
-            switchAuthTab('register');
-            openModal(authModal);
-            return;
-        }
         openModal(downloadModal);
     });
 
@@ -306,7 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
         $('reg-agree').checked = true;
         closeModal(authModal);
         updateAuthUI();
-        showToast(`Регистрация завершена, ${nickname}! Теперь можно скачать лаунчер.`);
+        showToast(`Регистрация завершена, ${nickname}!`);
     });
 
     // Login submit
@@ -331,7 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
         formLogin.reset();
         closeModal(authModal);
         updateAuthUI();
-        showToast(`С возвращением, ${found.nickname}! Загрузка лаунчера открыта.`);
+        showToast(`С возвращением, ${found.nickname}!`);
     });
 
     // Legal docs

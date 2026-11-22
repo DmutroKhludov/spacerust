@@ -12,7 +12,11 @@ class SpaceRustClientManager:
         self.default_game_dir = os.path.expandvars(r'%APPDATA%\.spacerust')
         self.config_dir = os.path.expandvars(r'%LOCALAPPDATA%\SpaceRust')
         self.config_file = os.path.join(self.config_dir, 'launcher_config.json')
-        self.game_dir = self._load_saved_game_dir()
+        self._config_lock = threading.Lock()
+        cfg = self._load_config()
+        saved_dir = (cfg.get('game_dir') or '').strip()
+        self.game_dir = os.path.abspath(os.path.expandvars(saved_dir)) if saved_dir else self.default_game_dir
+        self.playtime_seconds = int(cfg.get('playtime_seconds', 0) or 0)
         self.version_id = 'SpaceRust-1.16.5'
         self.log_file = os.path.join(self.game_dir, 'launcher.log')
         self._pause_event = threading.Event()
@@ -23,25 +27,70 @@ class SpaceRustClientManager:
             self.exe_dir = os.path.dirname(os.path.abspath(__file__))
         self.ensure_directories()
 
-    def _load_saved_game_dir(self):
+    def _load_config(self):
         try:
             if os.path.isfile(self.config_file):
                 with open(self.config_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
-                saved = (data.get('game_dir') or '').strip()
-                if saved:
-                    return os.path.abspath(os.path.expandvars(saved))
+                if isinstance(data, dict):
+                    return data
         except Exception:
             pass
-        return self.default_game_dir
+        return {}
 
-    def _save_game_dir(self, path):
+    def _save_config(self, updates):
         try:
-            os.makedirs(self.config_dir, exist_ok=True)
-            with open(self.config_file, 'w', encoding='utf-8') as f:
-                json.dump({'game_dir': path}, f, ensure_ascii=False, indent=2)
+            with self._config_lock:
+                data = self._load_config()
+                data.update(updates)
+                os.makedirs(self.config_dir, exist_ok=True)
+                with open(self.config_file, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, ensure_ascii=False, indent=2)
         except Exception as e:
             self.log(f"Could not save config: {e}")
+
+    def get_playtime(self):
+        return int(self.playtime_seconds)
+
+    def add_playtime(self, delta_seconds):
+        if delta_seconds <= 0:
+            return self.playtime_seconds
+        with self._config_lock:
+            self.playtime_seconds += int(delta_seconds)
+            total = self.playtime_seconds
+            try:
+                data = self._load_config()
+                data['playtime_seconds'] = total
+                os.makedirs(self.config_dir, exist_ok=True)
+                with open(self.config_file, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, ensure_ascii=False, indent=2)
+            except Exception as e:
+                self.log(f"Could not save playtime: {e}")
+        return total
+
+    def _track_playtime(self, proc, playtime_callback=None):
+        import time
+        last_tick = time.monotonic()
+        while proc.poll() is None:
+            time.sleep(5)
+            now = time.monotonic()
+            whole = int(now - last_tick)
+            if whole >= 1:
+                last_tick += whole
+                total = self.add_playtime(whole)
+                if playtime_callback:
+                    try:
+                        playtime_callback(total)
+                    except Exception:
+                        pass
+        whole = int(time.monotonic() - last_tick)
+        if whole >= 1:
+            total = self.add_playtime(whole)
+            if playtime_callback:
+                try:
+                    playtime_callback(total)
+                except Exception:
+                    pass
 
     def set_game_dir(self, new_path):
         if not new_path or not str(new_path).strip():
@@ -60,7 +109,7 @@ class SpaceRustClientManager:
         self.game_dir = target
         self.log_file = os.path.join(self.game_dir, 'launcher.log')
         self.ensure_directories()
-        self._save_game_dir(target)
+        self._save_config({'game_dir': target})
         self.log(f"Game directory changed to: {self.game_dir}")
         return {"status": "ok", "path": self.game_dir}
 
@@ -341,7 +390,7 @@ class SpaceRustClientManager:
                 f"Проверьте подключение к интернету."
             )
 
-    def launch(self, nickname, ram_mb, progress_callback=None):
+    def launch(self, nickname, ram_mb, progress_callback=None, playtime_callback=None):
         """Launches the isolated SpaceRust client directly into the Rust Main Menu."""
         try:
             # 1. Check and prepare client files FIRST (downloads from cloud if needed)
@@ -391,6 +440,7 @@ class SpaceRustClientManager:
                 flags = getattr(subprocess, 'CREATE_NEW_PROCESS_GROUP', 0) | getattr(subprocess, 'DETACHED_PROCESS', 0)
             proc = subprocess.Popen(cmd, cwd=self.game_dir, creationflags=flags)
             self.log(f"Process launched! PID: {proc.pid}")
+            threading.Thread(target=self._track_playtime, args=(proc, playtime_callback), daemon=True).start()
 
             return {
                 "status": "success",

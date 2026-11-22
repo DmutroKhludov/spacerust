@@ -12,14 +12,17 @@
 </head>
 <body>
     <div class="page">
-        <!-- ===================== HERO BANNER ===================== -->
-        <header class="hero">
-            <div class="hero-bg" aria-hidden="true"></div>
-            <div class="hero-overlay" aria-hidden="true"></div>
-            <div class="hero-fade" aria-hidden="true"></div>
+        <!-- ===================== FULL-PAGE BACKGROUND ===================== -->
+        <div class="page-bg" aria-hidden="true">
+            <div class="page-bg-image"></div>
+            <div class="page-bg-overlay"></div>
+        </div>
 
+        <!-- ===================== HERO HEADER ===================== -->
+        <header class="hero">
             <div class="hero-inner">
                 <div class="hero-brand">
+                    <img class="hero-logo" src="assets/logo.png" alt="SpaceRust">
                     <h1 class="hero-title">Space<br>Rust</h1>
                 </div>
 
@@ -42,16 +45,12 @@
                 </button>
 
                 <div class="download-wrap">
-                    <button class="action-btn btn-download locked" id="btn-download" type="button" aria-disabled="true">
-                        <svg class="btn-icon lock-icon" id="download-lock-icon" viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z"/>
-                        </svg>
+                    <button class="action-btn btn-download" id="btn-download" type="button">
                         <svg class="btn-icon dl-icon" id="download-ready-icon" viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
                         </svg>
                         <span>СКАЧАТЬ ЛАУНЧЕР</span>
                     </button>
-                    <p class="download-hint" id="download-hint">Доступно после регистрации</p>
                 </div>
 
                 <button class="action-btn btn-shop" id="btn-shop" type="button">
@@ -91,7 +90,7 @@
             </div>
 
             <form class="modal-body" id="form-register" novalidate>
-                <p class="modal-note">Зарегистрируйтесь в SpaceRust, чтобы открыть доступ к скачиванию лаунчера.</p>
+                <p class="modal-note">Зарегистрируйтесь в SpaceRust, чтобы создать профиль и закрепить свой игровой никнейм.</p>
 
                 <label class="field">
                     <span>Игровой никнейм (3–16 символов, латиница и цифры)</span>
@@ -124,7 +123,7 @@
             </form>
 
             <form class="modal-body" id="form-login" novalidate hidden>
-                <p class="modal-note">Войдите в свой аккаунт SpaceRust, чтобы скачать лаунчер.</p>
+                <p class="modal-note">Войдите в свой аккаунт SpaceRust.</p>
 
                 <label class="field">
                     <span>Никнейм или Email</span>
@@ -158,7 +157,7 @@
                         <p id="acc-modal-email">player@example.com</p>
                     </div>
                 </div>
-                <p class="modal-note">Ваш аккаунт активен. Скачивание лаунчера <b>SpaceRust.exe</b> разблокировано.</p>
+                <p class="modal-note">Ваш аккаунт SpaceRust активен.</p>
                 <div class="modal-actions-row">
                     <button type="button" class="modal-submit white-btn" id="acc-open-download">СКАЧАТЬ ЛАУНЧЕР</button>
                     <button type="button" class="modal-submit ghost-btn" id="acc-logout">ВЫЙТИ</button>

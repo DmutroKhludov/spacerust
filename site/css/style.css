@@ -42,48 +42,52 @@ input {
 }
 
 .page {
+    position: relative;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    background: var(--bg-body);
+    background: #141416;
 }
 
-/* ===================== HERO BANNER ===================== */
-.hero {
-    position: relative;
-    width: 100%;
-    height: clamp(320px, 46vh, 460px);
+/* ===================== FULL-PAGE BACKGROUND ===================== */
+.page-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
     overflow: hidden;
-    flex-shrink: 0;
 }
 
-.hero-bg {
+.page-bg-image {
     position: absolute;
     inset: 0;
     background-image: url('../assets/hero-bg.jpg');
     background-size: cover;
-    background-position: center 42%;
-    filter: saturate(0.95) brightness(0.9);
+    background-position: center center;
+    filter: saturate(0.95) brightness(0.84);
     transform: scale(1.02);
 }
 
-.hero-overlay {
+.page-bg-overlay {
     position: absolute;
     inset: 0;
     background:
-        radial-gradient(circle at 30% 45%, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.45) 85%),
-        linear-gradient(90deg, rgba(16, 16, 18, 0.45) 0%, rgba(16, 16, 18, 0.1) 55%, rgba(16, 16, 18, 0.3) 100%);
+        radial-gradient(circle at 50% 42%, rgba(16, 16, 18, 0.16) 0%, rgba(14, 14, 16, 0.62) 90%),
+        linear-gradient(
+            to bottom,
+            rgba(16, 16, 18, 0.22) 0%,
+            rgba(18, 18, 20, 0.42) 52%,
+            rgba(14, 14, 16, 0.74) 100%
+        );
 }
 
-.hero-fade {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-        to bottom,
-        rgba(35, 35, 37, 0) 35%,
-        rgba(35, 35, 37, 0.58) 72%,
-        var(--bg-body) 100%
-    );
+/* ===================== HERO HEADER ===================== */
+.hero {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: clamp(270px, 38vh, 380px);
+    flex-shrink: 0;
 }
 
 .hero-inner {
@@ -92,15 +96,28 @@ input {
     max-width: 1120px;
     height: 100%;
     margin: 0 auto;
-    padding: 28px 32px 48px;
+    padding: 36px 32px 24px;
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
 
 .hero-brand {
-    margin-left: clamp(0px, 8vw, 110px);
-    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: clamp(16px, 2vw, 24px);
+    margin-left: clamp(0px, 6vw, 84px);
+    margin-top: 12px;
+}
+
+.hero-logo {
+    width: clamp(76px, 8.2vw, 108px);
+    height: clamp(76px, 8.2vw, 108px);
+    border-radius: 20px;
+    object-fit: cover;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.6);
+    flex-shrink: 0;
+    user-select: none;
 }
 
 .hero-title {
@@ -109,7 +126,7 @@ input {
     line-height: 0.94;
     letter-spacing: -0.02em;
     color: #ffffff;
-    text-shadow: 0 6px 26px rgba(0, 0, 0, 0.65);
+    text-shadow: 0 6px 26px rgba(0, 0, 0, 0.72);
     user-select: none;
 }
 
@@ -180,11 +197,13 @@ input {
 
 /* ===================== CENTER ACTIONS ===================== */
 .actions-section {
+    position: relative;
+    z-index: 1;
     flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 28px 20px 64px;
+    padding: 20px 20px 64px;
 }
 
 .actions-stack {
@@ -226,11 +245,6 @@ input {
     flex-shrink: 0;
 }
 
-.btn-download.locked .dl-icon,
-.btn-download:not(.locked) .lock-icon {
-    display: none;
-}
-
 /* Primary Coral Button */
 .btn-register {
     background-color: var(--coral);
@@ -266,42 +280,10 @@ input {
     color: #1f1f22;
 }
 
-.btn-download:not(.locked):hover {
+.btn-download:hover {
     background-color: var(--white-btn-hover);
     transform: translateY(-1px);
     box-shadow: 0 7px 18px rgba(255, 255, 255, 0.14);
-}
-
-.btn-download.locked {
-    background-color: rgba(255, 255, 255, 0.42);
-    color: rgba(24, 24, 27, 0.85);
-    cursor: not-allowed;
-    box-shadow: none;
-}
-
-.btn-download.locked:hover {
-    background-color: rgba(255, 255, 255, 0.5);
-}
-
-.btn-download.shake {
-    animation: shakeX 0.36s ease;
-}
-
-.download-hint {
-    margin-top: 6px;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-muted);
-    letter-spacing: 0.01em;
-    transition: opacity 0.2s ease, max-height 0.2s ease, margin 0.2s ease;
-}
-
-.download-hint.hidden {
-    opacity: 0;
-    max-height: 0;
-    margin-top: 0;
-    overflow: hidden;
-    pointer-events: none;
 }
 
 /* Donate Shop Button */
@@ -318,8 +300,11 @@ input {
 
 /* ===================== FOOTER ===================== */
 .site-footer {
-    background-color: var(--bg-footer);
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    position: relative;
+    z-index: 1;
+    background-color: rgba(15, 15, 17, 0.78);
+    backdrop-filter: blur(6px);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
     padding: 22px 20px 24px;
     text-align: center;
 }
@@ -756,15 +741,22 @@ input {
 
 @media (max-width: 640px) {
     .hero {
-        height: 290px;
+        height: 220px;
     }
 
     .hero-inner {
-        padding: 24px 20px 36px;
+        padding: 24px 20px 18px;
     }
 
     .hero-brand {
         margin-left: 0;
+        gap: 14px;
+    }
+
+    .hero-logo {
+        width: 64px;
+        height: 64px;
+        border-radius: 14px;
     }
 
     .hero-user-bar {
@@ -773,7 +765,7 @@ input {
     }
 
     .actions-section {
-        padding: 20px 16px 48px;
+        padding: 16px 16px 48px;
     }
 
     .modal-actions-row {

@@ -143,6 +143,16 @@ class LauncherApi:
             pass
         return None
 
+    def get_playtime(self):
+        return {"status": "ok", "seconds": self.manager.get_playtime()}
+
+    def report_playtime(self, total_seconds):
+        if self.window:
+            try:
+                self.window.evaluate_js(f"window.updatePlaytime && window.updatePlaytime({int(total_seconds)})")
+            except Exception:
+                pass
+
     def report_progress(self, stage, percent):
         if self.window:
             try:
@@ -167,7 +177,12 @@ class LauncherApi:
 
     def launch_client(self, ram_mb=None, nickname=None):
         try:
-            res = self.manager.launch(nickname=nickname, ram_mb=ram_mb, progress_callback=self.report_progress)
+            res = self.manager.launch(
+                nickname=nickname,
+                ram_mb=ram_mb,
+                progress_callback=self.report_progress,
+                playtime_callback=self.report_playtime
+            )
             return res
         except Exception as e:
             print(f"[Launcher Launch Error] {e}")

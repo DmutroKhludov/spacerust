@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ramMB: parseInt(localStorage.getItem('sr_ram_mb') || '6144', 10),
         nickname: localStorage.getItem('sr_nickname') || ('Player_' + Math.floor(100 + Math.random() * 900)),
         rank: localStorage.getItem('sr_rank') || 'ИГРОК',
+        playtimeSeconds: parseInt(localStorage.getItem('sr_playtime_sec') || '0', 10),
         redeemedCodes: JSON.parse(localStorage.getItem('sr_redeemed_codes') || '[]'),
         soundEnabled: localStorage.getItem('sr_sound_enabled') !== 'false',
         soundVolume: parseFloat(localStorage.getItem('sr_sound_vol') || '0.6'),
@@ -66,6 +67,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalNick = $('modal-display-nick');
     const modalLockedNick = $('modal-locked-nick');
     const modalSubStatus = $('modal-sub-status');
+    const playtimeTextEl = $('playtime-text');
+    const modalPlaytimeEl = $('modal-playtime-text');
 
     const avatarUrl = (nick) => `https://mc-heads.net/avatar/${encodeURIComponent(nick || 'Steve')}/64`;
     [avatarImg, modalAvatar].forEach(img => {
@@ -99,6 +102,39 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // PROFILE / ACCOUNT (nickname is locked)
     // ==========================================
+    function formatPlaytimeHours(seconds) {
+        const hrs = Math.max(0, Number(seconds) || 0) / 3600;
+        if (hrs < 0.05) return '0 ч';
+        if (hrs < 100) return `${hrs.toFixed(1).replace(/\.0$/, '')} ч`;
+        return `${Math.floor(hrs)} ч`;
+    }
+
+    function renderPlaytime() {
+        const formatted = formatPlaytimeHours(STATE.playtimeSeconds);
+        if (playtimeTextEl) playtimeTextEl.textContent = `Наиграно: ${formatted}`;
+        if (modalPlaytimeEl) modalPlaytimeEl.textContent = `Время в игре: ${formatted}`;
+    }
+
+    window.updatePlaytime = function (seconds) {
+        const val = Math.max(0, parseInt(seconds, 10) || 0);
+        STATE.playtimeSeconds = val;
+        localStorage.setItem('sr_playtime_sec', String(val));
+        renderPlaytime();
+    };
+
+    async function syncPlaytime() {
+        const a = api();
+        if (!a || !a.get_playtime) return;
+        try {
+            const res = await a.get_playtime();
+            if (res && res.status === 'ok' && typeof res.seconds === 'number') {
+                window.updatePlaytime(res.seconds);
+            }
+        } catch (err) { console.log('get_playtime error', err); }
+    }
+    window.addEventListener('pywebviewready', syncPlaytime);
+    setTimeout(syncPlaytime, 700);
+
     function updateProfileUI() {
         if (avatarImg) avatarImg.src = avatarUrl(STATE.nickname);
         if (dockNickEl) dockNickEl.textContent = STATE.nickname;
@@ -115,6 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
             el.textContent = rankText;
             el.classList.toggle('has-sub', hasSub);
         });
+        renderPlaytime();
     }
 
     function openAccountModal() {
