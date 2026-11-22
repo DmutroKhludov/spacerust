@@ -243,11 +243,80 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const gamePathInput = $('setting-game-path');
+
+    async function syncGameDir() {
+        const a = api();
+        if (!a || !a.get_game_dir) return;
+        try {
+            const res = await a.get_game_dir();
+            if (res && res.path && gamePathInput) gamePathInput.value = res.path;
+        } catch (err) { console.log('get_game_dir error', err); }
+    }
+    window.addEventListener('pywebviewready', syncGameDir);
+    setTimeout(syncGameDir, 600);
+
+    async function applyGameDir(newPath) {
+        if (STATE.isLaunching) {
+            showToast('Дождитесь завершения запуска игры', 'error');
+            syncGameDir();
+            return;
+        }
+        const a = api();
+        if (!a || !a.set_game_dir) return;
+        const res = await a.set_game_dir(newPath);
+        if (res && res.status === 'ok') {
+            if (gamePathInput) gamePathInput.value = res.path;
+            sfx('playSuccess');
+            showToast(`Путь игры изменён: ${res.path}`, 'success');
+        } else {
+            showToast((res && res.message) || 'Не удалось изменить путь', 'error');
+            syncGameDir();
+        }
+    }
+
+    if (gamePathInput) {
+        gamePathInput.addEventListener('change', () => applyGameDir(gamePathInput.value));
+        gamePathInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') gamePathInput.blur();
+        });
+    }
+
+    $('btn-browse-folder')?.addEventListener('click', async () => {
+        sfx('playClick');
+        if (STATE.isLaunching) return showToast('Дождитесь завершения запуска игры', 'error');
+        const a = api();
+        if (!a || !a.browse_game_folder) {
+            return showToast('Выбор папки доступен в приложении SpaceRust.exe');
+        }
+        const res = await a.browse_game_folder();
+        if (res && res.status === 'ok') {
+            if (gamePathInput) gamePathInput.value = res.path;
+            sfx('playSuccess');
+            showToast(`Путь игры изменён: ${res.path}`, 'success');
+        } else if (res && res.status === 'error') {
+            showToast(res.message || 'Ошибка выбора папки', 'error');
+        }
+    });
+
+    $('btn-reset-folder')?.addEventListener('click', async () => {
+        sfx('playClick');
+        if (STATE.isLaunching) return showToast('Дождитесь завершения запуска игры', 'error');
+        const a = api();
+        if (!a || !a.reset_game_dir) return;
+        const res = await a.reset_game_dir();
+        if (res && res.status === 'ok') {
+            if (gamePathInput) gamePathInput.value = res.path;
+            sfx('playSuccess');
+            showToast('Путь сброшен по умолчанию', 'success');
+        }
+    });
+
     $('btn-open-folder')?.addEventListener('click', () => {
         sfx('playClick');
         const a = api();
         if (a && a.open_game_folder) a.open_game_folder();
-        else showToast('Папка клиента: %APPDATA%\\.spacerust');
+        else showToast(`Папка клиента: ${gamePathInput ? gamePathInput.value : '%APPDATA%\\.spacerust'}`);
     });
 
     if (soundBtn) {

@@ -254,8 +254,12 @@
                 <div class="set-group">
                     <h5>ПАПКА ИГРЫ</h5>
                     <div class="path-input-group">
-                        <input type="text" id="setting-game-path" class="path-input" value="%APPDATA%\.spacerust" readonly>
-                        <button class="browse-btn" id="btn-open-folder">ОТКРЫТЬ</button>
+                        <input type="text" id="setting-game-path" class="path-input" value="%APPDATA%\.spacerust" spellcheck="false" title="Путь к папке клиента SpaceRust">
+                        <button class="browse-btn accent" id="btn-browse-folder" title="Выбрать папку через Проводник">ВЫБРАТЬ</button>
+                    </div>
+                    <div class="path-actions-row">
+                        <button class="browse-btn" id="btn-open-folder" title="Открыть папку в Проводнике">ОТКРЫТЬ ПАПКУ</button>
+                        <button class="browse-btn" id="btn-reset-folder" title="Сбросить путь по умолчанию">СБРОСИТЬ</button>
                     </div>
                 </div>
 

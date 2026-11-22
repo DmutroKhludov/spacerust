@@ -777,11 +777,15 @@ body.no-anim .btn-play::after, body.no-anim .btn-play.loading-state { animation:
     padding: 0 10px;
     background: rgba(0,0,0,0.45);
     border: 1px solid var(--line-strong);
-    color: var(--text-dim);
+    color: var(--text);
     font-family: var(--font-mono);
     font-size: 11px;
     outline: none;
+    transition: border-color 0.15s ease;
 }
+.path-input:focus { border-color: var(--red); }
+.path-actions-row { display: flex; gap: 6px; }
+.path-actions-row .browse-btn { flex: 1; }
 .browse-btn {
     height: 32px;
     padding: 0 12px;
@@ -793,6 +797,8 @@ body.no-anim .btn-play::after, body.no-anim .btn-play.loading-state { animation:
     transition: background 0.15s ease;
 }
 .browse-btn:hover { background: rgba(255,255,255,0.2); }
+.browse-btn.accent { background: var(--red); color: #fff; }
+.browse-btn.accent:hover { background: var(--red-bright); }
 
 .set-group.socials { flex-direction: row; }
 .social-btn {

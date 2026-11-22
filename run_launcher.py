@@ -105,6 +105,32 @@ class LauncherApi:
             print(f"[Error opening folder] {e}")
             return {"status": "error", "message": str(e)}
 
+    def get_game_dir(self):
+        return {
+            "status": "ok",
+            "path": self.manager.game_dir,
+            "default_path": self.manager.default_game_dir
+        }
+
+    def set_game_dir(self, new_path):
+        return self.manager.set_game_dir(new_path)
+
+    def reset_game_dir(self):
+        return self.manager.reset_game_dir()
+
+    def browse_game_folder(self):
+        if not self.window:
+            return {"status": "error", "message": "Окно не готово"}
+        try:
+            initial_dir = self.manager.game_dir if os.path.isdir(self.manager.game_dir) else ""
+            result = self.window.create_file_dialog(webview.FileDialog.FOLDER, directory=initial_dir)
+            if result and len(result) > 0:
+                return self.manager.set_game_dir(result[0])
+            return {"status": "cancelled"}
+        except Exception as e:
+            print(f"[Browse Folder Error] {e}")
+            return {"status": "error", "message": str(e)}
+
     def get_system_username(self):
         try:
             import getpass

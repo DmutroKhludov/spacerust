@@ -9,7 +9,10 @@ import minecraft_launcher_lib
 
 class SpaceRustClientManager:
     def __init__(self):
-        self.game_dir = os.path.expandvars(r'%APPDATA%\.spacerust')
+        self.default_game_dir = os.path.expandvars(r'%APPDATA%\.spacerust')
+        self.config_dir = os.path.expandvars(r'%LOCALAPPDATA%\SpaceRust')
+        self.config_file = os.path.join(self.config_dir, 'launcher_config.json')
+        self.game_dir = self._load_saved_game_dir()
         self.version_id = 'SpaceRust-1.16.5'
         self.log_file = os.path.join(self.game_dir, 'launcher.log')
         self._pause_event = threading.Event()
@@ -19,6 +22,50 @@ class SpaceRustClientManager:
         else:
             self.exe_dir = os.path.dirname(os.path.abspath(__file__))
         self.ensure_directories()
+
+    def _load_saved_game_dir(self):
+        try:
+            if os.path.isfile(self.config_file):
+                with open(self.config_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                saved = (data.get('game_dir') or '').strip()
+                if saved:
+                    return os.path.abspath(os.path.expandvars(saved))
+        except Exception:
+            pass
+        return self.default_game_dir
+
+    def _save_game_dir(self, path):
+        try:
+            os.makedirs(self.config_dir, exist_ok=True)
+            with open(self.config_file, 'w', encoding='utf-8') as f:
+                json.dump({'game_dir': path}, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            self.log(f"Could not save config: {e}")
+
+    def set_game_dir(self, new_path):
+        if not new_path or not str(new_path).strip():
+            return {"status": "error", "message": "Путь к папке не может быть пустым"}
+        cleaned = str(new_path).strip().strip('"').strip("'")
+        target = os.path.abspath(os.path.expandvars(cleaned))
+        try:
+            os.makedirs(target, exist_ok=True)
+            test_file = os.path.join(target, '.write_test')
+            with open(test_file, 'w', encoding='utf-8') as tf:
+                tf.write('ok')
+            os.remove(test_file)
+        except Exception as e:
+            return {"status": "error", "message": f"Недоступная папка для записи: {e}"}
+
+        self.game_dir = target
+        self.log_file = os.path.join(self.game_dir, 'launcher.log')
+        self.ensure_directories()
+        self._save_game_dir(target)
+        self.log(f"Game directory changed to: {self.game_dir}")
+        return {"status": "ok", "path": self.game_dir}
+
+    def reset_game_dir(self):
+        return self.set_game_dir(self.default_game_dir)
 
     def pause_download(self):
         self._pause_event.clear()
