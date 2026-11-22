@@ -3,12 +3,26 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Clean up / normalize initial state (Scrap as primary currency, no initial subscription)
+    let savedRank = localStorage.getItem('sr_rank');
+    if (!savedRank || savedRank === 'VIP+') {
+        savedRank = 'ИГРОК';
+        localStorage.setItem('sr_rank', 'ИГРОК');
+    }
+
+    let savedScrap = localStorage.getItem('sr_scrap');
+    if (savedScrap === null) {
+        localStorage.removeItem('sr_balance');
+        savedScrap = '0';
+        localStorage.setItem('sr_scrap', '0');
+    }
+
     // --- STATE INITIALIZATION ---
     const STATE = {
         ramMB: parseInt(localStorage.getItem('sr_ram_mb') || '6144', 10),
         nickname: localStorage.getItem('sr_nickname') || ('Player_' + Math.floor(100 + Math.random() * 900)),
-        balance: parseInt(localStorage.getItem('sr_balance') || '1450', 10),
-        rank: localStorage.getItem('sr_rank') || 'VIP+',
+        scrap: parseInt(savedScrap, 10),
+        rank: savedRank,
         soundEnabled: localStorage.getItem('sr_sound_enabled') !== 'false',
         soundVolume: parseFloat(localStorage.getItem('sr_sound_vol') || '0.6'),
         redeemedCodes: JSON.parse(localStorage.getItem('sr_redeemed_codes') || '[]'),
@@ -174,16 +188,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const validPromos = {
-            'WIPE2026': { bonus: 500, label: '+500 ₽ на баланс' },
-            'RUSTME': { bonus: 300, label: '+300 ₽' },
-            'SPACERUST': { bonus: 1000, label: '+1,000 ₽ на баланс' }
+            'WIPE2026': { bonus: 500, label: '+500 Scrap' },
+            'RUSTME': { bonus: 300, label: '+300 Scrap' },
+            'SPACERUST': { bonus: 1000, label: '+1,000 Scrap' }
         };
 
         if (validPromos[code]) {
             const reward = validPromos[code];
             if (reward.bonus) {
-                STATE.balance += reward.bonus;
-                localStorage.setItem('sr_balance', STATE.balance);
+                STATE.scrap += reward.bonus;
+                localStorage.setItem('sr_scrap', STATE.scrap);
             }
 
             STATE.redeemedCodes.push(code);
@@ -246,7 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateProfileUI() {
         if (profileNickEl) profileNickEl.textContent = STATE.nickname;
-        if (profileBalEl) profileBalEl.textContent = `${STATE.balance.toLocaleString('ru-RU')} ₽`;
+        if (profileBalEl) profileBalEl.textContent = `${STATE.scrap.toLocaleString('ru-RU')} Scrap`;
         if (profileAvatarImg) {
             profileAvatarImg.src = `https://mc-heads.net/avatar/${encodeURIComponent(STATE.nickname)}/64`;
         }
@@ -262,7 +276,14 @@ document.addEventListener('DOMContentLoaded', () => {
             modalAvatarPreview.src = `https://mc-heads.net/avatar/${encodeURIComponent(STATE.nickname)}/64`;
         }
         const rankEl = document.querySelector('.user-rank');
-        if (rankEl) rankEl.textContent = STATE.rank;
+        if (rankEl) {
+            rankEl.textContent = STATE.rank || 'ИГРОК';
+            if (STATE.rank && STATE.rank !== 'ИГРОК' && STATE.rank !== 'БЕЗ ПОДПИСКИ') {
+                rankEl.classList.add('has-sub');
+            } else {
+                rankEl.classList.remove('has-sub');
+            }
+        }
     }
 
     // Direct Nickname Input in Bottom Dock

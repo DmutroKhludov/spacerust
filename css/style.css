@@ -422,11 +422,21 @@ html, body {
     font-family: var(--font-sub);
     font-size: 10px;
     font-weight: 700;
-    background: var(--rust-orange);
-    color: #fff;
-    padding: 1px 5px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-muted);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 1px 6px;
     border-radius: 3px;
     letter-spacing: 0.5px;
+    text-transform: uppercase;
+    transition: all 0.2s ease;
+}
+
+.user-rank.has-sub, .user-rank.vip {
+    background: var(--rust-orange);
+    color: #fff;
+    border-color: rgba(255, 110, 50, 0.4);
+    box-shadow: 0 0 8px rgba(255, 110, 50, 0.3);
 }
 
 .user-stats-row {
