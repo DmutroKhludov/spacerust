@@ -9,6 +9,9 @@ import net.minecraft.client.gui.screen.option.ControlsOptionsScreen;
 import net.minecraft.client.gui.screen.option.LanguageOptionsScreen;
 import net.minecraft.client.network.ServerInfo;
 import net.minecraft.client.option.GraphicsMode;
+import net.minecraft.client.render.BufferBuilder;
+import net.minecraft.client.render.Tessellator;
+import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.sound.PositionedSoundInstance;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.sound.SoundCategory;
@@ -47,6 +50,7 @@ public class RustServerBrowserScreen extends Screen {
     private static final Identifier TEX_SEARCH        = new Identifier("spacerust", "textures/gui/icon_search.png");
     private static final Identifier TEX_REFRESH       = new Identifier("spacerust", "textures/gui/icon_refresh.png");
     private static final Identifier TEX_RESET         = new Identifier("spacerust", "textures/gui/icon_reset.png");
+    private static final Identifier TEX_BG_FALLBACK    = new Identifier("spacerust", "textures/gui/bg_main.png");
 
     public enum MenuTab {
         HOME("ГЛАВНАЯ"),
@@ -350,7 +354,35 @@ public class RustServerBrowserScreen extends Screen {
     }
 
     private void renderFallbackBackground(MatrixStack matrices, int screenW, int screenH) {
-        this.fillGradient(matrices, 0, 0, screenW, screenH, 0xFF1A1E26, 0xFF0C0E13);
+        if (this.client != null) {
+            RenderSystem.enableTexture();
+            RenderSystem.disableBlend();
+            RenderSystem.color4f(1.0f, 1.0f, 1.0f, 1.0f);
+            this.client.getTextureManager().bindTexture(TEX_BG_FALLBACK);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+
+            int imgW = 1376;
+            int imgH = 768;
+            float scale = Math.max((float) screenW / (float) imgW, (float) screenH / (float) imgH);
+            float drawW = imgW * scale;
+            float drawH = imgH * scale;
+            float x0 = (screenW - drawW) * 0.5f;
+            float y0 = (screenH - drawH) * 0.5f;
+            float x1 = x0 + drawW;
+            float y1 = y0 + drawH;
+
+            Tessellator tessellator = Tessellator.getInstance();
+            BufferBuilder buffer = tessellator.getBuffer();
+            buffer.begin(GL11.GL_QUADS, VertexFormats.POSITION_TEXTURE);
+            buffer.vertex(x0, y1, 0.0D).texture(0.0f, 1.0f).next();
+            buffer.vertex(x1, y1, 0.0D).texture(1.0f, 1.0f).next();
+            buffer.vertex(x1, y0, 0.0D).texture(1.0f, 0.0f).next();
+            buffer.vertex(x0, y0, 0.0D).texture(0.0f, 0.0f).next();
+            tessellator.draw();
+        } else {
+            this.fillGradient(matrices, 0, 0, screenW, screenH, 0xFF1A1E26, 0xFF0C0E13);
+        }
     }
 
     private void drawIcon(MatrixStack matrices, Identifier tex, int x, int y, int size, int argb) {
