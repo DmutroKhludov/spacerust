@@ -391,63 +391,47 @@ document.addEventListener('DOMContentLoaded', () => {
     let isWindowMaximized = false;
     const btnMaximize = $('btn-maximize');
 
-    function detectSizePreset(maximized, width) {
-        if (maximized) return 'fullscreen';
-        const w = Number(width) || window.innerWidth || 1160;
-        if (w <= 980) return 'compact';
-        if (w >= 1320) return 'large';
-        if (Math.abs(w - 1160) <= 40) return 'normal';
-        return '';
-    }
-
-    function updateWindowUIState(maximized, width) {
+    function updateWindowUIState(maximized) {
         isWindowMaximized = !!maximized;
         document.body.classList.toggle('is-maximized', isWindowMaximized);
         if (btnMaximize) {
             btnMaximize.title = isWindowMaximized ? t('topbar.restore') : t('topbar.maximize');
         }
-        const activePreset = detectSizePreset(isWindowMaximized, width);
-        document.querySelectorAll('[data-win-size]').forEach((btn) => {
-            btn.classList.toggle('active', !!activePreset && btn.dataset.winSize === activePreset);
-        });
     }
 
-    window.onWindowStateChange = function (maximized, width, height) {
-        updateWindowUIState(maximized, width);
+    window.onWindowStateChange = function (maximized) {
+        updateWindowUIState(maximized);
     };
 
     async function syncWindowState() {
         const a = api();
         if (!a || !a.get_window_state) {
-            updateWindowUIState(false, window.innerWidth);
+            updateWindowUIState(false);
             return;
         }
         try {
             const res = await a.get_window_state();
             if (res && res.status === 'ok') {
-                updateWindowUIState(res.maximized, res.width);
+                updateWindowUIState(res.maximized);
             }
         } catch (err) { console.log('syncWindowState error', err); }
     }
     window.addEventListener('pywebviewready', syncWindowState);
     setTimeout(syncWindowState, 500);
-    window.addEventListener('resize', () => {
-        if (!isWindowMaximized) updateWindowUIState(false, window.innerWidth);
-    });
 
     async function handleToggleMaximize() {
         sfx('playClick');
         const a = api();
         if (a && a.toggle_maximize_window) {
             const res = await a.toggle_maximize_window();
-            if (res && res.status === 'ok') updateWindowUIState(res.maximized, res.width);
+            if (res && res.status === 'ok') updateWindowUIState(res.maximized);
         } else {
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen?.().catch(() => {});
-                updateWindowUIState(true, window.screen.width);
+                updateWindowUIState(true);
             } else {
                 document.exitFullscreen?.().catch(() => {});
-                updateWindowUIState(false, window.innerWidth);
+                updateWindowUIState(false);
             }
         }
     }
@@ -460,20 +444,6 @@ document.addEventListener('DOMContentLoaded', () => {
     $('btn-close')?.addEventListener('click', () => {
         const a = api();
         if (a && a.close_window) a.close_window(); else window.close();
-    });
-
-    document.querySelectorAll('[data-win-size]').forEach((btn) => {
-        btn.addEventListener('click', async () => {
-            sfx('playClick');
-            const preset = btn.dataset.winSize;
-            const a = api();
-            if (a && a.set_window_preset) {
-                const res = await a.set_window_preset(preset);
-                if (res && res.status === 'ok') updateWindowUIState(res.maximized, res.width);
-            } else if (preset === 'fullscreen') {
-                handleToggleMaximize();
-            }
-        });
     });
 
     const topbar = $('app-titlebar');
