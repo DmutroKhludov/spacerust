@@ -1,509 +1,503 @@
 /**
- * SpaceRust Launcher - Main Application Logic
+ * SpaceRust Launcher — Main UI logic (Rust style redesign)
  */
-
 document.addEventListener('DOMContentLoaded', () => {
-    // Clean up / normalize initial state (Scrap as primary currency, no initial subscription)
+    const $ = (id) => document.getElementById(id);
+    const api = () => (window.pywebview && window.pywebview.api) ? window.pywebview.api : null;
+    const sfx = (name) => { if (window.soundEngine && window.soundEngine[name]) window.soundEngine[name](); };
+
+    // ==========================================
+    // STATE (Scrap = main currency, no default subscription)
+    // ==========================================
     let savedRank = localStorage.getItem('sr_rank');
     if (!savedRank || savedRank === 'VIP+') {
         savedRank = 'ИГРОК';
-        localStorage.setItem('sr_rank', 'ИГРОК');
+        localStorage.setItem('sr_rank', savedRank);
     }
-
-    let savedScrap = localStorage.getItem('sr_scrap');
-    if (savedScrap === null) {
+    if (localStorage.getItem('sr_scrap') === null) {
         localStorage.removeItem('sr_balance');
-        savedScrap = '0';
         localStorage.setItem('sr_scrap', '0');
     }
 
-    // --- STATE INITIALIZATION ---
     const STATE = {
         ramMB: parseInt(localStorage.getItem('sr_ram_mb') || '6144', 10),
         nickname: localStorage.getItem('sr_nickname') || ('Player_' + Math.floor(100 + Math.random() * 900)),
-        scrap: parseInt(savedScrap, 10),
+        scrap: parseInt(localStorage.getItem('sr_scrap') || '0', 10),
         rank: savedRank,
         soundEnabled: localStorage.getItem('sr_sound_enabled') !== 'false',
         soundVolume: parseFloat(localStorage.getItem('sr_sound_vol') || '0.6'),
+        animations: localStorage.getItem('sr_anim') !== 'false',
+        optGC: localStorage.getItem('sr_opt_gc') !== 'false',
         redeemedCodes: JSON.parse(localStorage.getItem('sr_redeemed_codes') || '[]'),
-        isLaunching: false
+        isLaunching: false,
+        isPaused: false
     };
 
-    // Initialize Audio Engine Settings
     if (window.soundEngine) {
         window.soundEngine.setEnabled(STATE.soundEnabled);
         window.soundEngine.setVolume(STATE.soundVolume);
     }
 
-    // --- DOM REFERENCES ---
+    // ==========================================
+    // DOM
+    // ==========================================
     const tabButtons = document.querySelectorAll('.tab-btn');
     const tabViews = document.querySelectorAll('.tab-view');
-    
-    // Header & Profile
-    const profileBtn = document.getElementById('user-profile-btn');
-    const profileNickEl = document.getElementById('profile-nickname');
-    const profileBalEl = document.getElementById('profile-balance');
-    const profileAvatarImg = document.getElementById('user-avatar-img');
-    const soundToggleBtn = document.getElementById('sound-toggle-btn');
-    const homePlayerNick = document.getElementById('home-player-nick');
-    const homeRamVal = document.getElementById('home-ram-val');
-    
-    // Bottom Dock
-    const dockRamStat = document.getElementById('dock-ram-stat');
-    const dockNickInput = document.getElementById('dock-nick-input');
-    const btnPlay = document.getElementById('btn-play');
-    const btnPlayText = document.getElementById('btn-play-text');
-    const launchProgressBar = document.getElementById('launch-progress-bar');
-    
-    // Settings elements
-    const settingsRamSlider = document.getElementById('settings-ram-slider');
-    const settingsRamLabel = document.getElementById('settings-ram-label');
-    const settingsVolSlider = document.getElementById('settings-volume-slider');
-    const settingsVolLabel = document.getElementById('settings-volume-label');
-    const btnOpenFolder = document.getElementById('btn-open-folder');
 
-    // Promo elements
-    const promoInput = document.getElementById('promo-input');
-    const promoSubmitBtn = document.getElementById('promo-submit-btn');
+    const profileCard = $('user-profile-btn');
+    const profileBalEl = $('profile-balance');
+    const shopBalEl = $('shop-balance');
+    const avatarImg = $('user-avatar-img');
+    const rankEl = document.querySelector('.user-rank');
+    const nickInput = $('dock-nick-input');
+    const soundBtn = $('sound-toggle-btn');
 
-    // Account Modal elements
-    const accountModal = document.getElementById('account-modal');
-    const modalCloseBtn = document.getElementById('modal-account-close');
-    const modalInputNick = document.getElementById('modal-input-nick');
-    const modalAvatarPreview = document.getElementById('modal-avatar-preview');
-    const modalDisplayNick = document.getElementById('modal-display-nick');
-    const modalSaveBtn = document.getElementById('modal-save-btn');
+    const btnPlay = $('btn-play');
+    const btnPlayText = $('btn-play-text');
+    const loadLine = document.querySelector('.load-line');
+    const loadFill = $('launch-progress-bar');
+    const loadTitle = $('load-title');
+    const loadStage = $('load-stage');
+    const loadPct = $('load-pct');
+    const btnPause = $('btn-dl-pause');
+    const btnResume = $('btn-dl-resume');
 
-    // Window controls
-    const btnMinimize = document.getElementById('btn-minimize');
-    const btnClose = document.getElementById('btn-close');
+    const drawer = $('settings-drawer');
+    const drawerBackdrop = $('settings-backdrop');
 
-    // --- INITIAL UI POPULATION ---
-    updateProfileUI();
-    syncSettingsUI();
-    attachAudioListeners();
+    const accountModal = $('account-modal');
+    const modalInputNick = $('modal-input-nick');
+    const modalAvatar = $('modal-avatar-preview');
+    const modalNick = $('modal-display-nick');
 
-    // ==========================================
-    // TABS SWITCHING
-    // ==========================================
-    tabButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const targetTab = btn.dataset.tab;
-            if (btn.classList.contains('active')) return;
-
-            if (window.soundEngine) window.soundEngine.playClick();
-
-            tabButtons.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-
-            tabViews.forEach(view => {
-                view.classList.remove('active-view');
-                if (view.id === `view-${targetTab}`) {
-                    view.classList.add('active-view');
-                }
-            });
-        });
+    const avatarUrl = (nick) => `https://mc-heads.net/avatar/${encodeURIComponent(nick || 'Steve')}/64`;
+    [avatarImg, modalAvatar].forEach(img => {
+        if (img) img.addEventListener('error', () => { img.src = 'assets/logo.png'; });
     });
 
     // ==========================================
-    // SETTINGS LOGIC
+    // TABS
     // ==========================================
-    function syncSettingsUI() {
-        if (settingsRamSlider && settingsRamLabel && dockRamStat) {
-            settingsRamSlider.value = STATE.ramMB;
-            settingsRamLabel.textContent = `${STATE.ramMB} MB`;
-            dockRamStat.textContent = `${STATE.ramMB} MB`;
-            if (homeRamVal) homeRamVal.textContent = `${STATE.ramMB} MB`;
-
-            settingsRamSlider.addEventListener('input', (e) => {
-                const val = parseInt(e.target.value, 10);
-                STATE.ramMB = val;
-                settingsRamLabel.textContent = `${val} MB`;
-                dockRamStat.textContent = `${val} MB`;
-                if (homeRamVal) homeRamVal.textContent = `${val} MB`;
-                localStorage.setItem('sr_ram_mb', val);
-            });
-        }
-
-        if (settingsVolSlider && settingsVolLabel) {
-            settingsVolSlider.value = Math.round(STATE.soundVolume * 100);
-            settingsVolLabel.textContent = `${settingsVolSlider.value}%`;
-
-            settingsVolSlider.addEventListener('input', (e) => {
-                const val = parseInt(e.target.value, 10);
-                const floatVal = val / 100;
-                STATE.soundVolume = floatVal;
-                settingsVolLabel.textContent = `${val}%`;
-                localStorage.setItem('sr_sound_vol', floatVal);
-                if (window.soundEngine) window.soundEngine.setVolume(floatVal);
-            });
-        }
-
-        if (btnOpenFolder) {
-            btnOpenFolder.addEventListener('click', () => {
-                if (window.soundEngine) window.soundEngine.playClick();
-                if (window.pywebview && window.pywebview.api && window.pywebview.api.open_game_folder) {
-                    window.pywebview.api.open_game_folder();
-                } else {
-                    showToast('Папка клиента: %APPDATA%\\.spacerust', 'info');
-                }
-            });
-        }
+    function switchTab(target) {
+        tabButtons.forEach(b => b.classList.toggle('active', b.dataset.tab === target));
+        tabViews.forEach(v => v.classList.toggle('active-view', v.id === `view-${target}`));
     }
 
-    // Sound toggle in top titlebar
-    if (soundToggleBtn) {
-        soundToggleBtn.addEventListener('click', () => {
-            STATE.soundEnabled = !STATE.soundEnabled;
-            localStorage.setItem('sr_sound_enabled', STATE.soundEnabled);
-            if (window.soundEngine) {
-                window.soundEngine.setEnabled(STATE.soundEnabled);
-                if (STATE.soundEnabled) window.soundEngine.playClick();
-            }
-            soundToggleBtn.style.opacity = STATE.soundEnabled ? '1' : '0.4';
-            showToast(STATE.soundEnabled ? 'Звуки интерфейса включены' : 'Звуки интерфейса выключены');
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (btn.classList.contains('active')) return;
+            sfx('playClick');
+            switchTab(btn.dataset.tab);
         });
-    }
+    });
+
+    const openPatches = () => { sfx('playClick'); switchTab('news'); };
+    $('btn-open-changes')?.addEventListener('click', openPatches);
+    $('btn-open-more')?.addEventListener('click', openPatches);
+
+    $('btn-notify')?.addEventListener('click', () => {
+        sfx('playClick');
+        const dot = document.querySelector('.notify-dot');
+        if (dot) dot.remove();
+        switchTab('news');
+        showToast('Вышел патч v2.5.0 — Rust-крафт и новый лаунчер', 'success');
+    });
 
     // ==========================================
-    // PROMO CODE ACTIVATION
+    // PROFILE / ACCOUNT
     // ==========================================
-    if (promoSubmitBtn && promoInput) {
-        promoSubmitBtn.addEventListener('click', redeemPromo);
-        promoInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') redeemPromo();
-        });
-    }
-
-    function redeemPromo() {
-        const code = promoInput.value.trim().toUpperCase();
-        if (!code) {
-            showToast('Введите промокод!', 'error');
-            return;
-        }
-
-        if (STATE.redeemedCodes.includes(code)) {
-            showToast('Этот промокод уже был активирован ранее!', 'error');
-            return;
-        }
-
-        const validPromos = {
-            'WIPE2026': { bonus: 500, label: '+500 Scrap' },
-            'RUSTME': { bonus: 300, label: '+300 Scrap' },
-            'SPACERUST': { bonus: 1000, label: '+1,000 Scrap' }
-        };
-
-        if (validPromos[code]) {
-            const reward = validPromos[code];
-            if (reward.bonus) {
-                STATE.scrap += reward.bonus;
-                localStorage.setItem('sr_scrap', STATE.scrap);
-            }
-
-            STATE.redeemedCodes.push(code);
-            localStorage.setItem('sr_redeemed_codes', JSON.stringify(STATE.redeemedCodes));
-
-            promoInput.value = '';
-            if (window.soundEngine) window.soundEngine.playSuccess();
-            updateProfileUI();
-            showToast(`Успешно! Промокод активирован: ${reward.label}`, 'success');
-        } else {
-            showToast('Неверный промокод или срок действия истек', 'error');
-        }
-    }
-
-    // ==========================================
-    // ACCOUNT / NICKNAME MODAL
-    // ==========================================
-    if (profileBtn && accountModal) {
-        profileBtn.addEventListener('click', () => {
-            if (window.soundEngine) window.soundEngine.playClick();
-            modalInputNick.value = STATE.nickname;
-            modalDisplayNick.textContent = STATE.nickname;
-            modalAvatarPreview.src = `https://mc-heads.net/avatar/${encodeURIComponent(STATE.nickname)}/64`;
-            accountModal.classList.add('show');
-        });
-    }
-
-    if (modalCloseBtn && accountModal) {
-        modalCloseBtn.addEventListener('click', () => {
-            accountModal.classList.remove('show');
-        });
-    }
-
-    if (modalInputNick) {
-        modalInputNick.addEventListener('input', (e) => {
-            const raw = e.target.value.replace(/[^a-zA-Z0-9_]/g, '');
-            e.target.value = raw;
-            const previewNick = raw || 'Steve';
-            modalDisplayNick.textContent = raw || '...';
-            modalAvatarPreview.src = `https://mc-heads.net/avatar/${encodeURIComponent(previewNick)}/64`;
-        });
-    }
-
-    if (modalSaveBtn) {
-        modalSaveBtn.addEventListener('click', () => {
-            const newNick = modalInputNick.value.trim();
-            if (newNick.length < 3) {
-                showToast('Никнейм должен содержать минимум 3 символа!', 'error');
-                return;
-            }
-
-            STATE.nickname = newNick;
-            localStorage.setItem('sr_nickname', newNick);
-            updateProfileUI();
-            accountModal.classList.remove('show');
-            if (window.soundEngine) window.soundEngine.playSuccess();
-            showToast(`Никнейм успешно сохранен: ${newNick}`, 'success');
-        });
-    }
-
     function updateProfileUI() {
-        if (profileNickEl) profileNickEl.textContent = STATE.nickname;
-        if (profileBalEl) profileBalEl.textContent = `${STATE.scrap.toLocaleString('ru-RU')} Scrap`;
-        if (profileAvatarImg) {
-            profileAvatarImg.src = `https://mc-heads.net/avatar/${encodeURIComponent(STATE.nickname)}/64`;
-        }
-        if (homePlayerNick) homePlayerNick.textContent = STATE.nickname;
-        if (dockNickInput && document.activeElement !== dockNickInput) {
-            dockNickInput.value = STATE.nickname;
-        }
-        if (modalInputNick && document.activeElement !== modalInputNick) {
-            modalInputNick.value = STATE.nickname;
-        }
-        if (modalDisplayNick) modalDisplayNick.textContent = STATE.nickname;
-        if (modalAvatarPreview) {
-            modalAvatarPreview.src = `https://mc-heads.net/avatar/${encodeURIComponent(STATE.nickname)}/64`;
-        }
-        const rankEl = document.querySelector('.user-rank');
+        const scrapText = `${STATE.scrap.toLocaleString('ru-RU')} Scrap`;
+        if (profileBalEl) profileBalEl.textContent = scrapText;
+        if (shopBalEl) shopBalEl.textContent = scrapText;
+        if (avatarImg) avatarImg.src = avatarUrl(STATE.nickname);
+        if (nickInput && document.activeElement !== nickInput) nickInput.value = STATE.nickname;
+        if (modalNick) modalNick.textContent = STATE.nickname;
+        if (modalAvatar) modalAvatar.src = avatarUrl(STATE.nickname);
         if (rankEl) {
             rankEl.textContent = STATE.rank || 'ИГРОК';
-            if (STATE.rank && STATE.rank !== 'ИГРОК' && STATE.rank !== 'БЕЗ ПОДПИСКИ') {
-                rankEl.classList.add('has-sub');
-            } else {
-                rankEl.classList.remove('has-sub');
-            }
+            rankEl.classList.toggle('has-sub', !!STATE.rank && STATE.rank !== 'ИГРОК');
         }
     }
 
-    // Direct Nickname Input in Bottom Dock
-    if (dockNickInput) {
-        dockNickInput.value = STATE.nickname;
-        dockNickInput.addEventListener('input', (e) => {
+    function setNickname(nick) {
+        STATE.nickname = nick;
+        localStorage.setItem('sr_nickname', nick);
+        updateProfileUI();
+    }
+
+    if (nickInput) {
+        nickInput.addEventListener('click', (e) => e.stopPropagation());
+        nickInput.addEventListener('input', (e) => {
             const raw = e.target.value.replace(/[^a-zA-Z0-9_]/g, '');
             e.target.value = raw;
             if (raw.length >= 3) {
                 STATE.nickname = raw;
                 localStorage.setItem('sr_nickname', raw);
-                if (profileNickEl) profileNickEl.textContent = raw;
-                if (homePlayerNick) homePlayerNick.textContent = raw;
-                if (profileAvatarImg) profileAvatarImg.src = `https://mc-heads.net/avatar/${encodeURIComponent(raw)}/64`;
-                if (modalDisplayNick) modalDisplayNick.textContent = raw;
-                if (modalInputNick && document.activeElement !== modalInputNick) modalInputNick.value = raw;
-                if (modalAvatarPreview) modalAvatarPreview.src = `https://mc-heads.net/avatar/${encodeURIComponent(raw)}/64`;
+                if (avatarImg) avatarImg.src = avatarUrl(raw);
             }
         });
-        dockNickInput.addEventListener('change', (e) => {
+        nickInput.addEventListener('change', (e) => {
             const raw = e.target.value.trim();
             if (raw.length < 3) {
                 showToast('Никнейм должен содержать минимум 3 символа!', 'error');
                 e.target.value = STATE.nickname;
             } else {
-                showToast(`Никнейм обновлен: ${raw}`, 'success');
+                setNickname(raw);
+                showToast(`Никнейм обновлён: ${raw}`, 'success');
             }
         });
+        nickInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') nickInput.blur(); });
     }
 
-    if (homePlayerNick) {
-        homePlayerNick.style.cursor = 'pointer';
-        homePlayerNick.title = 'Нажмите для смены ника';
-        homePlayerNick.addEventListener('click', () => {
-            if (profileBtn) profileBtn.click();
-        });
+    function openAccountModal() {
+        sfx('playClick');
+        modalInputNick.value = STATE.nickname;
+        modalNick.textContent = STATE.nickname;
+        modalAvatar.src = avatarUrl(STATE.nickname);
+        accountModal.classList.add('show');
+        setTimeout(() => modalInputNick.focus(), 50);
     }
+    const closeAccountModal = () => accountModal.classList.remove('show');
 
-    // Auto-detect Windows username on fresh start
-    async function checkSystemUsername() {
-        if (!localStorage.getItem('sr_nickname')) {
-            try {
-                if (window.pywebview && window.pywebview.api && window.pywebview.api.get_system_username) {
-                    const sysName = await window.pywebview.api.get_system_username();
-                    if (sysName && sysName.length >= 3) {
-                        STATE.nickname = sysName;
-                        localStorage.setItem('sr_nickname', sysName);
-                        updateProfileUI();
-                    }
-                }
-            } catch (err) {
-                console.log('System username lookup error:', err);
-            }
+    profileCard?.addEventListener('click', openAccountModal);
+    $('modal-account-close')?.addEventListener('click', closeAccountModal);
+    accountModal?.addEventListener('click', (e) => { if (e.target === accountModal) closeAccountModal(); });
+
+    modalInputNick?.addEventListener('input', (e) => {
+        const raw = e.target.value.replace(/[^a-zA-Z0-9_]/g, '');
+        e.target.value = raw;
+        modalNick.textContent = raw || '...';
+        modalAvatar.src = avatarUrl(raw || 'Steve');
+    });
+    modalInputNick?.addEventListener('keydown', (e) => { if (e.key === 'Enter') $('modal-save-btn').click(); });
+
+    $('modal-save-btn')?.addEventListener('click', () => {
+        const nick = modalInputNick.value.trim();
+        if (nick.length < 3) {
+            showToast('Никнейм должен содержать минимум 3 символа!', 'error');
+            return;
         }
+        setNickname(nick);
+        closeAccountModal();
+        sfx('playSuccess');
+        showToast(`Никнейм сохранён: ${nick}`, 'success');
+    });
+
+    async function checkSystemUsername() {
+        if (localStorage.getItem('sr_nickname')) return;
+        try {
+            const a = api();
+            if (a && a.get_system_username) {
+                const sysName = await a.get_system_username();
+                if (sysName && sysName.length >= 3) setNickname(sysName);
+            }
+        } catch (err) { console.log('username lookup error', err); }
     }
     window.addEventListener('pywebviewready', checkSystemUsername);
     setTimeout(checkSystemUsername, 800);
 
     // ==========================================
-    // WINDOW CONTROLS (PYWEBVIEW / BROWSER)
+    // PROMO CODES (Scrap)
     // ==========================================
-    if (btnMinimize) {
-        btnMinimize.addEventListener('click', () => {
-            if (window.pywebview && window.pywebview.api && window.pywebview.api.minimize_window) {
-                window.pywebview.api.minimize_window();
-            } else {
-                showToast('Сворачивание доступно в окне приложения');
-            }
+    const promoInput = $('promo-input');
+    function redeemPromo() {
+        const code = promoInput.value.trim().toUpperCase();
+        if (!code) return showToast('Введите промокод!', 'error');
+        if (STATE.redeemedCodes.includes(code)) return showToast('Этот промокод уже активирован!', 'error');
+
+        const promos = {
+            'WIPE2026': 500,
+            'RUSTME': 300,
+            'SPACERUST': 1000
+        };
+        if (!promos[code]) return showToast('Неверный промокод или срок действия истёк', 'error');
+
+        STATE.scrap += promos[code];
+        localStorage.setItem('sr_scrap', STATE.scrap);
+        STATE.redeemedCodes.push(code);
+        localStorage.setItem('sr_redeemed_codes', JSON.stringify(STATE.redeemedCodes));
+        promoInput.value = '';
+        sfx('playSuccess');
+        updateProfileUI();
+        showToast(`Промокод активирован: +${promos[code].toLocaleString('ru-RU')} Scrap`, 'success');
+    }
+    $('promo-submit-btn')?.addEventListener('click', redeemPromo);
+    promoInput?.addEventListener('keypress', (e) => { if (e.key === 'Enter') redeemPromo(); });
+
+    // ==========================================
+    // SETTINGS DRAWER
+    // ==========================================
+    const openDrawer = () => { sfx('playClick'); drawer.classList.add('show'); drawerBackdrop.classList.add('show'); };
+    const closeDrawer = () => { drawer.classList.remove('show'); drawerBackdrop.classList.remove('show'); };
+    $('btn-settings')?.addEventListener('click', openDrawer);
+    $('settings-close')?.addEventListener('click', closeDrawer);
+    drawerBackdrop?.addEventListener('click', closeDrawer);
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') { closeDrawer(); closeAccountModal(); }
+    });
+
+    const ramSlider = $('settings-ram-slider');
+    const ramLabel = $('settings-ram-label');
+    function renderRam() {
+        const txt = `${STATE.ramMB} MB`;
+        if (ramLabel) ramLabel.textContent = txt;
+        if ($('dock-ram-stat')) $('dock-ram-stat').textContent = txt;
+        if ($('home-ram-val')) $('home-ram-val').textContent = txt;
+    }
+    if (ramSlider) {
+        ramSlider.value = STATE.ramMB;
+        ramSlider.addEventListener('input', (e) => {
+            STATE.ramMB = parseInt(e.target.value, 10);
+            localStorage.setItem('sr_ram_mb', STATE.ramMB);
+            renderRam();
+        });
+    }
+    renderRam();
+
+    const volSlider = $('settings-volume-slider');
+    const volLabel = $('settings-volume-label');
+    if (volSlider) {
+        volSlider.value = Math.round(STATE.soundVolume * 100);
+        volLabel.textContent = `${volSlider.value}%`;
+        volSlider.addEventListener('input', (e) => {
+            const v = parseInt(e.target.value, 10);
+            STATE.soundVolume = v / 100;
+            volLabel.textContent = `${v}%`;
+            localStorage.setItem('sr_sound_vol', STATE.soundVolume);
+            if (window.soundEngine) window.soundEngine.setVolume(STATE.soundVolume);
         });
     }
 
-    if (btnClose) {
-        btnClose.addEventListener('click', () => {
-            if (window.pywebview && window.pywebview.api && window.pywebview.api.close_window) {
-                window.pywebview.api.close_window();
-            } else {
-                window.close();
+    const animToggle = $('setting-gpu-accel');
+    const applyAnim = () => document.body.classList.toggle('no-anim', !STATE.animations);
+    if (animToggle) {
+        animToggle.checked = STATE.animations;
+        animToggle.addEventListener('change', () => {
+            STATE.animations = animToggle.checked;
+            localStorage.setItem('sr_anim', STATE.animations);
+            applyAnim();
+        });
+    }
+    applyAnim();
+
+    const gcToggle = $('setting-opt-gc');
+    if (gcToggle) {
+        gcToggle.checked = STATE.optGC;
+        gcToggle.addEventListener('change', () => {
+            STATE.optGC = gcToggle.checked;
+            localStorage.setItem('sr_opt_gc', STATE.optGC);
+        });
+    }
+
+    $('btn-open-folder')?.addEventListener('click', () => {
+        sfx('playClick');
+        const a = api();
+        if (a && a.open_game_folder) a.open_game_folder();
+        else showToast('Папка клиента: %APPDATA%\\.spacerust');
+    });
+
+    if (soundBtn) {
+        soundBtn.classList.toggle('muted', !STATE.soundEnabled);
+        soundBtn.addEventListener('click', () => {
+            STATE.soundEnabled = !STATE.soundEnabled;
+            localStorage.setItem('sr_sound_enabled', STATE.soundEnabled);
+            if (window.soundEngine) {
+                window.soundEngine.setEnabled(STATE.soundEnabled);
+                if (STATE.soundEnabled) sfx('playClick');
             }
+            soundBtn.classList.toggle('muted', !STATE.soundEnabled);
+            showToast(STATE.soundEnabled ? 'Звуки интерфейса включены' : 'Звуки интерфейса выключены');
         });
     }
 
     // ==========================================
-    // SMOOTH NATIVE WINDOW DRAG (ZERO LAG WIN32)
+    // WINDOW CONTROLS + NATIVE DRAG
     // ==========================================
-    const titlebar = document.getElementById('app-titlebar') || document.querySelector('.titlebar');
-    const headerBar = document.querySelector('.header-bar');
+    $('btn-minimize')?.addEventListener('click', () => {
+        const a = api();
+        if (a && a.minimize_window) a.minimize_window();
+    });
+    $('btn-close')?.addEventListener('click', () => {
+        const a = api();
+        if (a && a.close_window) a.close_window(); else window.close();
+    });
 
+    const topbar = $('app-titlebar');
     const triggerDrag = () => {
-        if (window.pywebview && window.pywebview.api && typeof window.pywebview.api.drag_window === 'function') {
-            window.pywebview.api.drag_window();
-            return true;
-        }
+        const a = api();
+        if (a && typeof a.drag_window === 'function') { a.drag_window(); return true; }
         return false;
     };
-
-    const handleWindowDragStart = (e) => {
+    topbar?.addEventListener('mousedown', (e) => {
         if (e.button !== 0) return;
-        // Ignore clicks on buttons, inputs, links, tabs, profile badges or window controls
-        if (e.target.closest('button, a, input, select, textarea, .tab-btn, .social-btn, .sound-toggle-btn, .window-ctrl-btn, .user-profile-badge, .window-controls')) {
-            return;
-        }
-
+        if (e.target.closest('button, a, input')) return;
         e.preventDefault();
-
-        if (!triggerDrag()) {
-            setTimeout(triggerDrag, 25);
-        }
-    };
-
-    if (titlebar) {
-        titlebar.addEventListener('mousedown', handleWindowDragStart);
-    }
-    if (headerBar) {
-        headerBar.addEventListener('mousedown', handleWindowDragStart);
-    }
+        if (!triggerDrag()) setTimeout(triggerDrag, 25);
+    });
 
     // ==========================================
-    // LAUNCH GAME ACTION
+    // GAME LOADING LINE + PLAY
     // ==========================================
-    window.updateLaunchProgress = function(text, percent) {
-        if (btnPlayText) btnPlayText.textContent = text.toUpperCase();
-        if (launchProgressBar) launchProgressBar.style.width = `${percent}%`;
+    function setIdleLine() {
+        loadLine.classList.remove('paused', 'done');
+        loadFill.style.width = '0%';
+        loadTitle.textContent = 'КЛИЕНТ ГОТОВ К ЗАПУСКУ';
+        loadStage.innerHTML = `SpaceRust-1.16.5 · ОЗУ <b id="dock-ram-stat">${STATE.ramMB} MB</b>`;
+        loadPct.textContent = '';
+        btnPause.disabled = true;
+        btnResume.disabled = true;
+        btnResume.classList.remove('active');
+    }
+
+    window.updateLaunchProgress = function (text, percent) {
+        const pct = Math.max(0, Math.min(100, Math.round(percent)));
+        loadFill.style.width = `${pct}%`;
+        loadTitle.textContent = STATE.isPaused ? 'ЗАГРУЗКА НА ПАУЗЕ' : 'ЗАГРУЗКА ИГРЫ';
+        loadStage.textContent = text;
+        loadPct.textContent = `${pct}%`;
+        if (btnPlayText) btnPlayText.textContent = pct >= 100 ? 'ЗАПУСК...' : `ЗАГРУЗКА ${pct}%`;
     };
 
-    if (btnPlay) {
-        btnPlay.addEventListener('click', handleLaunchGame);
+    function setPaused(paused) {
+        STATE.isPaused = paused;
+        loadLine.classList.toggle('paused', paused);
+        btnPause.disabled = paused;
+        btnResume.disabled = !paused;
+        btnResume.classList.toggle('active', paused);
+        loadTitle.textContent = paused ? 'ЗАГРУЗКА НА ПАУЗЕ' : 'ЗАГРУЗКА ИГРЫ';
+    }
+
+    btnPause?.addEventListener('click', async () => {
+        if (!STATE.isLaunching || STATE.isPaused) return;
+        sfx('playClick');
+        setPaused(true);
+        const a = api();
+        if (a && a.pause_download) await a.pause_download();
+        showToast('Загрузка приостановлена');
+    });
+
+    btnResume?.addEventListener('click', async () => {
+        if (!STATE.isLaunching || !STATE.isPaused) return;
+        sfx('playClick');
+        setPaused(false);
+        const a = api();
+        if (a && a.resume_download) await a.resume_download();
+        showToast('Загрузка продолжена', 'success');
+    });
+
+    function finishLaunch(delay) {
+        setTimeout(() => {
+            btnPlay.classList.remove('loading-state');
+            btnPlayText.textContent = 'ИГРАТЬ';
+            STATE.isLaunching = false;
+            setPaused(false);
+            setIdleLine();
+        }, delay);
+    }
+
+    // Browser preview fallback (no pywebview) — simulated progress
+    function simulateLaunch() {
+        return new Promise((resolve) => {
+            let p = 5;
+            const tick = setInterval(() => {
+                if (STATE.isPaused) return;
+                p += 4 + Math.random() * 6;
+                if (p >= 100) {
+                    clearInterval(tick);
+                    window.updateLaunchProgress('Запуск Minecraft...', 100);
+                    resolve({ status: 'success' });
+                } else {
+                    window.updateLaunchProgress(`Загрузка: ${Math.round(p * 1.6)} / 160 МБ`, p);
+                }
+            }, 180);
+        });
     }
 
     async function handleLaunchGame() {
         if (STATE.isLaunching) return;
+        if (nickInput && document.activeElement === nickInput) nickInput.blur();
+        if (!STATE.nickname || STATE.nickname.length < 3) {
+            showToast('Укажите никнейм (минимум 3 символа)', 'error');
+            return;
+        }
 
         STATE.isLaunching = true;
-        if (window.soundEngine) window.soundEngine.playLaunch();
-
+        sfx('playLaunch');
         btnPlay.classList.add('loading-state');
-        if (launchProgressBar) launchProgressBar.style.width = '20%';
-        if (btnPlayText) btnPlayText.textContent = 'ПРОВЕРКА ФАЙЛОВ...';
+        loadLine.classList.remove('done', 'paused');
+        btnPause.disabled = false;
+        btnResume.disabled = true;
+        window.updateLaunchProgress('Проверка файлов клиента...', 3);
 
         try {
-            if (launchProgressBar) launchProgressBar.style.width = '50%';
-            if (btnPlayText) btnPlayText.textContent = 'ЗАПУСК КЛИЕНТА...';
-
-            let res = { status: 'success' };
-            if (window.pywebview && window.pywebview.api && window.pywebview.api.launch_client) {
-                res = await window.pywebview.api.launch_client(STATE.ramMB, STATE.nickname);
-            }
+            const a = api();
+            const res = (a && a.launch_client)
+                ? await a.launch_client(STATE.ramMB, STATE.nickname)
+                : await simulateLaunch();
 
             if (res && res.status === 'error') {
-                if (launchProgressBar) launchProgressBar.style.width = '0%';
                 btnPlay.classList.remove('loading-state');
-                if (btnPlayText) btnPlayText.textContent = 'ЗАПУСТИТЬ ИГРУ';
+                btnPlayText.textContent = 'ИГРАТЬ';
                 STATE.isLaunching = false;
-
-                showToast('Ошибка запуска! Проверьте сообщение на экране', 'error');
+                setPaused(false);
+                setIdleLine();
+                showToast('Ошибка запуска игры', 'error');
                 alert('⚠️ НЕ УДАЛОСЬ ЗАПУСТИТЬ ИГРУ:\n\n' + res.message);
                 return;
             }
 
-            if (launchProgressBar) launchProgressBar.style.width = '100%';
-            if (btnPlayText) btnPlayText.textContent = 'ИГРА ЗАПУСКАЕТСЯ...';
-            if (window.soundEngine) window.soundEngine.playSuccess();
-            showToast('🚀 Игра запущена! Открывается SpaceRust...', 'success');
-
-            setTimeout(() => {
-                btnPlay.classList.remove('loading-state');
-                if (launchProgressBar) launchProgressBar.style.width = '0%';
-                if (btnPlayText) btnPlayText.textContent = 'ЗАПУСТИТЬ ИГРУ';
-                STATE.isLaunching = false;
-            }, 3500);
-
+            loadLine.classList.add('done');
+            loadFill.style.width = '100%';
+            loadTitle.textContent = 'ИГРА ЗАПУЩЕНА';
+            loadStage.textContent = 'Приятной игры на SpaceRust!';
+            loadPct.textContent = '100%';
+            btnPlayText.textContent = 'ИГРА ЗАПУЩЕНА';
+            btnPause.disabled = true;
+            btnResume.disabled = true;
+            sfx('playSuccess');
+            showToast('Игра запущена! Открывается SpaceRust...', 'success');
+            finishLaunch(4000);
         } catch (err) {
-            console.error('Launch Error:', err);
+            console.error('Launch error', err);
             btnPlay.classList.remove('loading-state');
-            if (launchProgressBar) launchProgressBar.style.width = '0%';
-            if (btnPlayText) btnPlayText.textContent = 'ЗАПУСТИТЬ ИГРУ';
+            btnPlayText.textContent = 'ИГРАТЬ';
             STATE.isLaunching = false;
+            setPaused(false);
+            setIdleLine();
             alert('⚠️ Ошибка соединения с лаунчером:\n\n' + err);
         }
     }
+    btnPlay?.addEventListener('click', handleLaunchGame);
 
     // ==========================================
-    // AUDIO HOVER LISTENER HELPER
+    // AUDIO HOVER
     // ==========================================
-    function attachAudioListeners() {
-        const interactiveElements = document.querySelectorAll('button, .tab-btn, .social-btn, .user-profile-badge');
-        interactiveElements.forEach(el => {
-            if (!el.dataset.audioBound) {
-                el.dataset.audioBound = 'true';
-                el.addEventListener('mouseenter', () => {
-                    if (window.soundEngine) window.soundEngine.playHover();
-                });
-            }
-        });
-    }
+    document.querySelectorAll('button, .account-card, .quick-row, .patch-card, .shop-card').forEach(el => {
+        el.addEventListener('mouseenter', () => sfx('playHover'));
+    });
 
     // ==========================================
-    // TOAST NOTIFICATIONS HELPER
+    // TOASTS
     // ==========================================
     function showToast(message, type = 'info') {
-        const container = document.getElementById('toast-container');
+        const container = $('toast-container');
         if (!container) return;
-
         const toast = document.createElement('div');
-        toast.className = `toast ${type === 'success' ? 'success' : ''}`;
-        
-        let iconSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>';
-        if (type === 'success') {
-            iconSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="var(--rust-green-bright)"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
-        } else if (type === 'error') {
-            iconSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="#e81123"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>';
-        }
-
-        toast.innerHTML = `${iconSvg}<span>${message}</span>`;
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
         container.appendChild(toast);
-
         setTimeout(() => {
-            toast.style.opacity = '0';
-            toast.style.transform = 'translateX(40px)';
-            toast.style.transition = 'all 0.3s ease';
-            setTimeout(() => toast.remove(), 300);
-        }, 3500);
+            toast.classList.add('hide');
+            setTimeout(() => toast.remove(), 260);
+        }, 2800);
+        while (container.children.length > 3) container.firstChild.remove();
     }
+
+    // ==========================================
+    // INIT
+    // ==========================================
+    updateProfileUI();
+    setIdleLine();
 });

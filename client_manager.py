@@ -3,6 +3,7 @@ import sys
 import shutil
 import subprocess
 import json
+import threading
 import traceback
 import minecraft_launcher_lib
 
@@ -11,11 +12,19 @@ class SpaceRustClientManager:
         self.game_dir = os.path.expandvars(r'%APPDATA%\.spacerust')
         self.version_id = 'SpaceRust-1.16.5'
         self.log_file = os.path.join(self.game_dir, 'launcher.log')
+        self._pause_event = threading.Event()
+        self._pause_event.set()
         if getattr(sys, 'frozen', False):
             self.exe_dir = os.path.dirname(sys.executable)
         else:
             self.exe_dir = os.path.dirname(os.path.abspath(__file__))
         self.ensure_directories()
+
+    def pause_download(self):
+        self._pause_event.clear()
+
+    def resume_download(self):
+        self._pause_event.set()
 
     def log(self, text):
         msg = f"[SpaceRust] {text}"
@@ -137,6 +146,10 @@ class SpaceRustClientManager:
             last_pct = -1
 
             while True:
+                if not self._pause_event.is_set():
+                    pct_now = last_pct if last_pct > 0 else 0
+                    notify(f"Пауза ({pct_now}%)", pct_now)
+                    self._pause_event.wait()
                 chunk = resp.read(chunk_size)
                 if not chunk:
                     break
@@ -154,6 +167,7 @@ class SpaceRustClientManager:
                     notify(f"Загрузка: {mb_done:.0f} МБ...", 50)
 
     def verify_and_prepare(self, progress_callback=None):
+        self._pause_event.set()
         def notify(stage, percent):
             self.log(f"{stage} ({percent}%)")
             if progress_callback:

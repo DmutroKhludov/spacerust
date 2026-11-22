@@ -125,6 +125,20 @@ class LauncherApi:
             except Exception:
                 pass
 
+    def pause_download(self):
+        try:
+            self.manager.pause_download()
+            return True
+        except Exception:
+            return False
+
+    def resume_download(self):
+        try:
+            self.manager.resume_download()
+            return True
+        except Exception:
+            return False
+
     def launch_client(self, ram_mb=None, nickname=None):
         try:
             res = self.manager.launch(nickname=nickname, ram_mb=ram_mb, progress_callback=self.report_progress)
