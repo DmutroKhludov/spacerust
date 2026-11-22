@@ -385,6 +385,7 @@ class SpaceRustClientManager:
             self.log(f"Player: {options['username']}, RAM: {ram_mb} MB")
             self.log(f"Java: {java_exe}")
 
+            cmd = minecraft_launcher_lib.command.get_minecraft_command(self.version_id, self.game_dir, options)
             flags = 0
             if sys.platform == 'win32':
                 flags = getattr(subprocess, 'CREATE_NEW_PROCESS_GROUP', 0) | getattr(subprocess, 'DETACHED_PROCESS', 0)
