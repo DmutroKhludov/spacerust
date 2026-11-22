@@ -7,6 +7,63 @@ import threading
 import traceback
 import minecraft_launcher_lib
 
+SUPPORTED_LANGS = ('ru', 'uk', 'en')
+
+BACKEND_MESSAGES = {
+    'ru': {
+        'mb': 'МБ',
+        'mbs': 'МБ/с',
+        'kbs': 'КБ/с',
+        'paused': 'Пауза ({pct}%)',
+        'checking': 'Проверка папки SpaceRust...',
+        'ready': 'Клиент готов к запуску!',
+        'ready_short': 'Клиент готов!',
+        'unpacking_dir': 'Распаковка файлов игры из папки...',
+        'init_cache': 'Инициализация файлов из локального кэша...',
+        'first_launch': 'Первый запуск: подключение к серверу...',
+        'extracting': 'Распаковка файлов игры...',
+        'done_launch': 'Установка завершена! Запуск...',
+        'dl_failed': 'Не удалось автоматически загрузить файлы игры:\n{err}\n\nПроверьте подключение к интернету.',
+        'no_java': 'Java не найдена на вашем компьютере!\n\nДля запуска игры требуется Java 8 (x64).\nУстановите Java с официального сайта: https://www.java.com',
+        'launch_err': 'Ошибка запуска игры: {err}',
+    },
+    'uk': {
+        'mb': 'МБ',
+        'mbs': 'МБ/с',
+        'kbs': 'КБ/с',
+        'paused': 'Пауза ({pct}%)',
+        'checking': 'Перевірка папки SpaceRust...',
+        'ready': 'Клієнт готовий до запуску!',
+        'ready_short': 'Клієнт готовий!',
+        'unpacking_dir': 'Розпакування файлів гри з папки...',
+        'init_cache': 'Ініціалізація файлів із локального кешу...',
+        'first_launch': 'Перший запуск: підключення до сервера...',
+        'extracting': 'Розпакування файлів гри...',
+        'done_launch': 'Встановлення завершено! Запуск...',
+        'dl_failed': 'Не вдалося автоматично завантажити файли гри:\n{err}\n\nПеревірте підключення до інтернету.',
+        'no_java': 'Java не знайдено на вашому комп’ютері!\n\nДля запуску гри потрібна Java 8 (x64).\nВстановіть Java з офіційного сайту: https://www.java.com',
+        'launch_err': 'Помилка запуску гри: {err}',
+    },
+    'en': {
+        'mb': 'MB',
+        'mbs': 'MB/s',
+        'kbs': 'KB/s',
+        'paused': 'Paused ({pct}%)',
+        'checking': 'Checking SpaceRust folder...',
+        'ready': 'Client is ready to launch!',
+        'ready_short': 'Client ready!',
+        'unpacking_dir': 'Extracting game files from folder...',
+        'init_cache': 'Initializing files from local cache...',
+        'first_launch': 'First launch: connecting to server...',
+        'extracting': 'Extracting game files...',
+        'done_launch': 'Installation complete! Launching...',
+        'dl_failed': 'Failed to download game files automatically:\n{err}\n\nCheck your internet connection.',
+        'no_java': 'Java was not found on your computer!\n\nJava 8 (x64) is required to launch the game.\nInstall Java from the official site: https://www.java.com',
+        'launch_err': 'Game launch error: {err}',
+    },
+}
+
+
 class SpaceRustClientManager:
     def __init__(self):
         self.default_game_dir = os.path.expandvars(r'%APPDATA%\.spacerust')
@@ -17,6 +74,8 @@ class SpaceRustClientManager:
         saved_dir = (cfg.get('game_dir') or '').strip()
         self.game_dir = os.path.abspath(os.path.expandvars(saved_dir)) if saved_dir else self.default_game_dir
         self.playtime_seconds = int(cfg.get('playtime_seconds', 0) or 0)
+        saved_lang = str(cfg.get('lang') or 'ru').strip().lower()
+        self.lang = saved_lang if saved_lang in SUPPORTED_LANGS else 'ru'
         self.version_id = 'SpaceRust-1.16.5'
         self.log_file = os.path.join(self.game_dir, 'launcher.log')
         self._pause_event = threading.Event()
@@ -26,6 +85,22 @@ class SpaceRustClientManager:
         else:
             self.exe_dir = os.path.dirname(os.path.abspath(__file__))
         self.ensure_directories()
+
+    def _msg(self, key, **kwargs):
+        table = BACKEND_MESSAGES.get(self.lang, BACKEND_MESSAGES['ru'])
+        text = table.get(key) or BACKEND_MESSAGES['ru'].get(key, key)
+        return text.format(**kwargs) if kwargs else text
+
+    def get_language(self):
+        return self.lang
+
+    def set_language(self, lang):
+        clean = str(lang or '').strip().lower()
+        if clean not in SUPPORTED_LANGS:
+            return {"status": "error", "message": f"Unsupported language: {lang}"}
+        self.lang = clean
+        self._save_config({'lang': clean})
+        return {"status": "ok", "lang": self.lang}
 
     def _load_config(self):
         try:
@@ -244,12 +319,12 @@ class SpaceRustClientManager:
             win_start = time.monotonic()
             win_bytes = 0
             last_report = 0.0
-            speed_str = "0.0 МБ/с"
+            speed_str = f"0.0 {self._msg('mbs')}"
 
             while True:
                 if not self._pause_event.is_set():
                     pct_now = last_pct if last_pct > 0 else 0
-                    notify(f"Пауза ({pct_now}%)", pct_now)
+                    notify(self._msg('paused', pct=pct_now), pct_now)
                     self._pause_event.wait()
                     win_start = time.monotonic()
                     win_bytes = 0
@@ -267,9 +342,9 @@ class SpaceRustClientManager:
                 if elapsed >= 0.4:
                     bps = win_bytes / elapsed
                     if bps >= 1024 * 1024:
-                        speed_str = f"{bps / (1024 * 1024):.1f} МБ/с"
+                        speed_str = f"{bps / (1024 * 1024):.1f} {self._msg('mbs')}"
                     else:
-                        speed_str = f"{bps / 1024:.0f} КБ/с"
+                        speed_str = f"{bps / 1024:.0f} {self._msg('kbs')}"
                     win_start = now
                     win_bytes = 0
 
@@ -278,11 +353,12 @@ class SpaceRustClientManager:
                     last_pct = pct
                     last_report = now
                     mb_done = downloaded / (1024 * 1024)
+                    mb_unit = self._msg('mb')
                     if total_size > 0:
                         mb_total = total_size / (1024 * 1024)
-                        notify(f"{mb_done:.0f} / {mb_total:.0f} МБ · {speed_str}", pct)
+                        notify(f"{mb_done:.0f} / {mb_total:.0f} {mb_unit} · {speed_str}", pct)
                     else:
-                        notify(f"{mb_done:.0f} МБ · {speed_str}", pct)
+                        notify(f"{mb_done:.0f} {mb_unit} · {speed_str}", pct)
 
     def verify_and_prepare(self, progress_callback=None):
         self._pause_event.set()
@@ -291,7 +367,7 @@ class SpaceRustClientManager:
             if progress_callback:
                 progress_callback(stage, percent)
 
-        notify("Проверка папки SpaceRust...", 10)
+        notify(self._msg('checking'), 10)
         self.ensure_directories()
         self.create_desktop_shortcut()
 
@@ -302,13 +378,13 @@ class SpaceRustClientManager:
         # 1. If files already exist in .spacerust, we are ready!
         if os.path.isfile(ver_jar) and os.path.isfile(ver_json):
             self.sync_latest_mod()
-            notify("Клиент готов к запуску!", 100)
+            notify(self._msg('ready'), 100)
             return True
 
         # 2. Check if a portable 'data' folder exists next to the launcher exe/script
         portable_data = os.path.join(self.exe_dir, 'data')
         if os.path.isdir(portable_data):
-            notify("Распаковка файлов игры из папки...", 30)
+            notify(self._msg('unpacking_dir'), 30)
             self.log(f"Copying portable data from {portable_data} to {self.game_dir}...")
             try:
                 for item in os.listdir(portable_data):
@@ -320,7 +396,7 @@ class SpaceRustClientManager:
                         shutil.copy2(src_item, dst_item)
                 self.sync_latest_mod()
                 if os.path.isfile(ver_jar) and os.path.isfile(ver_json):
-                    notify("Клиент готов к запуску!", 100)
+                    notify(self._msg('ready'), 100)
                     return True
             except Exception as e:
                 self.log(f"Error copying portable data: {e}")
@@ -330,7 +406,7 @@ class SpaceRustClientManager:
         local_src_ver = os.path.join(local_mc, 'versions', 'Fabric 1.16.5')
 
         if os.path.isdir(local_src_ver):
-            notify("Инициализация файлов из локального кэша...", 40)
+            notify(self._msg('init_cache'), 40)
             shutil.copytree(local_src_ver, ver_dir, dirs_exist_ok=True)
             for f in os.listdir(ver_dir):
                 if 'Fabric 1.16.5' in f:
@@ -357,18 +433,18 @@ class SpaceRustClientManager:
                 shutil.copytree(local_assets, asset_dir, dirs_exist_ok=True)
 
             self.sync_latest_mod()
-            notify("Клиент готов!", 100)
+            notify(self._msg('ready_short'), 100)
             return True
 
         # 4. Auto-download from GitHub Release (RustMe-style cloud bootstrap)
         cloud_url = "https://github.com/DmutroKhludov/spacerust/releases/download/v1.0.0/SpaceRust-Files.zip"
-        notify("Первый запуск: подключение к серверу...", 5)
+        notify(self._msg('first_launch'), 5)
         self.log(f"Downloading game client from {cloud_url}...")
 
         temp_zip = os.path.join(self.game_dir, 'client_download.tmp.zip')
         try:
             self.download_file_with_progress(cloud_url, temp_zip, notify)
-            notify("Распаковка файлов игры...", 90)
+            notify(self._msg('extracting'), 90)
             self.log("Extracting client package...")
             import zipfile
             with zipfile.ZipFile(temp_zip, 'r') as zf:
@@ -376,7 +452,7 @@ class SpaceRustClientManager:
             if os.path.isfile(temp_zip):
                 os.remove(temp_zip)
             self.sync_latest_mod()
-            notify("Установка завершена! Запуск...", 100)
+            notify(self._msg('done_launch'), 100)
             return True
         except Exception as e:
             if os.path.isfile(temp_zip):
@@ -385,10 +461,7 @@ class SpaceRustClientManager:
                 except Exception:
                     pass
             self.log(f"Cloud download failed: {e}")
-            raise RuntimeError(
-                f"Не удалось автоматически загрузить файлы игры:\n{e}\n\n"
-                f"Проверьте подключение к интернету."
-            )
+            raise RuntimeError(self._msg('dl_failed', err=e))
 
     def launch(self, nickname, ram_mb, progress_callback=None, playtime_callback=None):
         """Launches the isolated SpaceRust client directly into the Rust Main Menu."""
@@ -402,11 +475,7 @@ class SpaceRustClientManager:
             # 2. Check Java (after client preparation, runtime/jre is available)
             java_exe = self.find_java()
             if not java_exe:
-                err = (
-                    "Java не найдена на вашем компьютере!\n\n"
-                    "Для запуска игры требуется Java 8 (x64).\n"
-                    "Установите Java с официального сайта: https://www.java.com"
-                )
+                err = self._msg('no_java')
                 self.log(err)
                 return {"status": "error", "message": err}
 
@@ -453,5 +522,5 @@ class SpaceRustClientManager:
             self.log(f"Fatal launch error:\n{err_details}")
             return {
                 "status": "error",
-                "message": f"Ошибка запуска игры: {str(e)}"
+                "message": self._msg('launch_err', err=str(e))
             }

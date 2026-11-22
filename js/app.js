@@ -27,9 +27,26 @@ document.addEventListener('DOMContentLoaded', () => {
         soundVolume: parseFloat(localStorage.getItem('sr_sound_vol') || '0.6'),
         animations: localStorage.getItem('sr_anim') !== 'false',
         optGC: localStorage.getItem('sr_opt_gc') !== 'false',
+        lang: localStorage.getItem('sr_lang') || 'ru',
         isLaunching: false,
         isPaused: false
     };
+
+    const VALID_LANGS = ['ru', 'uk', 'en'];
+    if (!VALID_LANGS.includes(STATE.lang)) STATE.lang = 'ru';
+
+    function t(key, vars) {
+        const dicts = window.SPACERUST_I18N || {};
+        const table = dicts[STATE.lang] || dicts.ru || {};
+        const fallback = dicts.ru || {};
+        let str = table[key] !== undefined ? table[key] : (fallback[key] !== undefined ? fallback[key] : key);
+        if (vars && typeof str === 'string') {
+            Object.keys(vars).forEach((k) => {
+                str = str.replace(new RegExp('\\{' + k + '\\}', 'g'), String(vars[k]));
+            });
+        }
+        return str;
+    }
 
     if (window.soundEngine) {
         window.soundEngine.setEnabled(STATE.soundEnabled);
@@ -96,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const dot = document.querySelector('.notify-dot');
         if (dot) dot.remove();
         switchTab('news');
-        showToast('Вышел патч v2.5.0 — Rust-крафт и новый лаунчер', 'success');
+        showToast(t('topbar.notifyToast'), 'success');
     });
 
     // ==========================================
@@ -104,15 +121,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     function formatPlaytimeHours(seconds) {
         const hrs = Math.max(0, Number(seconds) || 0) / 3600;
-        if (hrs < 0.05) return '0 ч';
-        if (hrs < 100) return `${hrs.toFixed(1).replace(/\.0$/, '')} ч`;
-        return `${Math.floor(hrs)} ч`;
+        const unit = t('account.hourUnit');
+        if (hrs < 0.05) return `0 ${unit}`;
+        if (hrs < 100) return `${hrs.toFixed(1).replace(/\.0$/, '')} ${unit}`;
+        return `${Math.floor(hrs)} ${unit}`;
     }
 
     function renderPlaytime() {
         const formatted = formatPlaytimeHours(STATE.playtimeSeconds);
-        if (playtimeTextEl) playtimeTextEl.textContent = `Наиграно: ${formatted}`;
-        if (modalPlaytimeEl) modalPlaytimeEl.textContent = `Время в игре: ${formatted}`;
+        if (playtimeTextEl) playtimeTextEl.textContent = t('account.playtimeShort', { hours: formatted });
+        if (modalPlaytimeEl) modalPlaytimeEl.textContent = t('account.playtimeModal', { hours: formatted });
     }
 
     window.updatePlaytime = function (seconds) {
@@ -141,10 +159,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (modalNick) modalNick.textContent = STATE.nickname;
         if (modalLockedNick) modalLockedNick.textContent = STATE.nickname;
         if (modalAvatar) modalAvatar.src = avatarUrl(STATE.nickname);
-        const rankText = STATE.rank || 'ИГРОК';
         const hasSub = !!STATE.rank && STATE.rank !== 'ИГРОК';
+        const rankText = hasSub ? STATE.rank : t('account.rankDefault');
         if (modalSubStatus) {
-            modalSubStatus.textContent = hasSub ? `Активна привилегия: ${rankText}` : 'Нет активной подписки';
+            modalSubStatus.textContent = hasSub ? t('modal.activePriv', { rank: rankText }) : t('modal.noSub');
         }
         [rankEl, modalRankEl].forEach(el => {
             if (!el) return;
@@ -188,26 +206,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const promoInput = $('promo-input');
     function redeemPromo() {
         const code = promoInput.value.trim().toUpperCase();
-        if (!code) return showToast('Введите промокод!', 'error');
-        if (STATE.redeemedCodes.includes(code)) return showToast('Этот промокод уже активирован!', 'error');
+        if (!code) return showToast(t('promo.empty'), 'error');
+        if (STATE.redeemedCodes.includes(code)) return showToast(t('promo.used'), 'error');
 
         const promos = {
-            'WIPE2026': { rank: 'VIP', label: 'Привилегия VIP' },
-            'SPACEVIP': { rank: 'VIP+', label: 'Привилегия VIP+' },
-            'RUSTME': { rank: 'PREMIUM', label: 'Привилегия PREMIUM' },
-            'SPACERUST': { rank: 'ELITE', label: 'Привилегия ELITE' }
+            'WIPE2026': 'VIP',
+            'SPACEVIP': 'VIP+',
+            'RUSTME': 'PREMIUM',
+            'SPACERUST': 'ELITE'
         };
-        const reward = promos[code];
-        if (!reward) return showToast('Неверный промокод или срок действия истёк', 'error');
+        const rewardRank = promos[code];
+        if (!rewardRank) return showToast(t('promo.invalid'), 'error');
 
-        STATE.rank = reward.rank;
+        STATE.rank = rewardRank;
         localStorage.setItem('sr_rank', STATE.rank);
         STATE.redeemedCodes.push(code);
         localStorage.setItem('sr_redeemed_codes', JSON.stringify(STATE.redeemedCodes));
         promoInput.value = '';
         sfx('playSuccess');
         updateProfileUI();
-        showToast(`Промокод активирован: ${reward.label}!`, 'success');
+        const label = t('promo.privLabel', { rank: rewardRank });
+        showToast(t('promo.activated', { label }), 'success');
     }
     $('promo-submit-btn')?.addEventListener('click', redeemPromo);
     promoInput?.addEventListener('keypress', (e) => { if (e.key === 'Enter') redeemPromo(); });
@@ -291,7 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function applyGameDir(newPath) {
         if (STATE.isLaunching) {
-            showToast('Дождитесь завершения запуска игры', 'error');
+            showToast(t('settings.waitLaunch'), 'error');
             syncGameDir();
             return;
         }
@@ -301,9 +320,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (res && res.status === 'ok') {
             if (gamePathInput) gamePathInput.value = res.path;
             sfx('playSuccess');
-            showToast(`Путь игры изменён: ${res.path}`, 'success');
+            showToast(t('settings.folderChanged', { path: res.path }), 'success');
         } else {
-            showToast((res && res.message) || 'Не удалось изменить путь', 'error');
+            showToast((res && res.message) || t('settings.folderChangeErr'), 'error');
             syncGameDir();
         }
     }
@@ -317,31 +336,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     $('btn-browse-folder')?.addEventListener('click', async () => {
         sfx('playClick');
-        if (STATE.isLaunching) return showToast('Дождитесь завершения запуска игры', 'error');
+        if (STATE.isLaunching) return showToast(t('settings.waitLaunch'), 'error');
         const a = api();
         if (!a || !a.browse_game_folder) {
-            return showToast('Выбор папки доступен в приложении SpaceRust.exe');
+            return showToast(t('settings.folderExeOnly'));
         }
         const res = await a.browse_game_folder();
         if (res && res.status === 'ok') {
             if (gamePathInput) gamePathInput.value = res.path;
             sfx('playSuccess');
-            showToast(`Путь игры изменён: ${res.path}`, 'success');
+            showToast(t('settings.folderChanged', { path: res.path }), 'success');
         } else if (res && res.status === 'error') {
-            showToast(res.message || 'Ошибка выбора папки', 'error');
+            showToast(res.message || t('settings.folderBrowseErr'), 'error');
         }
     });
 
     $('btn-reset-folder')?.addEventListener('click', async () => {
         sfx('playClick');
-        if (STATE.isLaunching) return showToast('Дождитесь завершения запуска игры', 'error');
+        if (STATE.isLaunching) return showToast(t('settings.waitLaunch'), 'error');
         const a = api();
         if (!a || !a.reset_game_dir) return;
         const res = await a.reset_game_dir();
         if (res && res.status === 'ok') {
             if (gamePathInput) gamePathInput.value = res.path;
             sfx('playSuccess');
-            showToast('Путь сброшен по умолчанию', 'success');
+            showToast(t('settings.folderReset'), 'success');
         }
     });
 
@@ -349,7 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
         sfx('playClick');
         const a = api();
         if (a && a.open_game_folder) a.open_game_folder();
-        else showToast(`Папка клиента: ${gamePathInput ? gamePathInput.value : '%APPDATA%\\.spacerust'}`);
+        else showToast(t('settings.clientFolder', { path: gamePathInput ? gamePathInput.value : '%APPDATA%\\.spacerust' }));
     });
 
     if (soundBtn) {
@@ -362,7 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (STATE.soundEnabled) sfx('playClick');
             }
             soundBtn.classList.toggle('muted', !STATE.soundEnabled);
-            showToast(STATE.soundEnabled ? 'Звуки интерфейса включены' : 'Звуки интерфейса выключены');
+            showToast(STATE.soundEnabled ? t('topbar.soundOn') : t('topbar.soundOff'));
         });
     }
 
@@ -405,13 +424,16 @@ document.addEventListener('DOMContentLoaded', () => {
         btnResume.classList.remove('active');
     }
 
+    let lastProgressPct = 0;
+
     window.updateLaunchProgress = function (text, percent) {
         const pct = Math.max(0, Math.min(100, Math.round(percent)));
+        lastProgressPct = pct;
         loadFill.style.width = `${pct}%`;
-        loadTitle.textContent = STATE.isPaused ? 'ЗАГРУЗКА НА ПАУЗЕ' : 'ЗАГРУЗКА ИГРЫ';
+        loadTitle.textContent = STATE.isPaused ? t('play.loadPaused') : t('play.loadActive');
         loadStage.textContent = text;
         loadPct.textContent = `${pct}%`;
-        if (btnPlayText) btnPlayText.textContent = pct >= 100 ? 'ЗАПУСК...' : `ЗАГРУЗКА ${pct}%`;
+        if (btnPlayText) btnPlayText.textContent = pct >= 100 ? t('play.btnStarting') : t('play.btnProgress', { pct });
     };
 
     function setPaused(paused) {
@@ -420,7 +442,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnPause.disabled = paused;
         btnResume.disabled = !paused;
         btnResume.classList.toggle('active', paused);
-        loadTitle.textContent = paused ? 'ЗАГРУЗКА НА ПАУЗЕ' : 'ЗАГРУЗКА ИГРЫ';
+        loadTitle.textContent = paused ? t('play.loadPaused') : t('play.loadActive');
     }
 
     btnPause?.addEventListener('click', async () => {
@@ -429,7 +451,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setPaused(true);
         const a = api();
         if (a && a.pause_download) await a.pause_download();
-        showToast('Загрузка приостановлена');
+        showToast(t('play.toastPaused'));
     });
 
     btnResume?.addEventListener('click', async () => {
@@ -438,13 +460,13 @@ document.addEventListener('DOMContentLoaded', () => {
         setPaused(false);
         const a = api();
         if (a && a.resume_download) await a.resume_download();
-        showToast('Загрузка продолжена', 'success');
+        showToast(t('play.toastResumed'), 'success');
     });
 
     function finishLaunch(delay) {
         setTimeout(() => {
             btnPlay.classList.remove('loading-state');
-            btnPlayText.textContent = 'ИГРАТЬ';
+            btnPlayText.textContent = t('play.idle');
             STATE.isLaunching = false;
             setPaused(false);
             setIdleLine();
@@ -460,11 +482,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 p += 4 + Math.random() * 6;
                 if (p >= 100) {
                     clearInterval(tick);
-                    window.updateLaunchProgress('Запуск Minecraft...', 100);
+                    window.updateLaunchProgress(t('play.simStartingMc'), 100);
                     resolve({ status: 'success' });
                 } else {
                     const spd = (14 + Math.random() * 12).toFixed(1);
-                    window.updateLaunchProgress(`${Math.round(p * 1.6)} / 160 МБ · ${spd} МБ/с`, p);
+                    window.updateLaunchProgress(t('play.simSpeed', { done: Math.round(p * 1.6), spd }), p);
                 }
             }, 180);
         });
@@ -473,7 +495,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleLaunchGame() {
         if (STATE.isLaunching) return;
         if (!STATE.nickname || STATE.nickname.length < 3) {
-            showToast('Укажите никнейм (минимум 3 символа)', 'error');
+            showToast(t('play.nickMin'), 'error');
             return;
         }
 
@@ -483,7 +505,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadLine.classList.remove('done', 'paused');
         btnPause.disabled = false;
         btnResume.disabled = true;
-        window.updateLaunchProgress('Проверка файлов клиента...', 3);
+        window.updateLaunchProgress(t('play.checkingFiles'), 3);
 
         try {
             const a = api();
@@ -493,34 +515,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (res && res.status === 'error') {
                 btnPlay.classList.remove('loading-state');
-                btnPlayText.textContent = 'ИГРАТЬ';
+                btnPlayText.textContent = t('play.idle');
                 STATE.isLaunching = false;
                 setPaused(false);
                 setIdleLine();
-                showToast('Ошибка запуска игры', 'error');
-                alert('⚠️ НЕ УДАЛОСЬ ЗАПУСТИТЬ ИГРУ:\n\n' + res.message);
+                showToast(t('play.toastErr'), 'error');
+                alert(t('play.alertErr', { msg: res.message }));
                 return;
             }
 
             loadLine.classList.add('done');
             loadFill.style.width = '100%';
-            loadTitle.textContent = 'ИГРА ЗАПУЩЕНА';
-            loadStage.textContent = 'Приятной игры на SpaceRust!';
+            loadTitle.textContent = t('play.stageRunning');
+            loadStage.textContent = t('play.msgRunning');
             loadPct.textContent = '100%';
-            btnPlayText.textContent = 'ИГРА ЗАПУЩЕНА';
+            btnPlayText.textContent = t('play.stageRunning');
             btnPause.disabled = true;
             btnResume.disabled = true;
             sfx('playSuccess');
-            showToast('Игра запущена! Открывается SpaceRust...', 'success');
+            showToast(t('play.toastLaunched'), 'success');
             finishLaunch(4000);
         } catch (err) {
             console.error('Launch error', err);
             btnPlay.classList.remove('loading-state');
-            btnPlayText.textContent = 'ИГРАТЬ';
+            btnPlayText.textContent = t('play.idle');
             STATE.isLaunching = false;
             setPaused(false);
             setIdleLine();
-            alert('⚠️ Ошибка соединения с лаунчером:\n\n' + err);
+            alert(t('play.alertConnErr', { err }));
         }
     }
     btnPlay?.addEventListener('click', handleLaunchGame);
@@ -550,8 +572,82 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
+    // LANGUAGE SWITCHING (RU / UK / EN)
+    // ==========================================
+    function applyLanguage(lang, syncBackend = true) {
+        if (!VALID_LANGS.includes(lang)) lang = 'ru';
+        STATE.lang = lang;
+        localStorage.setItem('sr_lang', lang);
+        document.documentElement.lang = lang;
+
+        document.querySelectorAll('[data-i18n]').forEach((el) => {
+            el.textContent = t(el.dataset.i18n);
+        });
+        document.querySelectorAll('[data-i18n-html]').forEach((el) => {
+            el.innerHTML = t(el.dataset.i18nHtml);
+        });
+        document.querySelectorAll('[data-i18n-title]').forEach((el) => {
+            el.title = t(el.dataset.i18nTitle);
+        });
+        document.querySelectorAll('[data-lang]').forEach((btn) => {
+            btn.classList.toggle('active', btn.dataset.lang === lang);
+        });
+
+        updateProfileUI();
+
+        if (loadLine.classList.contains('done')) {
+            loadTitle.textContent = t('play.stageRunning');
+            loadStage.textContent = t('play.msgRunning');
+            if (btnPlayText) btnPlayText.textContent = t('play.stageRunning');
+        } else if (STATE.isLaunching) {
+            loadTitle.textContent = STATE.isPaused ? t('play.loadPaused') : t('play.loadActive');
+            if (btnPlayText) {
+                btnPlayText.textContent = lastProgressPct >= 100
+                    ? t('play.btnStarting')
+                    : t('play.btnProgress', { pct: lastProgressPct });
+            }
+        } else if (btnPlayText) {
+            btnPlayText.textContent = t('play.idle');
+        }
+
+        if (syncBackend) {
+            const a = api();
+            if (a && typeof a.set_language === 'function') {
+                a.set_language(lang).catch(() => {});
+            }
+        }
+    }
+
+    document.querySelectorAll('[data-lang]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const nextLang = btn.dataset.lang;
+            if (!nextLang || nextLang === STATE.lang) return;
+            sfx('playClick');
+            applyLanguage(nextLang, true);
+        });
+    });
+
+    async function syncLanguage() {
+        const a = api();
+        if (!a || !a.get_language) return;
+        try {
+            const hasLocal = !!localStorage.getItem('sr_lang');
+            if (hasLocal) {
+                if (a.set_language) await a.set_language(STATE.lang);
+            } else {
+                const res = await a.get_language();
+                if (res && res.status === 'ok' && VALID_LANGS.includes(res.lang)) {
+                    applyLanguage(res.lang, false);
+                }
+            }
+        } catch (err) { console.log('syncLanguage error', err); }
+    }
+    window.addEventListener('pywebviewready', syncLanguage);
+    setTimeout(syncLanguage, 650);
+
+    // ==========================================
     // INIT
     // ==========================================
-    updateProfileUI();
+    applyLanguage(STATE.lang, false);
     setIdleLine();
 });

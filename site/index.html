@@ -26,13 +26,23 @@
                     <h1 class="hero-title">Space<br>Rust</h1>
                 </div>
 
-                <div class="hero-user-bar" id="hero-user-bar" hidden>
-                    <img id="hero-user-avatar" src="assets/logo.png" alt="Аватар игрока">
-                    <div class="hero-user-meta">
-                        <span class="hero-user-label">АККАУНТ</span>
-                        <span id="hero-user-nick" class="hero-user-nick">Player</span>
+                <div class="hero-top-controls">
+                    <div class="lang-switcher" id="lang-switcher" role="group" aria-label="Language">
+                        <button class="lang-btn active" type="button" data-lang="ru" aria-pressed="true">RU</button>
+                        <button class="lang-btn" type="button" data-lang="uk" aria-pressed="false">UA</button>
+                        <button class="lang-btn" type="button" data-lang="en" aria-pressed="false">EN</button>
                     </div>
-                    <button class="hero-logout-btn" id="btn-logout" type="button" title="Выйти из аккаунта">Выйти</button>
+
+                    <div class="hero-user-bar" id="hero-user-bar" hidden>
+                        <button class="hero-user-open" id="hero-user-open" type="button">
+                            <img id="hero-user-avatar" src="assets/logo.png" alt="Avatar">
+                            <div class="hero-user-meta">
+                                <span class="hero-user-label" data-i18n="profileLabel">ПРОФИЛЬ</span>
+                                <span id="hero-user-nick" class="hero-user-nick">Player</span>
+                            </div>
+                        </button>
+                        <button class="hero-logout-btn" id="btn-logout" type="button" data-i18n="logoutBtn">Выйти</button>
+                    </div>
                 </div>
             </div>
         </header>
@@ -41,7 +51,7 @@
         <main class="actions-section">
             <div class="actions-stack">
                 <button class="action-btn btn-register" id="btn-register" type="button">
-                    <span id="btn-register-text">ЗАРЕГИСТРИРОВАТЬСЯ</span>
+                    <span id="btn-register-text" data-i18n="registerBtn">ЗАРЕГИСТРИРОВАТЬСЯ</span>
                 </button>
 
                 <div class="download-wrap">
@@ -49,30 +59,30 @@
                         <svg class="btn-icon dl-icon" id="download-ready-icon" viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
                         </svg>
-                        <span>СКАЧАТЬ ЛАУНЧЕР</span>
+                        <span data-i18n="downloadBtn">СКАЧАТЬ ЛАУНЧЕР</span>
                     </button>
                 </div>
 
-                <button class="action-btn btn-shop" id="btn-shop" type="button">
-                    <span>ДОНАТ МАГАЗИН</span>
-                </button>
+                <a class="action-btn btn-shop" id="btn-shop" href="shop.html">
+                    <span data-i18n="shopBtn">ДОНАТ МАГАЗИН</span>
+                </a>
             </div>
         </main>
 
         <!-- ===================== FOOTER ===================== -->
         <footer class="site-footer">
             <div class="footer-inner">
-                <p class="footer-copy">© 2026 SpaceRust. Все права защищены.</p>
+                <p class="footer-copy" data-i18n="footerCopy">© 2026 SpaceRust. Все права защищены.</p>
                 <p class="footer-disclaimer">
-                    SpaceRust — неофициальный проект Minecraft, не утверждён Mojang и не связан с Mojang.<br>
-                    SpaceRust — неофициальный проект Rust, не утверждён Facepunch и не связан с Facepunch.
+                    <span data-i18n="footerDisclaimer1">SpaceRust — неофициальный проект Minecraft, не утверждён Mojang и не связан с Mojang.</span><br>
+                    <span data-i18n="footerDisclaimer2">SpaceRust — неофициальный проект Rust, не утверждён Facepunch и не связан с Facepunch.</span>
                 </p>
-                <nav class="footer-links" aria-label="Правовая информация">
-                    <button class="footer-link" type="button" data-doc="terms">Пользовательское соглашение</button>
+                <nav class="footer-links" aria-label="Legal">
+                    <button class="footer-link" type="button" data-doc="terms" data-i18n="linkTerms">Пользовательское соглашение</button>
                     <span aria-hidden="true">|</span>
-                    <button class="footer-link" type="button" data-doc="privacy">Политика конфиденциальности</button>
+                    <button class="footer-link" type="button" data-doc="privacy" data-i18n="linkPrivacy">Политика конфиденциальности</button>
                     <span aria-hidden="true">|</span>
-                    <button class="footer-link" type="button" data-doc="rules">Правила проекта</button>
+                    <button class="footer-link" type="button" data-doc="rules" data-i18n="linkRules">Правила проекта</button>
                 </nav>
             </div>
         </footer>
@@ -83,84 +93,228 @@
         <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
             <div class="modal-head">
                 <div class="auth-tabs" id="auth-modal-title">
-                    <button class="auth-tab active" type="button" data-auth="register">РЕГИСТРАЦИЯ</button>
-                    <button class="auth-tab" type="button" data-auth="login">ВХОД</button>
+                    <button class="auth-tab active" type="button" data-auth="register" data-i18n="tabRegister">РЕГИСТРАЦИЯ</button>
+                    <button class="auth-tab" type="button" data-auth="login" data-i18n="tabLogin">ВХОД</button>
                 </div>
-                <button class="modal-close" id="auth-close" type="button" aria-label="Закрыть">&times;</button>
+                <button class="modal-close" id="auth-close" type="button" aria-label="Close">&times;</button>
             </div>
 
             <form class="modal-body" id="form-register" novalidate>
-                <p class="modal-note">Зарегистрируйтесь в SpaceRust, чтобы создать профиль и закрепить свой игровой никнейм.</p>
+                <p class="modal-note" data-i18n="regNote">Зарегистрируйтесь в SpaceRust, чтобы создать профиль и закрепить свой игровой никнейм.</p>
 
                 <label class="field">
-                    <span>Игровой никнейм (3–16 символов, латиница и цифры)</span>
-                    <input type="text" id="reg-nick" placeholder="Например: Pablus" minlength="3" maxlength="16" required autocomplete="username">
+                    <span data-i18n="regNickLabel">Игровой никнейм (3–16 символов, латиница и цифры)</span>
+                    <input type="text" id="reg-nick" placeholder="Например: Pablus" data-i18n-ph="regNickPh" minlength="3" maxlength="16" required autocomplete="username">
                 </label>
 
                 <label class="field">
-                    <span>Электронная почта</span>
+                    <span data-i18n="emailLabel">Электронная почта</span>
                     <input type="email" id="reg-email" placeholder="name@example.com" required autocomplete="email">
                 </label>
 
                 <label class="field">
-                    <span>Пароль (минимум 6 символов)</span>
+                    <span data-i18n="regPassLabel">Пароль (минимум 6 символов)</span>
                     <input type="password" id="reg-pass" placeholder="••••••••" minlength="6" required autocomplete="new-password">
                 </label>
 
                 <label class="field">
-                    <span>Повторите пароль</span>
+                    <span data-i18n="regPass2Label">Повторите пароль</span>
                     <input type="password" id="reg-pass2" placeholder="••••••••" minlength="6" required autocomplete="new-password">
                 </label>
 
                 <label class="check-row">
                     <input type="checkbox" id="reg-agree" checked required>
-                    <span>Я принимаю Пользовательское соглашение и Правила проекта</span>
+                    <span data-i18n="regAgree">Я принимаю Пользовательское соглашение и Правила проекта</span>
                 </label>
 
                 <div class="form-error" id="reg-error" role="alert" hidden></div>
 
-                <button type="submit" class="modal-submit coral">ЗАРЕГИСТРИРОВАТЬСЯ</button>
+                <button type="submit" class="modal-submit coral" data-i18n="regSubmit">ЗАРЕГИСТРИРОВАТЬСЯ</button>
             </form>
 
             <form class="modal-body" id="form-login" novalidate hidden>
-                <p class="modal-note">Войдите в свой аккаунт SpaceRust.</p>
+                <p class="modal-note" data-i18n="loginNote">Войдите в свой аккаунт SpaceRust.</p>
 
                 <label class="field">
-                    <span>Никнейм или Email</span>
-                    <input type="text" id="login-ident" placeholder="Никнейм или Email" required autocomplete="username">
+                    <span data-i18n="loginIdentLabel">Никнейм или Email</span>
+                    <input type="text" id="login-ident" placeholder="Никнейм или Email" data-i18n-ph="loginIdentPh" required autocomplete="username">
                 </label>
 
                 <label class="field">
-                    <span>Пароль</span>
+                    <span data-i18n="passLabel">Пароль</span>
                     <input type="password" id="login-pass" placeholder="••••••••" required autocomplete="current-password">
+                </label>
+
+                <label class="field" id="login-2fa-group" hidden>
+                    <span data-i18n="login2faLabel">Код двухэтапной защиты (6 цифр или резервный код)</span>
+                    <input type="text" id="login-2fa-code" placeholder="000000" maxlength="12" autocomplete="one-time-code">
                 </label>
 
                 <div class="form-error" id="login-error" role="alert" hidden></div>
 
-                <button type="submit" class="modal-submit coral">ВОЙТИ</button>
+                <button type="submit" class="modal-submit coral" data-i18n="loginSubmit">ВОЙТИ</button>
             </form>
         </div>
     </div>
 
     <!-- ===================== ACCOUNT MODAL ===================== -->
     <div class="modal-backdrop" id="account-modal" aria-hidden="true">
-        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="account-modal-title">
+        <div class="modal-card wide" role="dialog" aria-modal="true" aria-labelledby="account-modal-title">
             <div class="modal-head">
-                <span class="modal-title" id="account-modal-title">ПРОФИЛЬ ИГРОКА</span>
-                <button class="modal-close" id="account-close" type="button" aria-label="Закрыть">&times;</button>
+                <span class="modal-title" id="account-modal-title" data-i18n="profileTitle">ПРОФИЛЬ ИГРОКА</span>
+                <button class="modal-close" id="account-close" type="button" aria-label="Close">&times;</button>
             </div>
-            <div class="modal-body">
-                <div class="dl-summary">
-                    <img id="acc-modal-avatar" src="assets/logo.png" alt="Аватар">
-                    <div>
-                        <h4 id="acc-modal-nick">Player</h4>
+
+            <div class="modal-body profile-body">
+                <div class="profile-summary">
+                    <img id="acc-modal-avatar" src="assets/logo.png" alt="Avatar">
+                    <div class="profile-summary-meta">
+                        <div class="profile-name-row">
+                            <h4 id="acc-modal-nick">Player</h4>
+                            <span class="tfa-badge off" id="acc-2fa-badge" data-i18n="tfaBadgeOff">2FA не привязана</span>
+                        </div>
                         <p id="acc-modal-email">player@example.com</p>
                     </div>
                 </div>
-                <p class="modal-note">Ваш аккаунт SpaceRust активен.</p>
-                <div class="modal-actions-row">
-                    <button type="button" class="modal-submit white-btn" id="acc-open-download">СКАЧАТЬ ЛАУНЧЕР</button>
-                    <button type="button" class="modal-submit ghost-btn" id="acc-logout">ВЫЙТИ</button>
+
+                <div class="profile-tabs" role="tablist" aria-label="Profile sections">
+                    <button class="profile-tab active" type="button" data-ptab="overview" role="tab" aria-selected="true" data-i18n="ptabOverview">ОБЗОР</button>
+                    <button class="profile-tab" type="button" data-ptab="email" role="tab" aria-selected="false" data-i18n="ptabEmail">ПОЧТА</button>
+                    <button class="profile-tab" type="button" data-ptab="password" role="tab" aria-selected="false" data-i18n="ptabPassword">ПАРОЛЬ</button>
+                    <button class="profile-tab" type="button" data-ptab="2fa" role="tab" aria-selected="false" data-i18n="ptab2fa">2FA ЗАЩИТА</button>
+                </div>
+
+                <!-- TAB: OVERVIEW -->
+                <div class="profile-panel" id="ptab-overview">
+                    <div class="profile-stats-grid">
+                        <div class="stat-box">
+                            <span class="stat-label" data-i18n="statCreated">Дата создания аккаунта</span>
+                            <strong class="stat-value" id="acc-created-at">—</strong>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label" data-i18n="statLastOnline">Последний раз в онлайне</span>
+                            <strong class="stat-value" id="acc-last-online">—</strong>
+                        </div>
+                        <div class="stat-box full">
+                            <span class="stat-label" data-i18n="statLastServer">Последний сервер</span>
+                            <strong class="stat-value" id="acc-last-server">—</strong>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions-row">
+                        <button type="button" class="modal-submit white-btn" id="acc-open-download" data-i18n="btnDownloadLauncher">СКАЧАТЬ ЛАУНЧЕР</button>
+                        <button type="button" class="modal-submit ghost-btn" id="acc-logout" data-i18n="btnLogoutCaps">ВЫЙТИ</button>
+                    </div>
+                </div>
+
+                <!-- TAB: EMAIL -->
+                <form class="profile-panel" id="ptab-email" novalidate hidden>
+                    <div class="stat-box">
+                        <span class="stat-label" data-i18n="currentEmailLabel">Текущая почта</span>
+                        <strong class="stat-value" id="email-current-display">—</strong>
+                    </div>
+
+                    <label class="field">
+                        <span data-i18n="newEmailLabel">Новая электронная почта</span>
+                        <input type="email" id="change-email-new" placeholder="new-mail@example.com" required autocomplete="email">
+                    </label>
+
+                    <label class="field">
+                        <span data-i18n="confirmCurrPassLabel">Текущий пароль для подтверждения</span>
+                        <input type="password" id="change-email-pass" placeholder="••••••••" required autocomplete="current-password">
+                    </label>
+
+                    <div class="form-error" id="change-email-error" role="alert" hidden></div>
+
+                    <button type="submit" class="modal-submit coral" data-i18n="saveEmailBtn">СОХРАНИТЬ ПОЧТУ</button>
+                </form>
+
+                <!-- TAB: PASSWORD -->
+                <form class="profile-panel" id="ptab-password" novalidate hidden>
+                    <label class="field">
+                        <span data-i18n="currPassLabel">Текущий пароль</span>
+                        <input type="password" id="change-pass-old" placeholder="••••••••" required autocomplete="current-password">
+                    </label>
+
+                    <label class="field">
+                        <span data-i18n="newPassLabel">Новый пароль (минимум 6 символов)</span>
+                        <input type="password" id="change-pass-new" placeholder="••••••••" minlength="6" required autocomplete="new-password">
+                    </label>
+
+                    <label class="field">
+                        <span data-i18n="newPass2Label">Повторите новый пароль</span>
+                        <input type="password" id="change-pass-new2" placeholder="••••••••" minlength="6" required autocomplete="new-password">
+                    </label>
+
+                    <div class="form-error" id="change-pass-error" role="alert" hidden></div>
+
+                    <button type="submit" class="modal-submit coral" data-i18n="changePassBtn">ИЗМЕНИТЬ ПАРОЛЬ</button>
+                </form>
+
+                <!-- TAB: 2FA -->
+                <div class="profile-panel" id="ptab-2fa" hidden>
+                    <form class="tfa-box" id="tfa-setup-form" novalidate>
+                        <p class="modal-note" data-i18n="tfaSetupNote">
+                            Привяжите приложение-аутентификатор (Google Authenticator, Authy или 2FAS), отсканировав QR-код или введя секретный ключ вручную.
+                        </p>
+
+                        <div class="tfa-setup-grid">
+                            <div class="tfa-qr-wrap" id="tfa-qr-wrap" hidden>
+                                <img id="tfa-qr-img" src="" alt="2FA QR Code">
+                            </div>
+                            <div class="tfa-secret-info">
+                                <span class="stat-label" data-i18n="tfaSecretLabel">Секретный ключ (Base32)</span>
+                                <div class="secret-row">
+                                    <code id="tfa-secret-display">JBSWY3DPEHPK3PXP</code>
+                                    <button type="button" class="mini-btn" id="tfa-copy-secret" data-i18n="copyBtn">Копировать</button>
+                                </div>
+                                <div class="tfa-live-helper">
+                                    <span data-i18n="tfaLiveLabel">Проверочный код сейчас:</span>
+                                    <code id="tfa-live-code">000000</code>
+                                </div>
+                            </div>
+                        </div>
+
+                        <label class="field">
+                            <span data-i18n="tfaCodeInputLabel">Введите 6-значный код из аутентификатора</span>
+                            <input type="text" id="tfa-enable-code" inputmode="numeric" maxlength="6" placeholder="123456" required autocomplete="one-time-code">
+                        </label>
+
+                        <div class="form-error" id="tfa-enable-error" role="alert" hidden></div>
+
+                        <button type="submit" class="modal-submit coral" data-i18n="tfaEnableBtn">ВКЛЮЧИТЬ ДВУХЭТАПНУЮ ЗАЩИТУ</button>
+                    </form>
+
+                    <div class="tfa-box" id="tfa-active-box" hidden>
+                        <div class="tfa-status-card">
+                            <div>
+                                <h4 data-i18n="tfaActiveTitle">Двухэтапная защита активна</h4>
+                                <p id="tfa-enabled-since">Привязана к аккаунту</p>
+                            </div>
+                            <span class="tfa-badge on" data-i18n="tfaActiveBadge">АКТИВНА</span>
+                        </div>
+
+                        <div class="backup-box">
+                            <span class="stat-label" data-i18n="tfaBackupLabel">Резервные коды восстановления (сохраните в надёжном месте)</span>
+                            <div class="backup-codes-grid" id="tfa-backup-codes"></div>
+                        </div>
+
+                        <form class="tfa-disable-form" id="tfa-disable-form" novalidate>
+                            <label class="field">
+                                <span data-i18n="tfaDisablePassLabel">Текущий пароль для отключения 2FA</span>
+                                <input type="password" id="tfa-disable-pass" placeholder="••••••••" required autocomplete="current-password">
+                            </label>
+
+                            <label class="field">
+                                <span data-i18n="tfaDisableCodeLabel">Код из аутентификатора (6 цифр) или резервный код</span>
+                                <input type="text" id="tfa-disable-code" maxlength="12" placeholder="123456" required autocomplete="one-time-code">
+                            </label>
+
+                            <div class="form-error" id="tfa-disable-error" role="alert" hidden></div>
+
+                            <button type="submit" class="modal-submit ghost-btn" data-i18n="tfaDisableBtn">ОТКЛЮЧИТЬ 2FA</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -170,47 +324,26 @@
     <div class="modal-backdrop" id="download-modal" aria-hidden="true">
         <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="download-modal-title">
             <div class="modal-head">
-                <span class="modal-title" id="download-modal-title">СКАЧАТЬ ЛАУНЧЕР SPACERUST</span>
-                <button class="modal-close" id="dl-close" type="button" aria-label="Закрыть">&times;</button>
+                <span class="modal-title" id="download-modal-title" data-i18n="dlTitle">СКАЧАТЬ ЛАУНЧЕР SPACERUST</span>
+                <button class="modal-close" id="dl-close" type="button" aria-label="Close">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="dl-summary">
                     <img src="assets/logo.png" alt="SpaceRust">
                     <div>
-                        <h4>SpaceRust Launcher (Windows x64)</h4>
-                        <p>Версия патча v2.5.0 · Minecraft 1.16.5 Fabric</p>
+                        <h4 data-i18n="dlPlatform">SpaceRust Launcher (Windows x64)</h4>
+                        <p data-i18n="dlSub">Версия патча v2.5.0 · Minecraft 1.16.5 Fabric</p>
                     </div>
                 </div>
-                <p class="modal-note">
+                <p class="modal-note" data-i18n-html="dlNote">
                     Нажмите кнопку ниже, чтобы скачать автономный файл <b>SpaceRust.exe</b>. После запуска лаунчер автоматически подготовит клиент и моды.
                 </p>
-                <a class="modal-submit white-btn" id="dl-direct-link" href="../SpaceRust.exe" download="SpaceRust.exe">
+                <a class="modal-submit white-btn" id="dl-direct-link" href="../SpaceRust.exe" download="SpaceRust.exe" data-i18n="dlBtnExe">
                     СКАЧАТЬ SPACERUST.EXE
                 </a>
-                <a class="dl-alt-link" href="https://github.com/DmutroKhludov/spacerust/releases" target="_blank" rel="noopener">
+                <a class="dl-alt-link" href="https://github.com/DmutroKhludov/spacerust/releases" target="_blank" rel="noopener" data-i18n="dlAltGit">
                     Открыть страницу релизов на GitHub
                 </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===================== SHOP MODAL ===================== -->
-    <div class="modal-backdrop" id="shop-modal" aria-hidden="true">
-        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="shop-modal-title">
-            <div class="modal-head">
-                <span class="modal-title" id="shop-modal-title">ДОНАТ МАГАЗИН</span>
-                <button class="modal-close" id="shop-close" type="button" aria-label="Закрыть">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p class="modal-note">
-                    Донат-магазин <b>SpaceRust</b> скоро откроется! В нём будут доступны наборы ресурсов, скины оружия и привилегии.
-                </p>
-                <div class="shop-preview-list">
-                    <div class="shop-preview-item"><b>Стартовые наборы</b><span>Скоро</span></div>
-                    <div class="shop-preview-item"><b>Скины оружия</b><span>Скоро</span></div>
-                    <div class="shop-preview-item"><b>Привилегии и подписки</b><span>Скоро</span></div>
-                </div>
-                <button type="button" class="modal-submit amber" id="shop-ok">ПОНЯТНО</button>
             </div>
         </div>
     </div>
@@ -219,18 +352,20 @@
     <div class="modal-backdrop" id="doc-modal" aria-hidden="true">
         <div class="modal-card wide" role="dialog" aria-modal="true" aria-labelledby="doc-title">
             <div class="modal-head">
-                <span class="modal-title" id="doc-title">Документ</span>
-                <button class="modal-close" id="doc-close" type="button" aria-label="Закрыть">&times;</button>
+                <span class="modal-title" id="doc-title">Document</span>
+                <button class="modal-close" id="doc-close" type="button" aria-label="Close">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="doc-content" id="doc-content"></div>
-                <button type="button" class="modal-submit coral" id="doc-ok">ЗАКРЫТЬ</button>
+                <button type="button" class="modal-submit coral" id="doc-ok" data-i18n="closeBtn">ЗАКРЫТЬ</button>
             </div>
         </div>
     </div>
 
     <div class="toast-container" id="toast-container" aria-live="polite"></div>
 
+    <script src="js/i18n.js"></script>
+    <script src="js/totp.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

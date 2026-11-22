@@ -143,6 +143,12 @@ class LauncherApi:
             pass
         return None
 
+    def get_language(self):
+        return {"status": "ok", "lang": self.manager.get_language()}
+
+    def set_language(self, lang):
+        return self.manager.set_language(lang)
+
     def get_playtime(self):
         return {"status": "ok", "seconds": self.manager.get_playtime()}
 

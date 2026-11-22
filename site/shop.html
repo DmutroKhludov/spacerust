@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpaceRust — Донат Магазин (Привилегии, Киты, Кейсы)</title>
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/shop.css">
+</head>
+<body>
+    <div class="page">
+        <!-- ===================== FULL-PAGE BACKGROUND ===================== -->
+        <div class="page-bg" aria-hidden="true">
+            <div class="page-bg-image"></div>
+            <div class="page-bg-overlay"></div>
+        </div>
+
+        <!-- ===================== SHOP TOPBAR ===================== -->
+        <header class="shop-topbar">
+            <div class="shop-topbar-inner">
+                <div class="shop-brand-group">
+                    <a class="shop-back-link" href="index.html">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                        <span data-i18n="backHome">НА ГЛАВНУЮ</span>
+                    </a>
+                    <a class="shop-brand" href="shop.html">
+                        <img src="assets/logo.png" alt="SpaceRust">
+                        <div>
+                            <span class="shop-brand-title">SPACERUST</span>
+                            <span class="shop-brand-sub" data-i18n="shopSub">ДОНАТ МАГАЗИН</span>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="shop-topbar-right">
+                    <div class="lang-switcher" id="lang-switcher" role="group" aria-label="Language">
+                        <button class="lang-btn active" type="button" data-lang="ru" aria-pressed="true">RU</button>
+                        <button class="lang-btn" type="button" data-lang="uk" aria-pressed="false">UA</button>
+                        <button class="lang-btn" type="button" data-lang="en" aria-pressed="false">EN</button>
+                    </div>
+
+                    <div class="shop-user-pill" id="shop-user-pill">
+                        <img id="shop-user-avatar" src="assets/logo.png" alt="Player">
+                        <div class="shop-user-meta">
+                            <span class="shop-user-label" data-i18n="recipientLabel">ПОЛУЧАТЕЛЬ</span>
+                            <span class="shop-user-name" id="shop-user-name">Гость</span>
+                        </div>
+                    </div>
+
+                    <button class="shop-orders-btn" id="btn-orders-history" type="button">
+                        <span data-i18n="ordersBtn">ЗАКАЗЫ</span>
+                        <span class="badge-count" id="orders-count">0</span>
+                    </button>
+
+                    <button class="shop-cart-btn" id="btn-open-cart" type="button">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-1.99.9-1.99 2S15.9 22 17 22s2-.9 2-2-.9-2-2-2zM7.16 14.26l.03-.12.9-1.64h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0 0 20 3.5H5.21l-.94-2H1v2h2l3.6 7.59-1.35 2.45C4.52 14.87 5.48 16.5 7 16.5h12v-2H7.42c-.14 0-.25-.11-.26-.24z"/></svg>
+                        <span data-i18n="cartBtn">КОРЗИНА</span>
+                        <span class="badge-count coral" id="cart-count">0</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- ===================== SHOP MAIN CONTENT ===================== -->
+        <main class="shop-main">
+            <section class="shop-hero-strip">
+                <div class="shop-hero-text">
+                    <h1 data-i18n-html="shopHeroTitleHtml">МАГАЗИН <span>SPACERUST</span></h1>
+                    <p data-i18n="shopHeroDesc">Привилегии, наборы выживания (киты), оружейные кейсы и игровые услуги — выдаются сразу на все серверы SpaceRust.</p>
+                </div>
+
+                <div class="shop-scope-pill">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                    <span data-i18n="shopDeliveryPill">Выдача действует на всех серверах</span>
+                </div>
+            </section>
+
+            <!-- Category tabs + search -->
+            <section class="shop-controls">
+                <div class="shop-cats" role="tablist" aria-label="Categories">
+                    <button class="shop-cat active" type="button" data-cat="all" role="tab" aria-selected="true" data-i18n="catAll">ВСЕ ТОВАРЫ</button>
+                    <button class="shop-cat" type="button" data-cat="privileges" role="tab" aria-selected="false" data-i18n="catPrivileges">ПРИВИЛЕГИИ</button>
+                    <button class="shop-cat" type="button" data-cat="kits" role="tab" aria-selected="false" data-i18n="catKits">КИТЫ (НАБОРЫ)</button>
+                    <button class="shop-cat" type="button" data-cat="cases" role="tab" aria-selected="false" data-i18n="catCases">КЕЙСЫ И СКИНЫ</button>
+                    <button class="shop-cat" type="button" data-cat="services" role="tab" aria-selected="false" data-i18n="catServices">УСЛУГИ</button>
+                </div>
+
+                <div class="shop-search-wrap">
+                    <input type="search" id="shop-search" class="shop-search" placeholder="Поиск: VIP, Кит рейдер, АК-47..." data-i18n-ph="searchPh">
+                </div>
+            </section>
+
+            <!-- Products Grid -->
+            <section class="shop-grid" id="shop-grid" aria-live="polite"></section>
+
+            <div class="shop-empty" id="shop-empty" hidden>
+                <p data-i18n="shopEmptyText">По вашему запросу ничего не найдено.</p>
+                <button type="button" class="mini-btn" id="shop-reset-filter" data-i18n="shopResetBtn">Сбросить фильтры</button>
+            </div>
+        </main>
+
+        <!-- ===================== FOOTER ===================== -->
+        <footer class="site-footer">
+            <div class="footer-inner">
+                <p class="footer-copy" data-i18n="footerCopy">© 2026 SpaceRust. Все права защищены.</p>
+                <p class="footer-disclaimer">
+                    <span data-i18n="footerDisclaimer1">SpaceRust — неофициальный проект Minecraft, не утверждён Mojang и не связан с Mojang.</span><br>
+                    <span data-i18n="footerDisclaimer2">SpaceRust — неофициальный проект Rust, не утверждён Facepunch и не связан с Facepunch.</span>
+                </p>
+                <nav class="footer-links" aria-label="Legal">
+                    <a class="footer-link" href="index.html" data-i18n="linkHome">На главную</a>
+                    <span aria-hidden="true">|</span>
+                    <button class="footer-link" type="button" data-doc="terms" data-i18n="linkShopTerms">Условия выдачи товаров</button>
+                    <span aria-hidden="true">|</span>
+                    <button class="footer-link" type="button" data-doc="rules" data-i18n="linkRules">Правила проекта</button>
+                </nav>
+            </div>
+        </footer>
+    </div>
+
+    <!-- ===================== PRODUCT DETAILS MODAL ===================== -->
+    <div class="modal-backdrop" id="item-modal" aria-hidden="true">
+        <div class="modal-card wide" role="dialog" aria-modal="true" aria-labelledby="item-modal-title">
+            <div class="modal-head">
+                <span class="modal-title" id="item-modal-title">ТОВАР</span>
+                <button class="modal-close" id="item-modal-close" type="button" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body item-detail-body">
+                <div class="item-detail-top">
+                    <div class="item-detail-icon" id="item-detail-icon"></div>
+                    <div class="item-detail-meta">
+                        <div class="item-detail-badges">
+                            <span class="cat-pill" id="item-detail-cat">КИТ</span>
+                            <span class="dur-pill" id="item-detail-dur">Разовый</span>
+                        </div>
+                        <h3 id="item-detail-name">Название</h3>
+                        <p id="item-detail-desc">Описание</p>
+                    </div>
+                </div>
+
+                <div class="item-perks-box">
+                    <span class="stat-label" id="item-detail-list-title" data-i18n="detailPerksTitle">Что входит:</span>
+                    <ul class="item-perks-list" id="item-detail-list"></ul>
+                </div>
+
+                <div class="item-detail-footer">
+                    <div class="item-price-block">
+                        <span class="stat-label" data-i18n="detailPriceLabel">Стоимость</span>
+                        <strong class="item-detail-price" id="item-detail-price">199 ₽</strong>
+                    </div>
+                    <button type="button" class="modal-submit amber" id="item-detail-add" data-i18n="detailAddBtn">ДОБАВИТЬ В КОРЗИНУ</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== CART & CHECKOUT MODAL ===================== -->
+    <div class="modal-backdrop" id="cart-modal" aria-hidden="true">
+        <div class="modal-card wide" role="dialog" aria-modal="true" aria-labelledby="cart-modal-title">
+            <div class="modal-head">
+                <span class="modal-title" id="cart-modal-title" data-i18n="cartModalTitle">КОРЗИНА ПОКУПОК</span>
+                <button class="modal-close" id="cart-close" type="button" aria-label="Close">&times;</button>
+            </div>
+
+            <div class="modal-body cart-body">
+                <div class="cart-empty" id="cart-empty" hidden>
+                    <p data-i18n="cartEmptyText">Корзина пока пуста. Выберите привилегию, кит или кейс в каталоге.</p>
+                </div>
+
+                <div class="cart-items" id="cart-items"></div>
+
+                <form class="checkout-box" id="checkout-form" novalidate>
+                    <label class="field">
+                        <span data-i18n="checkoutNickLabel">Никнейм получателя (действует на всех серверах)</span>
+                        <input type="text" id="checkout-nick" placeholder="Ваш игровой никнейм" data-i18n-ph="checkoutNickPh" minlength="3" maxlength="16" required>
+                    </label>
+
+                    <div class="promo-row">
+                        <input type="text" id="promo-input" class="promo-input" placeholder="Промокод (например: WIPE2026 или RUSTME)" data-i18n-ph="promoPh">
+                        <button type="button" class="mini-btn" id="btn-apply-promo" data-i18n="promoApplyBtn">ПРИМЕНИТЬ</button>
+                    </div>
+                    <p class="promo-status" id="promo-status" hidden></p>
+
+                    <div class="cart-totals">
+                        <div class="total-line">
+                            <span data-i18n="cartSubtotalLabel">Товары:</span>
+                            <span id="cart-subtotal">0 ₽</span>
+                        </div>
+                        <div class="total-line discount" id="cart-discount-row" hidden>
+                            <span id="cart-discount-label">Скидка:</span>
+                            <span id="cart-discount-val">-0 ₽</span>
+                        </div>
+                        <div class="total-line grand">
+                            <span data-i18n="cartTotalLabel">Итого к оплате:</span>
+                            <strong id="cart-total">0 ₽</strong>
+                        </div>
+                    </div>
+
+                    <div class="form-error" id="checkout-error" role="alert" hidden></div>
+
+                    <button type="submit" class="modal-submit amber" id="btn-checkout-submit" data-i18n="checkoutSubmitBtn">ОФОРМИТЬ ЗАКАЗ</button>
+                    <p class="checkout-note" data-i18n="checkoutNote">Демо-оформление: привилегии и наборы распространяются на все серверы SpaceRust, заказ сохраняется в истории браузера.</p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== ORDERS HISTORY MODAL ===================== -->
+    <div class="modal-backdrop" id="orders-modal" aria-hidden="true">
+        <div class="modal-card wide" role="dialog" aria-modal="true" aria-labelledby="orders-modal-title">
+            <div class="modal-head">
+                <span class="modal-title" id="orders-modal-title" data-i18n="ordersModalTitle">ИСТОРИЯ ЗАКАЗОВ</span>
+                <button class="modal-close" id="orders-close" type="button" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="orders-list" id="orders-list"></div>
+                <button type="button" class="modal-submit coral" id="orders-ok" data-i18n="closeBtn">ЗАКРЫТЬ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== DOCS MODAL ===================== -->
+    <div class="modal-backdrop" id="shop-doc-modal" aria-hidden="true">
+        <div class="modal-card wide" role="dialog" aria-modal="true" aria-labelledby="shop-doc-title">
+            <div class="modal-head">
+                <span class="modal-title" id="shop-doc-title">Information</span>
+                <button class="modal-close" id="shop-doc-close" type="button" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="doc-content" id="shop-doc-content"></div>
+                <button type="button" class="modal-submit coral" id="shop-doc-ok" data-i18n="closeBtn">ЗАКРЫТЬ</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container" aria-live="polite"></div>
+
+    <script src="js/i18n.js"></script>
+    <script src="js/shop.js"></script>
+</body>
+</html>
