@@ -444,6 +444,28 @@ class LauncherApi:
         except Exception:
             return False
 
+    def check_updates(self):
+        try:
+            return self._manager.check_github_updates()
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    def mark_updates_seen(self, commit_sha=None):
+        try:
+            return self._manager.mark_updates_seen(commit_sha)
+        except Exception:
+            return {"status": "ok"}
+
+    def apply_update(self):
+        try:
+            res = self._manager.apply_github_update(progress_callback=self.report_progress)
+            if isinstance(res, dict) and res.get('status') == 'restart_required':
+                import threading
+                threading.Timer(0.6, self.close_window).start()
+            return res
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
     def launch_client(self, ram_mb=None, nickname=None):
         try:
             res = self._manager.launch(
@@ -499,6 +521,8 @@ def main():
     window.events.closing += api._on_closing
 
     def on_started():
+        import json
+        import threading
         if start_maximized:
             for _ in range(30):
                 if api._get_hwnd():
@@ -507,6 +531,22 @@ def main():
             api.toggle_maximize_window()
             st = api.get_window_state()
             api._notify_window_state(st['maximized'], st['width'], st['height'])
+
+        def bg_update_loop():
+            time.sleep(1.2)
+            while not api._closing:
+                try:
+                    data = api.check_updates()
+                    payload = json.dumps(data, ensure_ascii=False)
+                    api._safe_eval_js(f"window.onGithubUpdates && window.onGithubUpdates({payload})")
+                except Exception:
+                    pass
+                for _ in range(300):
+                    if api._closing:
+                        return
+                    time.sleep(1)
+
+        threading.Thread(target=bg_update_loop, daemon=True).start()
 
     webview.start(on_started, debug=False)
 

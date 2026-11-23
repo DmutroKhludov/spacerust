@@ -104,7 +104,25 @@ window.SPACERUST_I18N = {
         'promo.used': 'Этот промокод уже активирован!',
         'promo.invalid': 'Неверный промокод или срок действия истёк',
         'promo.privLabel': 'Привилегия {rank}',
-        'promo.activated': 'Промокод активирован: {label}!'
+        'promo.activated': 'Промокод активирован: {label}!',
+
+        'github.bannerTitle': 'Доступно обновление на GitHub',
+        'github.bannerReleaseTitle': 'Новое обновление: {tag}',
+        'github.btnUpdate': 'ОБНОВИТЬ',
+        'github.btnView': 'СМОТРЕТЬ',
+        'github.btnCheck': 'ПРОВЕРИТЬ ОБНОВЛЕНИЯ',
+        'github.checking': 'Проверка GitHub...',
+        'github.synced': 'Синхронизировано',
+        'github.offline': 'Нет связи с GitHub',
+        'github.tagRelease': 'РЕЛИЗ GITHUB',
+        'github.tagCommit': 'ОБНОВЛЕНИЕ GITHUB',
+        'github.tagNew': 'НОВОЕ',
+        'github.authorPrefix': 'Автор: {author}',
+        'github.newCommitToast': 'Обновление на GitHub: {title}',
+        'github.upToDate': 'Установлено последнее обновление с GitHub',
+        'github.applying': 'Загрузка обновления...',
+        'github.restarting': 'Обновление скачано, перезапуск лаунчера...',
+        'github.updatedMod': 'Обновление клиента установлено!'
     },
 
     uk: {
@@ -211,7 +229,25 @@ window.SPACERUST_I18N = {
         'promo.used': 'Цей промокод вже активовано!',
         'promo.invalid': 'Невірний промокод або термін дії минув',
         'promo.privLabel': 'Привілей {rank}',
-        'promo.activated': 'Промокод активовано: {label}!'
+        'promo.activated': 'Промокод активовано: {label}!',
+
+        'github.bannerTitle': 'Доступне оновлення на GitHub',
+        'github.bannerReleaseTitle': 'Нове оновлення: {tag}',
+        'github.btnUpdate': 'ОНОВИТИ',
+        'github.btnView': 'ДИВИТИСЯ',
+        'github.btnCheck': 'ПЕРЕВІРИТИ ОНОВЛЕННЯ',
+        'github.checking': 'Перевірка GitHub...',
+        'github.synced': 'Синхронізовано',
+        'github.offline': 'Немає зв’язку з GitHub',
+        'github.tagRelease': 'РЕЛІЗ GITHUB',
+        'github.tagCommit': 'ОНОВЛЕННЯ GITHUB',
+        'github.tagNew': 'НОВЕ',
+        'github.authorPrefix': 'Автор: {author}',
+        'github.newCommitToast': 'Оновлення на GitHub: {title}',
+        'github.upToDate': 'Встановлено останнє оновлення з GitHub',
+        'github.applying': 'Завантаження оновлення...',
+        'github.restarting': 'Оновлення завантажено, перезапуск лаунчера...',
+        'github.updatedMod': 'Оновлення клієнта встановлено!'
     },
 
     en: {
@@ -318,6 +354,24 @@ window.SPACERUST_I18N = {
         'promo.used': 'This promo code has already been redeemed!',
         'promo.invalid': 'Invalid or expired promo code',
         'promo.privLabel': '{rank} Privilege',
-        'promo.activated': 'Promo code redeemed: {label}!'
+        'promo.activated': 'Promo code redeemed: {label}!',
+
+        'github.bannerTitle': 'GitHub update available',
+        'github.bannerReleaseTitle': 'New update: {tag}',
+        'github.btnUpdate': 'UPDATE',
+        'github.btnView': 'VIEW',
+        'github.btnCheck': 'CHECK UPDATES',
+        'github.checking': 'Checking GitHub...',
+        'github.synced': 'Synced',
+        'github.offline': 'GitHub offline',
+        'github.tagRelease': 'GITHUB RELEASE',
+        'github.tagCommit': 'GITHUB UPDATE',
+        'github.tagNew': 'NEW',
+        'github.authorPrefix': 'Author: {author}',
+        'github.newCommitToast': 'GitHub update: {title}',
+        'github.upToDate': 'You are on the latest GitHub update',
+        'github.applying': 'Downloading update...',
+        'github.restarting': 'Update downloaded, restarting launcher...',
+        'github.updatedMod': 'Client update installed!'
     }
 };

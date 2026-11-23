@@ -8,6 +8,8 @@ import traceback
 import minecraft_launcher_lib
 
 SUPPORTED_LANGS = ('ru', 'uk', 'en')
+GITHUB_REPO = 'DmutroKhludov/spacerust'
+LAUNCHER_VERSION = '2.5.1'
 
 BACKEND_MESSAGES = {
     'ru': {
@@ -26,6 +28,12 @@ BACKEND_MESSAGES = {
         'dl_failed': 'Не удалось автоматически загрузить файлы игры:\n{err}\n\nПроверьте подключение к интернету.',
         'no_java': 'Java не найдена на вашем компьютере!\n\nДля запуска игры требуется Java 8 (x64).\nУстановите Java с официального сайта: https://www.java.com',
         'launch_err': 'Ошибка запуска игры: {err}',
+        'updating_launcher': 'Загрузка обновления лаунчера...',
+        'updating_mod': 'Загрузка обновления клиента...',
+        'update_restarting': 'Обновление загружено! Перезапуск лаунчера...',
+        'update_done': 'Обновление успешно установлено!',
+        'update_none': 'Установлена последняя версия!',
+        'update_err': 'Ошибка обновления: {err}',
     },
     'uk': {
         'mb': 'МБ',
@@ -43,6 +51,12 @@ BACKEND_MESSAGES = {
         'dl_failed': 'Не вдалося автоматично завантажити файли гри:\n{err}\n\nПеревірте підключення до інтернету.',
         'no_java': 'Java не знайдено на вашому комп’ютері!\n\nДля запуску гри потрібна Java 8 (x64).\nВстановіть Java з офіційного сайту: https://www.java.com',
         'launch_err': 'Помилка запуску гри: {err}',
+        'updating_launcher': 'Завантаження оновлення лаунчера...',
+        'updating_mod': 'Завантаження оновлення клієнта...',
+        'update_restarting': 'Оновлення завантажено! Перезапуск лаунчера...',
+        'update_done': 'Оновлення успішно встановлено!',
+        'update_none': 'Встановлено останню версію!',
+        'update_err': 'Помилка оновлення: {err}',
     },
     'en': {
         'mb': 'MB',
@@ -60,6 +74,12 @@ BACKEND_MESSAGES = {
         'dl_failed': 'Failed to download game files automatically:\n{err}\n\nCheck your internet connection.',
         'no_java': 'Java was not found on your computer!\n\nJava 8 (x64) is required to launch the game.\nInstall Java from the official site: https://www.java.com',
         'launch_err': 'Game launch error: {err}',
+        'updating_launcher': 'Downloading launcher update...',
+        'updating_mod': 'Downloading client update...',
+        'update_restarting': 'Update downloaded! Restarting launcher...',
+        'update_done': 'Update installed successfully!',
+        'update_none': 'You are already on the latest version!',
+        'update_err': 'Update error: {err}',
     },
 }
 
@@ -303,7 +323,274 @@ class SpaceRustClientManager:
                 break
 
         self.sync_menu_videos(base_dir)
-        self.check_cloud_updates()
+        # Never overwrite a locally built workspace/bundled mod JAR with an older GitHub Release
+        local_dev_mod = os.path.join(self.exe_dir, 'spacerust-mod', 'build', 'libs', 'spacerust-mod-1.0.0.jar')
+        if not os.path.isfile(local_dev_mod):
+            self.check_cloud_updates()
+
+    def _parse_github_time(self, iso_str):
+        if not iso_str:
+            return 0.0
+        try:
+            import datetime
+            clean = str(iso_str).strip()
+            if clean.endswith('Z'):
+                clean = clean[:-1] + '+00:00'
+            return datetime.datetime.fromisoformat(clean).timestamp()
+        except Exception:
+            return 0.0
+
+    def _fetch_github_json(self, path, timeout=5):
+        import urllib.request
+        url = f"https://api.github.com/repos/{GITHUB_REPO}{path}"
+        req = urllib.request.Request(url, headers={
+            'User-Agent': 'SpaceRustLauncher/1.0',
+            'Accept': 'application/vnd.github+json',
+        })
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return json.loads(resp.read().decode('utf-8'))
+
+    def _get_bundled_mod_mtime(self):
+        bundled_mtime = 0.0
+        for cand in [
+            os.path.join(getattr(sys, '_MEIPASS', self.exe_dir), 'spacerust-mod-1.0.0.jar'),
+            os.path.join(self.exe_dir, 'spacerust-mod', 'build', 'libs', 'spacerust-mod-1.0.0.jar'),
+        ]:
+            if os.path.isfile(cand):
+                bundled_mtime = max(bundled_mtime, os.path.getmtime(cand))
+        return bundled_mtime
+
+    def _get_current_launcher_mtime(self):
+        try:
+            if getattr(sys, 'frozen', False):
+                return os.path.getmtime(sys.executable)
+            return os.path.getmtime(os.path.abspath(__file__))
+        except Exception:
+            return 0.0
+
+    def mark_updates_seen(self, commit_sha=None):
+        if commit_sha:
+            self._save_config({'seen_commit_sha': str(commit_sha)})
+            return {"status": "ok", "seen_commit_sha": str(commit_sha)}
+        try:
+            commits_data = self._fetch_github_json('/commits?sha=main&per_page=1', timeout=4)
+            if isinstance(commits_data, list) and commits_data:
+                sha = commits_data[0].get('sha') or ''
+                if sha:
+                    self._save_config({'seen_commit_sha': sha})
+                    return {"status": "ok", "seen_commit_sha": sha}
+        except Exception:
+            pass
+        return {"status": "ok"}
+
+    def check_github_updates(self):
+        """Checks GitHub Releases and main branch commits for launcher & client updates."""
+        cfg = self._load_config()
+        commits = []
+        latest_release = None
+        release_obj = None
+        offline = False
+
+        try:
+            try:
+                release_obj = self._fetch_github_json('/releases/latest', timeout=5)
+            except Exception:
+                rels = self._fetch_github_json('/releases?per_page=1', timeout=5)
+                if isinstance(rels, list) and rels:
+                    release_obj = rels[0]
+        except Exception as e:
+            offline = True
+            self.log(f"GitHub release check failed: {e}")
+
+        try:
+            raw_commits = self._fetch_github_json('/commits?sha=main&per_page=8', timeout=5)
+            if isinstance(raw_commits, list):
+                for item in raw_commits:
+                    sha = item.get('sha') or ''
+                    cinfo = item.get('commit') or {}
+                    raw_msg = (cinfo.get('message') or '').strip()
+                    lines = [ln.strip() for ln in raw_msg.splitlines() if ln.strip()]
+                    title = lines[0] if lines else 'Update'
+                    details = lines[1:4]
+                    author_info = cinfo.get('author') or {}
+                    commits.append({
+                        'sha': sha,
+                        'short_sha': sha[:7],
+                        'title': title,
+                        'details': details,
+                        'author': author_info.get('name') or 'Developer',
+                        'date': author_info.get('date') or '',
+                        'url': item.get('html_url') or f"https://github.com/{GITHUB_REPO}/commit/{sha}",
+                    })
+                offline = False
+        except Exception as e:
+            self.log(f"GitHub commits check failed: {e}")
+
+        launcher_update = {'available': False}
+        mod_update = {'available': False}
+
+        if isinstance(release_obj, dict):
+            latest_release = {
+                'tag_name': release_obj.get('tag_name') or '',
+                'name': release_obj.get('name') or release_obj.get('tag_name') or '',
+                'body': (release_obj.get('body') or '').strip(),
+                'published_at': release_obj.get('published_at') or '',
+                'url': release_obj.get('html_url') or f"https://github.com/{GITHUB_REPO}/releases",
+            }
+            assets = {a.get('name'): a for a in release_obj.get('assets', []) if isinstance(a, dict)}
+
+            # Check updated SpaceRust.exe
+            exe_asset = assets.get('SpaceRust.exe')
+            if exe_asset:
+                asset_id = exe_asset.get('id')
+                updated_at = exe_asset.get('updated_at') or ''
+                dl_url = exe_asset.get('browser_download_url') or ''
+                remote_ts = self._parse_github_time(updated_at)
+                local_exe_ts = self._get_current_launcher_mtime()
+                is_frozen = bool(getattr(sys, 'frozen', False))
+                exe_newer = remote_ts > (local_exe_ts + 120.0)
+                not_applied = (
+                    cfg.get('remote_launcher_asset_id') != asset_id
+                    or cfg.get('remote_launcher_updated_at') != updated_at
+                )
+                if dl_url and is_frozen and exe_newer and not_applied:
+                    launcher_update = {
+                        'available': True,
+                        'asset_name': 'SpaceRust.exe',
+                        'asset_id': asset_id,
+                        'updated_at': updated_at,
+                        'download_url': dl_url,
+                        'size': int(exe_asset.get('size') or 0),
+                        'tag_name': latest_release['tag_name'],
+                    }
+
+            # Check updated spacerust-mod-1.0.0.jar
+            mod_asset = assets.get('spacerust-mod-1.0.0.jar')
+            local_dev_mod = os.path.join(self.exe_dir, 'spacerust-mod', 'build', 'libs', 'spacerust-mod-1.0.0.jar')
+            if mod_asset and not os.path.isfile(local_dev_mod):
+                asset_id = mod_asset.get('id')
+                updated_at = mod_asset.get('updated_at') or ''
+                dl_url = mod_asset.get('browser_download_url') or ''
+                remote_ts = self._parse_github_time(updated_at)
+                bundled_ts = self._get_bundled_mod_mtime()
+                remote_newer = remote_ts > (bundled_ts + 120.0)
+                not_applied = (
+                    cfg.get('remote_mod_asset_id') != asset_id
+                    or cfg.get('remote_mod_updated_at') != updated_at
+                )
+                if dl_url and remote_newer and not_applied:
+                    mod_update = {
+                        'available': True,
+                        'asset_name': 'spacerust-mod-1.0.0.jar',
+                        'asset_id': asset_id,
+                        'updated_at': updated_at,
+                        'download_url': dl_url,
+                        'size': int(mod_asset.get('size') or 0),
+                        'tag_name': latest_release['tag_name'],
+                    }
+
+        latest_sha = commits[0]['sha'] if commits else ''
+        seen_sha = cfg.get('seen_commit_sha') or ''
+        has_new_commit = bool(latest_sha and latest_sha != seen_sha)
+        has_binary_update = bool(launcher_update.get('available') or mod_update.get('available'))
+
+        return {
+            'status': 'offline' if (offline and not commits and not latest_release) else 'ok',
+            'repo': GITHUB_REPO,
+            'launcher_version': LAUNCHER_VERSION,
+            'is_frozen': bool(getattr(sys, 'frozen', False)),
+            'commits': commits,
+            'latest_release': latest_release,
+            'latest_commit_sha': latest_sha,
+            'latest_commit_short': commits[0]['short_sha'] if commits else '',
+            'has_new_commit': has_new_commit,
+            'launcher_update': launcher_update,
+            'mod_update': mod_update,
+            'has_binary_update': has_binary_update,
+            'has_any_update': bool(has_new_commit or has_binary_update),
+        }
+
+    def apply_github_update(self, progress_callback=None):
+        """Downloads and applies available mod and/or SpaceRust.exe updates from GitHub Releases."""
+        self._pause_event.set()
+        def notify(stage, percent):
+            self.log(f"{stage} ({percent}%)")
+            if progress_callback:
+                progress_callback(stage, percent)
+
+        try:
+            info = self.check_github_updates()
+            if info.get('status') == 'offline':
+                return {'status': 'error', 'message': self._msg('update_err', err='GitHub offline')}
+
+            updated_mod = False
+            mod_upd = info.get('mod_update') or {}
+            if mod_upd.get('available') and mod_upd.get('download_url'):
+                notify(self._msg('updating_mod'), 10)
+                mods_dir = os.path.join(self.game_dir, 'mods')
+                os.makedirs(mods_dir, exist_ok=True)
+                target = os.path.join(mods_dir, 'spacerust-mod-1.0.0.jar')
+                tmp_mod = target + '.tmp'
+                self.download_file_with_progress(mod_upd['download_url'], tmp_mod, notify)
+                if os.path.isfile(tmp_mod) and os.path.getsize(tmp_mod) > 1024:
+                    shutil.move(tmp_mod, target)
+                    self._save_config({
+                        'remote_mod_asset_id': mod_upd.get('asset_id'),
+                        'remote_mod_updated_at': mod_upd.get('updated_at'),
+                    })
+                    updated_mod = True
+                    self.log(f"Updated client mod from GitHub: {target}")
+
+            exe_upd = info.get('launcher_update') or {}
+            if exe_upd.get('available') and exe_upd.get('download_url') and getattr(sys, 'frozen', False):
+                notify(self._msg('updating_launcher'), 15)
+                current_exe = os.path.abspath(sys.executable)
+                new_exe = current_exe + '.new'
+                self.download_file_with_progress(exe_upd['download_url'], new_exe, notify)
+                if os.path.isfile(new_exe) and os.path.getsize(new_exe) > 100000:
+                    updates_cfg = {
+                        'remote_launcher_asset_id': exe_upd.get('asset_id'),
+                        'remote_launcher_updated_at': exe_upd.get('updated_at'),
+                    }
+                    if info.get('latest_commit_sha'):
+                        updates_cfg['seen_commit_sha'] = info['latest_commit_sha']
+                    self._save_config(updates_cfg)
+
+                    import tempfile
+                    bat_path = os.path.join(tempfile.gettempdir(), 'spacerust_self_update.bat')
+                    pid = os.getpid()
+                    bat_body = (
+                        "@echo off\r\n"
+                        "chcp 65001 >nul\r\n"
+                        ":waitloop\r\n"
+                        f"tasklist /FI \"PID eq {pid}\" 2>NUL | find /I \"{pid}\" >NUL\r\n"
+                        "if \"%ERRORLEVEL%\"==\"0\" (\r\n"
+                        "    timeout /t 1 /nobreak >nul\r\n"
+                        "    goto waitloop\r\n"
+                        ")\r\n"
+                        f"move /y \"{new_exe}\" \"{current_exe}\" >nul\r\n"
+                        f"start \"\" \"{current_exe}\"\r\n"
+                        "del \"%~f0\"\r\n"
+                    )
+                    with open(bat_path, 'w', encoding='utf-8') as bf:
+                        bf.write(bat_body)
+
+                    flags = getattr(subprocess, 'CREATE_NO_WINDOW', 0) | getattr(subprocess, 'DETACHED_PROCESS', 0)
+                    subprocess.Popen(['cmd', '/c', bat_path], creationflags=flags)
+                    notify(self._msg('update_restarting'), 100)
+                    return {'status': 'restart_required', 'message': self._msg('update_restarting')}
+
+            if info.get('latest_commit_sha'):
+                self._save_config({'seen_commit_sha': info['latest_commit_sha']})
+
+            if updated_mod:
+                notify(self._msg('update_done'), 100)
+                return {'status': 'ok', 'updated': 'mod', 'message': self._msg('update_done')}
+
+            return {'status': 'up_to_date', 'message': self._msg('update_none')}
+        except Exception as e:
+            self.log(f"Update error: {e}")
+            return {'status': 'error', 'message': self._msg('update_err', err=str(e))}
 
     def check_cloud_updates(self):
         """Check GitHub Releases (latest) for updated mod JAR or menu_videos.zip."""
@@ -319,13 +606,28 @@ class SpaceRustClientManager:
         cfg = self._load_config()
         assets = {a.get('name'): a for a in release.get('assets', []) if isinstance(a, dict)}
 
-        # 1. Check updated mod jar asset
+        # 1. Check updated mod jar asset (only if strictly newer than local bundled mod)
         mod_asset = assets.get('spacerust-mod-1.0.0.jar')
         if mod_asset:
             asset_id = mod_asset.get('id')
             updated_at = mod_asset.get('updated_at')
             dl_url = mod_asset.get('browser_download_url')
-            if dl_url and (cfg.get('remote_mod_asset_id') != asset_id or cfg.get('remote_mod_updated_at') != updated_at):
+            bundled_mtime = 0.0
+            for cand in [
+                os.path.join(getattr(sys, '_MEIPASS', self.exe_dir), 'spacerust-mod-1.0.0.jar'),
+                os.path.join(self.exe_dir, 'spacerust-mod', 'build', 'libs', 'spacerust-mod-1.0.0.jar'),
+            ]:
+                if os.path.isfile(cand):
+                    bundled_mtime = max(bundled_mtime, os.path.getmtime(cand))
+            remote_newer = False
+            if updated_at:
+                try:
+                    import datetime
+                    dt = datetime.datetime.strptime(updated_at, '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=datetime.timezone.utc)
+                    remote_newer = dt.timestamp() > (bundled_mtime + 120.0)
+                except Exception:
+                    remote_newer = False
+            if dl_url and remote_newer and (cfg.get('remote_mod_asset_id') != asset_id or cfg.get('remote_mod_updated_at') != updated_at):
                 try:
                     target = os.path.join(self.game_dir, 'mods', 'spacerust-mod-1.0.0.jar')
                     tmp_mod = target + '.tmp'

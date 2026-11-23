@@ -67,16 +67,38 @@
         <!-- ===================== CONTENT ===================== -->
         <main class="content">
             <!-- ---------- TAB: HOME ---------- -->
-            <section class="tab-view active-view" id="view-home"></section>
+            <section class="tab-view active-view" id="view-home">
+                <div class="update-banner" id="update-banner">
+                    <div class="update-banner-left">
+                        <span class="update-badge" id="update-banner-badge">GITHUB</span>
+                        <div class="update-banner-info">
+                            <div class="update-banner-title" id="update-banner-title" data-i18n="github.bannerTitle">Доступно обновление на GitHub</div>
+                            <div class="update-banner-sub" id="update-banner-sub"></div>
+                        </div>
+                    </div>
+                    <div class="update-banner-actions">
+                        <button class="update-btn primary" id="btn-banner-action" data-i18n="github.btnUpdate">ОБНОВИТЬ</button>
+                        <button class="update-btn close" id="btn-banner-dismiss" title="×">&times;</button>
+                    </div>
+                </div>
+            </section>
 
             <!-- ---------- TAB: PATCHES / NEWS ---------- -->
             <section class="tab-view" id="view-news">
                 <div class="news-wrap">
                     <div class="news-list">
-                        <div class="news-head">
-                            <span class="news-kicker" data-i18n="news.kicker">ПАТЧИ ИГРЫ</span>
-                            <h2 class="news-title" data-i18n="news.title">СПИСОК ИЗМЕНЕНИЙ</h2>
+                        <div class="news-head-row">
+                            <div class="news-head">
+                                <span class="news-kicker" data-i18n="news.kicker">ПАТЧИ ИГРЫ</span>
+                                <h2 class="news-title" data-i18n="news.title">СПИСОК ИЗМЕНЕНИЙ</h2>
+                            </div>
+                            <div class="news-head-actions">
+                                <span class="github-sync-badge" id="github-sync-badge">GitHub</span>
+                                <button class="browse-btn accent" id="btn-check-updates" data-i18n="github.btnCheck">ПРОВЕРИТЬ ОБНОВЛЕНИЯ</button>
+                            </div>
                         </div>
+
+                        <div class="github-patches-list" id="github-patches-list"></div>
 
                         <article class="patch-card featured">
                             <div class="patch-meta"><span class="patch-ver">v2.5.0</span><span class="patch-date" data-i18n="news.p1.date">22 ноября 2026</span><span class="patch-tag new" data-i18n="news.p1.tag">НОВОЕ</span></div>
@@ -161,7 +183,7 @@
 
             <!-- Play (bottom-center) -->
             <div class="play-zone">
-                <div class="play-caption"><span data-i18n="play.patchPrefix">ПАТЧ:</span> <span>v2.5.0</span></div>
+                <div class="play-caption"><span data-i18n="play.patchPrefix">ПАТЧ:</span> <span id="patch-version-label">v2.5.0</span></div>
                 <button class="btn-play" id="btn-play">
                     <span id="btn-play-text" data-i18n="play.idle">ИГРАТЬ</span>
                     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>

@@ -89,6 +89,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function switchTab(target) {
         tabButtons.forEach(b => b.classList.toggle('active', b.dataset.tab === target));
         tabViews.forEach(v => v.classList.toggle('active-view', v.id === `view-${target}`));
+        if (target === 'news' && typeof markGithubSeen === 'function') {
+            markGithubSeen();
+        }
     }
 
     tabButtons.forEach(btn => {
@@ -99,10 +102,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     $('btn-notify')?.addEventListener('click', () => {
-        const dot = document.querySelector('.notify-dot');
-        if (dot) dot.remove();
         switchTab('news');
-        showToast(t('topbar.notifyToast'), 'success');
+        if (typeof markGithubSeen === 'function') markGithubSeen();
+        const latestTitle = STATE.githubData?.commits?.[0]?.title;
+        if (latestTitle) {
+            showToast(t('github.newCommitToast', { title: latestTitle }), 'success');
+        } else {
+            showToast(t('topbar.notifyToast'), 'success');
+        }
     });
 
     // ==========================================
@@ -455,6 +462,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnPause.disabled = true;
         btnResume.disabled = true;
         btnResume.classList.remove('active');
+        if (btnPlayText && !STATE.isLaunching) btnPlayText.textContent = t('play.idle');
     }
 
     let lastProgressPct = 0;
@@ -524,7 +532,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function handleLaunchGame() {
-        if (STATE.isLaunching) return;
+        if (STATE.isLaunching || STATE.isUpdating) return;
         if (!STATE.nickname || STATE.nickname.length < 3) {
             showToast(t('play.nickMin'), 'error');
             return;
@@ -620,6 +628,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         updateProfileUI();
+        if (STATE.githubData && typeof renderGithubUpdates === 'function') {
+            renderGithubUpdates(STATE.githubData, false);
+        }
 
         if (loadLine.classList.contains('done')) {
             loadTitle.textContent = t('play.stageRunning');
@@ -669,6 +680,292 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.addEventListener('pywebviewready', syncLanguage);
     setTimeout(syncLanguage, 650);
+
+    // ==========================================
+    // GITHUB UPDATES (RELEASES + COMMITS + SELF-UPDATE)
+    // ==========================================
+    STATE.githubData = null;
+    STATE.lastToastedSha = '';
+    STATE.bannerDismissedSha = '';
+    STATE.isUpdating = false;
+
+    const btnNotify = $('btn-notify');
+    const updateBanner = $('update-banner');
+    const updateBannerBadge = $('update-banner-badge');
+    const updateBannerTitle = $('update-banner-title');
+    const updateBannerSub = $('update-banner-sub');
+    const btnBannerAction = $('btn-banner-action');
+    const btnBannerDismiss = $('btn-banner-dismiss');
+    const btnCheckUpdates = $('btn-check-updates');
+    const githubSyncBadge = $('github-sync-badge');
+    const githubPatchesList = $('github-patches-list');
+    const patchVersionLabel = $('patch-version-label');
+
+    function escapeHtml(str) {
+        return String(str || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function formatGithubDate(isoStr) {
+        if (!isoStr) return '';
+        try {
+            const d = new Date(isoStr);
+            if (Number.isNaN(d.getTime())) return '';
+            const localeMap = { ru: 'ru-RU', uk: 'uk-UA', en: 'en-US' };
+            return d.toLocaleDateString(localeMap[STATE.lang] || 'ru-RU', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+            });
+        } catch (_) {
+            return '';
+        }
+    }
+
+    function markGithubSeen() {
+        const latestSha = STATE.githubData?.latest_commit_sha || STATE.githubData?.commits?.[0]?.sha || '';
+        if (latestSha) {
+            localStorage.setItem('sr_seen_sha', latestSha);
+            const a = api();
+            if (a && typeof a.mark_updates_seen === 'function') {
+                a.mark_updates_seen(latestSha).catch(() => {});
+            }
+        }
+        if (STATE.githubData) STATE.githubData.has_new_commit = false;
+        if (btnNotify && !STATE.githubData?.has_binary_update) {
+            btnNotify.classList.remove('has-updates');
+        }
+    }
+
+    function renderGithubUpdates(data, allowToast = true) {
+        if (!data || typeof data !== 'object') return;
+        STATE.githubData = data;
+
+        const commits = Array.isArray(data.commits) ? data.commits : [];
+        const rel = data.latest_release || null;
+        const hasBinaryUpdate = !!data.has_binary_update;
+        const latestSha = data.latest_commit_sha || commits[0]?.sha || '';
+        const localSeen = localStorage.getItem('sr_seen_sha') || '';
+        const isUnseenCommit = !!(latestSha && ((data.has_new_commit && latestSha !== localSeen) || (!api() && latestSha !== localSeen)));
+
+        if (githubSyncBadge) {
+            githubSyncBadge.classList.remove('ok', 'err');
+            if (data.status === 'offline') {
+                githubSyncBadge.textContent = t('github.offline');
+                githubSyncBadge.classList.add('err');
+            } else {
+                const shortSha = data.latest_commit_short || (latestSha ? latestSha.slice(0, 7) : '');
+                githubSyncBadge.textContent = shortSha ? `GitHub · #${shortSha}` : t('github.synced');
+                githubSyncBadge.classList.add('ok');
+            }
+        }
+
+        if (patchVersionLabel && data.status === 'ok') {
+            const baseVer = (rel && rel.tag_name) ? rel.tag_name : 'v2.5.0';
+            const shortSha = data.latest_commit_short || '';
+            patchVersionLabel.textContent = shortSha ? `${baseVer} · #${shortSha}` : baseVer;
+        }
+
+        if (githubPatchesList) {
+            const cards = [];
+            if (rel && (rel.name || rel.body)) {
+                const relLines = (rel.body || '')
+                    .split('\n')
+                    .map((l) => l.replace(/^[-*•]\s*/, '').trim())
+                    .filter(Boolean)
+                    .slice(0, 4);
+                const relItems = relLines.length
+                    ? `<ul>${relLines.map((ln) => `<li>${escapeHtml(ln)}</li>`).join('')}</ul>`
+                    : '';
+                cards.push(
+                    `<article class="patch-card featured">` +
+                    `<div class="patch-meta">` +
+                    `<span class="patch-ver">${escapeHtml(rel.tag_name || 'RELEASE')}</span>` +
+                    `<span class="patch-date">${escapeHtml(formatGithubDate(rel.published_at))}</span>` +
+                    `<span class="patch-tag new">${escapeHtml(t('github.tagRelease'))}</span>` +
+                    `</div>` +
+                    `<h3>${escapeHtml(rel.name || rel.tag_name)}</h3>` +
+                    `${relItems}` +
+                    `</article>`
+                );
+            }
+
+            commits.slice(0, 6).forEach((c, idx) => {
+                const detailsHtml = (c.details && c.details.length)
+                    ? `<ul>${c.details.map((ln) => `<li>${escapeHtml(ln)}</li>`).join('')}</ul>`
+                    : '';
+                const isFirst = idx === 0 && !rel;
+                cards.push(
+                    `<article class="patch-card${isFirst ? ' featured' : ''}">` +
+                    `<div class="patch-meta">` +
+                    `<span class="patch-ver">#${escapeHtml(c.short_sha)}</span>` +
+                    `<span class="patch-date">${escapeHtml(formatGithubDate(c.date))}</span>` +
+                    `<span class="patch-tag ${idx === 0 ? 'new' : 'github'}">${escapeHtml(idx === 0 ? t('github.tagNew') : t('github.tagCommit'))}</span>` +
+                    `<span class="patch-author">${escapeHtml(t('github.authorPrefix', { author: c.author || 'GitHub' }))}</span>` +
+                    `</div>` +
+                    `<h3>${escapeHtml(c.title)}</h3>` +
+                    `${detailsHtml}` +
+                    `</article>`
+                );
+            });
+
+            githubPatchesList.innerHTML = cards.join('');
+        }
+
+        if (btnNotify) {
+            btnNotify.classList.toggle('has-updates', hasBinaryUpdate || isUnseenCommit);
+        }
+
+        if (updateBanner) {
+            const dismissed = !!(latestSha && STATE.bannerDismissedSha === latestSha && !hasBinaryUpdate);
+            const shouldShow = (hasBinaryUpdate || isUnseenCommit) && !dismissed && data.status !== 'offline';
+            updateBanner.classList.toggle('show', shouldShow);
+            updateBanner.classList.toggle('binary-ready', hasBinaryUpdate);
+
+            if (shouldShow) {
+                if (hasBinaryUpdate) {
+                    const tag = data.launcher_update?.tag_name || data.mod_update?.tag_name || 'GitHub';
+                    if (updateBannerBadge) updateBannerBadge.textContent = 'RELEASE';
+                    if (updateBannerTitle) updateBannerTitle.textContent = t('github.bannerReleaseTitle', { tag });
+                    if (updateBannerSub) updateBannerSub.textContent = commits[0]?.title || rel?.name || t('github.bannerTitle');
+                    if (btnBannerAction) btnBannerAction.textContent = t('github.btnUpdate');
+                } else {
+                    if (updateBannerBadge) updateBannerBadge.textContent = 'GITHUB';
+                    if (updateBannerTitle) updateBannerTitle.textContent = t('github.bannerTitle');
+                    if (updateBannerSub) updateBannerSub.textContent = `#${data.latest_commit_short || ''} · ${commits[0]?.title || ''}`;
+                    if (btnBannerAction) btnBannerAction.textContent = t('github.btnView');
+                }
+            }
+        }
+
+        if (allowToast && (hasBinaryUpdate || isUnseenCommit) && latestSha && STATE.lastToastedSha !== latestSha) {
+            STATE.lastToastedSha = latestSha;
+            const summary = commits[0]?.title || rel?.name || 'GitHub';
+            showToast(t('github.newCommitToast', { title: summary }), 'info');
+        }
+    }
+
+    window.onGithubUpdates = function (data) {
+        renderGithubUpdates(data, true);
+    };
+
+    async function fetchGithubUpdates(manual = false) {
+        if (githubSyncBadge) {
+            githubSyncBadge.classList.remove('ok', 'err');
+            githubSyncBadge.textContent = t('github.checking');
+        }
+        const a = api();
+        if (a && typeof a.check_updates === 'function') {
+            try {
+                const res = await a.check_updates();
+                renderGithubUpdates(res, !manual);
+                if (manual) {
+                    if (res.status === 'offline') showToast(t('github.offline'), 'error');
+                    else if (!res.has_binary_update && !res.has_new_commit) showToast(t('github.upToDate'), 'success');
+                }
+                return res;
+            } catch (err) {
+                console.log('check_updates error', err);
+            }
+        }
+        // Browser preview fallback directly via GitHub public CORS API
+        try {
+            const [relResp, comResp] = await Promise.all([
+                fetch('https://api.github.com/repos/DmutroKhludov/spacerust/releases/latest'),
+                fetch('https://api.github.com/repos/DmutroKhludov/spacerust/commits?sha=main&per_page=8'),
+            ]);
+            const relJson = relResp.ok ? await relResp.json() : null;
+            const comJson = comResp.ok ? await comResp.json() : [];
+            const commits = Array.isArray(comJson) ? comJson.map((item) => {
+                const msg = (item.commit?.message || '').trim();
+                const lines = msg.split('\n').map((s) => s.trim()).filter(Boolean);
+                return {
+                    sha: item.sha || '',
+                    short_sha: (item.sha || '').slice(0, 7),
+                    title: lines[0] || 'Update',
+                    details: lines.slice(1, 4),
+                    author: item.commit?.author?.name || 'Developer',
+                    date: item.commit?.author?.date || '',
+                    url: item.html_url || '',
+                };
+            }) : [];
+            const payload = {
+                status: 'ok',
+                latest_release: relJson ? {
+                    tag_name: relJson.tag_name || '',
+                    name: relJson.name || relJson.tag_name || '',
+                    body: relJson.body || '',
+                    published_at: relJson.published_at || '',
+                    url: relJson.html_url || '',
+                } : null,
+                commits,
+                latest_commit_sha: commits[0]?.sha || '',
+                latest_commit_short: commits[0]?.short_sha || '',
+                has_new_commit: !!(commits[0]?.sha && commits[0].sha !== localStorage.getItem('sr_seen_sha')),
+                has_binary_update: false,
+            };
+            renderGithubUpdates(payload, !manual);
+            if (manual && !payload.has_new_commit) showToast(t('github.upToDate'), 'success');
+            return payload;
+        } catch (err) {
+            renderGithubUpdates({ status: 'offline', commits: [] }, false);
+            if (manual) showToast(t('github.offline'), 'error');
+            return { status: 'offline' };
+        }
+    }
+
+    async function handleApplyUpdate() {
+        if (STATE.isUpdating || STATE.isLaunching) return;
+        const a = api();
+        if (!STATE.githubData?.has_binary_update || !a || typeof a.apply_update !== 'function') {
+            switchTab('news');
+            markGithubSeen();
+            return;
+        }
+        STATE.isUpdating = true;
+        if (btnBannerAction) btnBannerAction.disabled = true;
+        loadLine.classList.remove('done', 'paused');
+        window.updateLaunchProgress(t('github.applying'), 5);
+        try {
+            const res = await a.apply_update();
+            if (res && res.status === 'restart_required') {
+                loadLine.classList.add('done');
+                showToast(t('github.restarting'), 'success');
+            } else if (res && res.status === 'ok') {
+                loadLine.classList.add('done');
+                showToast(t('github.updatedMod'), 'success');
+                setTimeout(setIdleLine, 2500);
+                await fetchGithubUpdates(false);
+            } else if (res && res.status === 'up_to_date') {
+                setIdleLine();
+                showToast(t('github.upToDate'), 'success');
+                await fetchGithubUpdates(false);
+            } else {
+                setIdleLine();
+                showToast((res && res.message) || t('github.offline'), 'error');
+            }
+        } catch (err) {
+            setIdleLine();
+            showToast(t('github.offline'), 'error');
+        } finally {
+            STATE.isUpdating = false;
+            if (btnBannerAction) btnBannerAction.disabled = false;
+        }
+    }
+
+    btnBannerAction?.addEventListener('click', handleApplyUpdate);
+    btnBannerDismiss?.addEventListener('click', () => {
+        STATE.bannerDismissedSha = STATE.githubData?.latest_commit_sha || 'dismissed';
+        updateBanner?.classList.remove('show');
+    });
+    btnCheckUpdates?.addEventListener('click', () => fetchGithubUpdates(true));
+
+    // Trigger initial check when running in browser preview (EXE triggers from on_started + also safe fallback)
+    window.addEventListener('pywebviewready', () => fetchGithubUpdates(false));
+    setTimeout(() => { if (!STATE.githubData) fetchGithubUpdates(false); }, 1800);
 
     // ==========================================
     // INIT
