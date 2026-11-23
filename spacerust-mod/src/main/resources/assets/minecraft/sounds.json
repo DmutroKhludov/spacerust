@@ -1,0 +1,61 @@
+{
+  "music.game": {
+    "replace": true,
+    "sounds": [
+      { "name": "spacerust:menu_safe_zone", "stream": true, "weight": 3 },
+      { "name": "spacerust:menu_classic", "stream": true, "weight": 2 }
+    ]
+  },
+  "music.creative": {
+    "replace": true,
+    "sounds": [
+      { "name": "spacerust:menu_safe_zone", "stream": true, "weight": 3 },
+      { "name": "spacerust:menu_classic", "stream": true, "weight": 2 }
+    ]
+  },
+  "music.under_water": {
+    "replace": true,
+    "sounds": [
+      { "name": "spacerust:menu_safe_zone", "stream": true }
+    ]
+  },
+  "music.menu": {
+    "replace": true,
+    "sounds": [
+      { "name": "spacerust:menu_classic", "stream": true },
+      { "name": "spacerust:menu_safe_zone", "stream": true }
+    ]
+  },
+  "music.nether.basalt_deltas": {
+    "replace": true,
+    "sounds": [{ "name": "spacerust:menu_classic", "stream": true }]
+  },
+  "music.nether.crimson_forest": {
+    "replace": true,
+    "sounds": [{ "name": "spacerust:menu_classic", "stream": true }]
+  },
+  "music.nether.nether_wastes": {
+    "replace": true,
+    "sounds": [{ "name": "spacerust:menu_classic", "stream": true }]
+  },
+  "music.nether.soul_sand_valley": {
+    "replace": true,
+    "sounds": [{ "name": "spacerust:menu_safe_zone", "stream": true }]
+  },
+  "music.nether.warped_forest": {
+    "replace": true,
+    "sounds": [{ "name": "spacerust:menu_safe_zone", "stream": true }]
+  },
+  "music.end": {
+    "replace": true,
+    "sounds": [{ "name": "spacerust:menu_safe_zone", "stream": true }]
+  },
+  "music.dragon": {
+    "replace": true,
+    "sounds": [{ "name": "spacerust:menu_classic", "stream": true }]
+  },
+  "music.credits": {
+    "replace": true,
+    "sounds": [{ "name": "spacerust:menu_safe_zone", "stream": true }]
+  }
+}

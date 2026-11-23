@@ -2,6 +2,8 @@ package net.spacerust.client.mixin;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ingame.InventoryScreen;
+import net.minecraft.entity.LivingEntity;
+import net.spacerust.client.SpaceRustClient;
 import net.spacerust.client.gui.RustInventoryScreen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -18,5 +20,17 @@ public class InventoryScreenMixin {
             client.openScreen(new RustInventoryScreen());
             ci.cancel();
         }
+    }
+
+    @Inject(method = "drawEntity", at = @At("HEAD"))
+    private static void hideHeldItemBegin(int x, int y, int size, float mouseX, float mouseY,
+                                          LivingEntity entity, CallbackInfo ci) {
+        SpaceRustClient.hideGuiHeldItem = true;
+    }
+
+    @Inject(method = "drawEntity", at = @At("RETURN"))
+    private static void hideHeldItemEnd(int x, int y, int size, float mouseX, float mouseY,
+                                        LivingEntity entity, CallbackInfo ci) {
+        SpaceRustClient.hideGuiHeldItem = false;
     }
 }

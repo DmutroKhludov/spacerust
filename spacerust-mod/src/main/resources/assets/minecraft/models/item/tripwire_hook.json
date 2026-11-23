@@ -1,0 +1,20 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "minecraft:block/tripwire_hook"
+  },
+  "overrides": [
+    {
+      "predicate": {
+        "custom_model_data": 1068
+      },
+      "model": "spacerust:item/key_lock"
+    },
+    {
+      "predicate": {
+        "custom_model_data": 1094
+      },
+      "model": "spacerust:item/spring"
+    }
+  ]
+}

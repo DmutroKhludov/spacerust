@@ -206,6 +206,7 @@ body.no-anim * { transition: none !important; }
 .icon-btn:hover, .text-btn:hover { background: rgba(255,255,255,0.16); color: #fff; }
 
 .notify-dot {
+    display: none;
     position: absolute;
     top: 6px; right: 6px;
     width: 6px; height: 6px;
@@ -213,6 +214,7 @@ body.no-anim * { transition: none !important; }
     background: var(--red-bright);
     box-shadow: 0 0 6px var(--red-bright);
 }
+#btn-notify.has-updates .notify-dot { display: block; }
 
 .window-controls { display: flex; height: 100%; margin-left: 8px; }
 .win-btn {
@@ -428,7 +430,7 @@ body.no-anim * { transition: none !important; }
 .load-track {
     position: absolute;
     left: 0;
-    right: 36px;
+    right: 90px;
     top: 50%;
     height: 3px;
     transform: translateY(-50%);
@@ -448,7 +450,7 @@ body.no-anim * { transition: none !important; }
 .load-label {
     position: absolute;
     left: 12px;
-    right: 44px;
+    right: 96px;
     bottom: calc(50% + 8px);
     display: flex;
     align-items: baseline;
@@ -480,12 +482,12 @@ body.no-anim * { transition: none !important; }
     top: 50%;
     transform: translateY(-50%);
     display: flex;
-    flex-direction: column;
-    gap: 3px;
+    flex-direction: row;
+    gap: 4px;
     pointer-events: auto;
 }
 .load-ctrl {
-    width: 28px; height: 20px;
+    width: 24px; height: 24px;
     display: flex; align-items: center; justify-content: center;
     background: rgba(255,255,255,0.08);
     color: #ddd7cd;
@@ -493,6 +495,7 @@ body.no-anim * { transition: none !important; }
 }
 .load-ctrl svg { width: 13px; height: 13px; }
 .load-ctrl:hover:not(:disabled) { background: rgba(255,255,255,0.18); color: #fff; }
+.load-ctrl.cancel:hover:not(:disabled) { background: rgba(205, 65, 43, 0.85); color: #fff; }
 .load-ctrl:disabled { opacity: 0.3; cursor: default; }
 .load-ctrl.active { background: var(--amber); color: #fff; opacity: 1; }
 
@@ -538,6 +541,17 @@ body.no-anim * { transition: none !important; }
 .btn-play:hover { filter: brightness(1.1); box-shadow: 0 8px 30px rgba(226, 85, 60, 0.55), inset 0 1px 0 rgba(255,255,255,0.2); }
 .btn-play:hover svg { transform: translateX(3px); }
 .btn-play:active { transform: translateY(1px); }
+.btn-play.update-ready {
+    background: linear-gradient(180deg, #82bd37 0%, #57871e 100%);
+    box-shadow: 0 6px 22px rgba(110, 155, 47, 0.38), inset 0 1px 0 rgba(255,255,255,0.22);
+}
+.btn-play.update-ready:hover {
+    filter: brightness(1.08);
+    box-shadow: 0 8px 30px rgba(140, 198, 63, 0.55), inset 0 1px 0 rgba(255,255,255,0.25);
+}
+.btn-play .icon-update { display: none; }
+.btn-play.update-ready:not(.loading-state) .icon-play { display: none; }
+.btn-play.update-ready:not(.loading-state) .icon-update { display: block; }
 .btn-play::after {
     content: '';
     position: absolute;
@@ -699,6 +713,17 @@ body.no-anim .btn-play::after, body.no-anim .btn-play.loading-state { animation:
 .browse-btn:hover { background: rgba(255,255,255,0.2); }
 .browse-btn.accent { background: var(--red); color: #fff; }
 .browse-btn.accent:hover { background: var(--red-bright); }
+.browse-btn.repair {
+    width: 100%;
+    background: rgba(201, 144, 47, 0.14);
+    border: 1px solid rgba(201, 144, 47, 0.35);
+    color: var(--amber-bright);
+}
+.browse-btn.repair:hover {
+    background: rgba(201, 144, 47, 0.28);
+    border-color: var(--amber-bright);
+    color: #fff;
+}
 
 .set-group.socials { flex-direction: row; }
 .social-btn {
@@ -979,4 +1004,45 @@ body.is-maximized .resize-edge { display: none; }
     .play-zone { bottom: 14px; }
     .load-line { bottom: 14px; }
     .news-wrap { inset: 10px 18px 6px; }
+}
+
+/* =========================================================
+   GITHUB LIVE PATCH FEED
+   ========================================================= */
+.news-head-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+}
+.news-head-row .news-head { margin-bottom: 0; }
+.news-head-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.github-sync-badge {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--text-muted);
+    padding: 4px 8px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--line);
+}
+.github-sync-badge.ok { color: var(--green-bright); border-color: rgba(140, 198, 63, 0.35); }
+.github-sync-badge.err { color: var(--amber-bright); }
+
+.github-patches-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.github-patches-list:empty { display: none; }
+.patch-tag.github { background: rgba(201, 144, 47, 0.22); color: var(--amber-bright); }
+.patch-author {
+    margin-left: auto;
+    font-size: 10.5px;
+    color: var(--text-muted);
 }

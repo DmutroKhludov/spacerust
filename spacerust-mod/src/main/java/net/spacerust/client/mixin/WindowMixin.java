@@ -1,6 +1,7 @@
 package net.spacerust.client.mixin;
 
 import net.minecraft.client.util.Window;
+import net.spacerust.client.config.RustSettings;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -10,7 +11,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class WindowMixin {
 
     @Inject(method = "calculateScaleFactor", at = @At("HEAD"), cancellable = true)
-    private void lockScaleFactor(int guiScale, boolean forceUnicodeFont, CallbackInfoReturnable<Integer> cir) {
-        cir.setReturnValue(2); // Lock GUI scale permanently to 2
+    private void applyRustGuiScale(int guiScale, boolean forceUnicodeFont, CallbackInfoReturnable<Integer> cir) {
+        int overrideScale = RustSettings.get().guiScaleOverride;
+        if (overrideScale > 0) {
+            cir.setReturnValue(overrideScale); // 1 = Small, 2 = Rust Default, 3 = Large; 0 = Auto (vanilla)
+        }
     }
 }

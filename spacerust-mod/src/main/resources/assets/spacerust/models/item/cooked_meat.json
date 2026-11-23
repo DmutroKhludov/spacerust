@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "spacerust:gui/rust_items/can.tuna"
+  }
+}

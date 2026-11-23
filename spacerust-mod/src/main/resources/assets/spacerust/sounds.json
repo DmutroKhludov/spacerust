@@ -3,5 +3,391 @@
     "sounds": [
       "spacerust:ui_click"
     ]
+  },
+  "ui_hover": {
+    "sounds": [
+      "spacerust:ui_hover"
+    ]
+  },
+  "menu_music_classic": {
+    "sounds": [
+      {
+        "name": "spacerust:menu_classic",
+        "stream": true
+      }
+    ]
+  },
+  "menu_music_safe_zone": {
+    "sounds": [
+      {
+        "name": "spacerust:menu_safe_zone",
+        "stream": true
+      }
+    ]
+  },
+  "ak_deploy": {
+    "sounds": [
+      "spacerust:weapons/ak_deploy"
+    ]
+  },
+  "ak_reload": {
+    "sounds": [
+      "spacerust:weapons/ak_reload"
+    ]
+  },
+  "ak_shoot": {
+    "sounds": [
+      "spacerust:weapons/ak_shoot"
+    ]
+  },
+  "axe_deploy": {
+    "sounds": [
+      "spacerust:weapons/axe_deploy"
+    ]
+  },
+  "bandage_deploy": {
+    "sounds": [
+      "spacerust:weapons/bandage_deploy"
+    ]
+  },
+  "bandage_use": {
+    "sounds": [
+      "spacerust:weapons/bandage_use"
+    ]
+  },
+  "bolt_deploy": {
+    "sounds": [
+      "spacerust:weapons/bolt_deploy"
+    ]
+  },
+  "bolt_reload": {
+    "sounds": [
+      "spacerust:weapons/bolt_reload"
+    ]
+  },
+  "bolt_shoot": {
+    "sounds": [
+      "spacerust:weapons/bolt_shoot"
+    ]
+  },
+  "dry_fire": {
+    "sounds": [
+      "spacerust:weapons/dry_fire"
+    ]
+  },
+  "hammer_deploy": {
+    "sounds": [
+      "spacerust:weapons/hammer_deploy"
+    ]
+  },
+  "headshot": {
+    "sounds": [
+      "spacerust:weapons/headshot"
+    ]
+  },
+  "hitmarker": {
+    "sounds": [
+      "spacerust:weapons/hitmarker"
+    ]
+  },
+  "melee_swing": {
+    "sounds": [
+      "spacerust:weapons/melee_swing"
+    ]
+  },
+  "pickaxe_deploy": {
+    "sounds": [
+      "spacerust:weapons/pickaxe_deploy"
+    ]
+  },
+  "revolver_deploy": {
+    "sounds": [
+      "spacerust:weapons/revolver_deploy"
+    ]
+  },
+  "revolver_reload": {
+    "sounds": [
+      "spacerust:weapons/revolver_reload"
+    ]
+  },
+  "revolver_shoot": {
+    "sounds": [
+      "spacerust:weapons/revolver_shoot"
+    ]
+  },
+  "rock_deploy": {
+    "sounds": [
+      "spacerust:weapons/rock_deploy"
+    ]
+  },
+  "shotgun_deploy": {
+    "sounds": [
+      "spacerust:weapons/shotgun_deploy"
+    ]
+  },
+  "shotgun_reload": {
+    "sounds": [
+      "spacerust:weapons/shotgun_reload"
+    ]
+  },
+  "shotgun_shoot": {
+    "sounds": [
+      "spacerust:weapons/shotgun_shoot"
+    ]
+  },
+  "syringe_deploy": {
+    "sounds": [
+      "spacerust:weapons/syringe_deploy"
+    ]
+  },
+  "syringe_use": {
+    "sounds": [
+      "spacerust:weapons/syringe_use"
+    ]
+  },
+  "thompson_deploy": {
+    "sounds": [
+      "spacerust:weapons/thompson_deploy"
+    ]
+  },
+  "thompson_reload": {
+    "sounds": [
+      "spacerust:weapons/thompson_reload"
+    ]
+  },
+  "thompson_shoot": {
+    "sounds": [
+      "spacerust:weapons/thompson_shoot"
+    ]
+  },
+  "torch_deploy": {
+    "sounds": [
+      "spacerust:weapons/torch_deploy"
+    ]
+  },
+  "ore_hit": {
+    "sounds": [
+      "spacerust:farm/ore_hit"
+    ]
+  },
+  "ore_hotspot_1": {
+    "sounds": [
+      "spacerust:farm/ore_hotspot_1"
+    ]
+  },
+  "ore_hotspot_2": {
+    "sounds": [
+      "spacerust:farm/ore_hotspot_2"
+    ]
+  },
+  "ore_break": {
+    "sounds": [
+      "spacerust:farm/ore_break"
+    ]
+  },
+  "tree_hit": {
+    "sounds": [
+      "spacerust:farm/tree_hit"
+    ]
+  },
+  "tree_chop_1": {
+    "sounds": [
+      "spacerust:farm/tree_chop_1"
+    ]
+  },
+  "tree_chop_2": {
+    "sounds": [
+      "spacerust:farm/tree_chop_2"
+    ]
+  },
+  "tree_bonus_1": {
+    "sounds": [
+      "spacerust:farm/tree_bonus_1"
+    ]
+  },
+  "tree_bonus_2": {
+    "sounds": [
+      "spacerust:farm/tree_bonus_2"
+    ]
+  },
+  "tree_spray": {
+    "sounds": [
+      "spacerust:farm/tree_spray"
+    ]
+  },
+  "tree_fall": {
+    "sounds": [
+      "spacerust:farm/tree_fall"
+    ]
+  },
+  "build_place": {
+    "sounds": [
+      "spacerust:building/build_place"
+    ]
+  },
+  "build_wood_upgrade": {
+    "sounds": [
+      "spacerust:building/build_wood_upgrade"
+    ]
+  },
+  "build_stone_upgrade": {
+    "sounds": [
+      "spacerust:building/build_stone_upgrade"
+    ]
+  },
+  "build_metal_upgrade": {
+    "sounds": [
+      "spacerust:building/build_metal_upgrade"
+    ]
+  },
+  "build_hqm_upgrade": {
+    "sounds": [
+      "spacerust:building/build_hqm_upgrade"
+    ]
+  },
+  "build_destroy": {
+    "sounds": [
+      "spacerust:building/build_destroy"
+    ]
+  },
+  "build_repair": {
+    "sounds": [
+      "spacerust:building/build_repair"
+    ]
+  },
+  "mp5_shoot": {
+    "sounds": [
+      "spacerust:weapons/mp5_shoot"
+    ]
+  },
+  "mp5_reload": {
+    "sounds": [
+      "spacerust:weapons/mp5_reload"
+    ]
+  },
+  "lr300_shoot": {
+    "sounds": [
+      "spacerust:weapons/lr300_shoot"
+    ]
+  },
+  "lr300_reload": {
+    "sounds": [
+      "spacerust:weapons/lr300_reload"
+    ]
+  },
+  "l96_shoot": {
+    "sounds": [
+      "spacerust:weapons/l96_shoot"
+    ]
+  },
+  "l96_reload": {
+    "sounds": [
+      "spacerust:weapons/l96_reload"
+    ]
+  },
+  "python_shoot": {
+    "sounds": [
+      "spacerust:weapons/python_shoot"
+    ]
+  },
+  "python_reload": {
+    "sounds": [
+      "spacerust:weapons/python_reload"
+    ]
+  },
+  "pump_shoot": {
+    "sounds": [
+      "spacerust:weapons/pump_shoot"
+    ]
+  },
+  "pump_reload": {
+    "sounds": [
+      "spacerust:weapons/pump_reload"
+    ]
+  },
+  "m92_shoot": {
+    "sounds": [
+      "spacerust:weapons/m92_shoot"
+    ]
+  },
+  "m92_reload": {
+    "sounds": [
+      "spacerust:weapons/m92_reload"
+    ]
+  },
+  "p250_shoot": {
+    "sounds": [
+      "spacerust:weapons/p250_shoot"
+    ]
+  },
+  "p250_reload": {
+    "sounds": [
+      "spacerust:weapons/p250_reload"
+    ]
+  },
+  "sar_shoot": {
+    "sounds": [
+      "spacerust:weapons/sar_shoot"
+    ]
+  },
+  "sar_reload": {
+    "sounds": [
+      "spacerust:weapons/sar_reload"
+    ]
+  },
+  "customsmg_shoot": {
+    "sounds": [
+      "spacerust:weapons/customsmg_shoot"
+    ]
+  },
+  "customsmg_reload": {
+    "sounds": [
+      "spacerust:weapons/customsmg_reload"
+    ]
+  },
+  "crossbow_shoot": {
+    "sounds": [
+      "spacerust:weapons/crossbow_shoot"
+    ]
+  },
+  "crossbow_reload": {
+    "sounds": [
+      "spacerust:weapons/crossbow_reload"
+    ]
+  },
+  "bow_shoot": {
+    "sounds": [
+      "spacerust:weapons/bow_shoot"
+    ]
+  },
+  "torch_ignite": {
+    "sounds": [
+      "spacerust:weapons/torch_ignite"
+    ]
+  },
+  "torch_extinguish": {
+    "sounds": [
+      "spacerust:weapons/torch_extinguish"
+    ]
+  },
+  "bow_draw_start": {
+    "sounds": [
+      "spacerust:weapons/bow_draw_start"
+    ]
+  },
+  "rocket_shoot": {
+    "sounds": [
+      "spacerust:weapons/rocket_shoot"
+    ]
+  },
+  "rocket_reload": {
+    "sounds": [
+      "spacerust:weapons/rocket_reload"
+    ]
+  },
+  "rocket_deploy": {
+    "sounds": [
+      "spacerust:weapons/rocket_deploy"
+    ]
   }
 }

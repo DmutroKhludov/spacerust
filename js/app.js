@@ -26,7 +26,10 @@ document.addEventListener('DOMContentLoaded', () => {
         optGC: localStorage.getItem('sr_opt_gc') !== 'false',
         lang: localStorage.getItem('sr_lang') || 'ru',
         isLaunching: false,
-        isPaused: false
+        isRepairing: false,
+        isUpdating: false,
+        isPaused: false,
+        isCancelled: false
     };
 
     const VALID_LANGS = ['ru', 'uk', 'en'];
@@ -66,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadPct = $('load-pct');
     const btnPause = $('btn-dl-pause');
     const btnResume = $('btn-dl-resume');
+    const btnCancel = $('btn-dl-cancel');
 
     const drawer = $('settings-drawer');
     const drawerBackdrop = $('settings-backdrop');
@@ -89,6 +93,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function switchTab(target) {
         tabButtons.forEach(b => b.classList.toggle('active', b.dataset.tab === target));
         tabViews.forEach(v => v.classList.toggle('active-view', v.id === `view-${target}`));
+        if (target === 'news' && typeof markGithubSeen === 'function') {
+            markGithubSeen();
+        }
     }
 
     tabButtons.forEach(btn => {
@@ -99,10 +106,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     $('btn-notify')?.addEventListener('click', () => {
-        const dot = document.querySelector('.notify-dot');
-        if (dot) dot.remove();
         switchTab('news');
-        showToast(t('topbar.notifyToast'), 'success');
+        if (typeof markGithubSeen === 'function') markGithubSeen();
     });
 
     // ==========================================
@@ -338,6 +343,69 @@ document.addEventListener('DOMContentLoaded', () => {
         else showToast(t('settings.clientFolder', { path: gamePathInput ? gamePathInput.value : '%APPDATA%\\.spacerust' }));
     });
 
+    $('btn-repair-game')?.addEventListener('click', async () => {
+        if (STATE.isLaunching || STATE.isUpdating || STATE.isRepairing) {
+            return showToast(t('settings.waitLaunch'), 'error');
+        }
+        const a = api();
+        if (!a || typeof a.repair_game !== 'function') {
+            return showToast(t('settings.folderExeOnly'));
+        }
+        STATE.isRepairing = true;
+        STATE.isCancelled = false;
+        closeDrawer();
+        btnPlay?.classList.add('loading-state');
+        btnPlay?.classList.remove('update-ready');
+        loadLine.classList.remove('done', 'paused');
+        btnPause.disabled = false;
+        btnResume.disabled = true;
+        if (btnCancel) btnCancel.disabled = false;
+        window.updateLaunchProgress(t('settings.repairRunning'), 3);
+        try {
+            const res = await a.repair_game();
+            if (res && res.status === 'cancelled') {
+                const alreadyCancelled = STATE.isCancelled;
+                STATE.isRepairing = false;
+                STATE.isCancelled = false;
+                btnPlay?.classList.remove('loading-state');
+                setPaused(false);
+                setIdleLine();
+                if (!alreadyCancelled) showToast(t('play.toastCancelled'));
+            } else if (res && res.status === 'ok') {
+                STATE.isCancelled = false;
+                loadLine.classList.add('done');
+                loadFill.style.width = '100%';
+                loadPct.textContent = '100%';
+                btnPause.disabled = true;
+                btnResume.disabled = true;
+                if (btnCancel) btnCancel.disabled = true;
+                showToast(t('settings.repairDone'), 'success');
+                setTimeout(() => {
+                    STATE.isRepairing = false;
+                    btnPlay?.classList.remove('loading-state');
+                    setPaused(false);
+                    setIdleLine();
+                }, 2200);
+            } else {
+                STATE.isRepairing = false;
+                STATE.isCancelled = false;
+                btnPlay?.classList.remove('loading-state');
+                setPaused(false);
+                setIdleLine();
+                const shortErr = String((res && res.message) || t('settings.repairErr')).split('\n')[0];
+                if (loadStage) loadStage.textContent = shortErr;
+                showToast(shortErr, 'error');
+            }
+        } catch (err) {
+            STATE.isRepairing = false;
+            STATE.isCancelled = false;
+            btnPlay?.classList.remove('loading-state');
+            setPaused(false);
+            setIdleLine();
+            showToast(t('settings.repairErr'), 'error');
+        }
+    });
+
     // ==========================================
     // WINDOW CONTROLS + NATIVE DRAG + RESIZE
     // ==========================================
@@ -446,7 +514,25 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // GAME LOADING LINE + PLAY
     // ==========================================
+    function syncPlayButtonMode() {
+        if (!btnPlay || !btnPlayText) return;
+        if (loadLine.classList.contains('done')) {
+            btnPlay.classList.remove('update-ready');
+            btnPlayText.textContent = t('play.stageRunning');
+            return;
+        }
+        if (STATE.isLaunching || STATE.isUpdating || STATE.isRepairing) return;
+        if (STATE.updateAvailable) {
+            btnPlay.classList.add('update-ready');
+            btnPlayText.textContent = t('github.btnUpdate');
+        } else {
+            btnPlay.classList.remove('update-ready');
+            btnPlayText.textContent = t('play.idle');
+        }
+    }
+
     function setIdleLine() {
+        STATE.isPaused = false;
         loadLine.classList.remove('paused', 'done');
         loadFill.style.width = '0%';
         loadTitle.textContent = '';
@@ -455,11 +541,14 @@ document.addEventListener('DOMContentLoaded', () => {
         btnPause.disabled = true;
         btnResume.disabled = true;
         btnResume.classList.remove('active');
+        if (btnCancel) btnCancel.disabled = true;
+        syncPlayButtonMode();
     }
 
     let lastProgressPct = 0;
 
     window.updateLaunchProgress = function (text, percent) {
+        if (STATE.isCancelled || (!STATE.isLaunching && !STATE.isRepairing && !STATE.isUpdating)) return;
         const pct = Math.max(0, Math.min(100, Math.round(percent)));
         lastProgressPct = pct;
         loadFill.style.width = `${pct}%`;
@@ -479,7 +568,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     btnPause?.addEventListener('click', async () => {
-        if (!STATE.isLaunching || STATE.isPaused) return;
+        if ((!STATE.isLaunching && !STATE.isRepairing && !STATE.isUpdating) || STATE.isPaused) return;
         setPaused(true);
         const a = api();
         if (a && a.pause_download) await a.pause_download();
@@ -487,17 +576,35 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     btnResume?.addEventListener('click', async () => {
-        if (!STATE.isLaunching || !STATE.isPaused) return;
+        if ((!STATE.isLaunching && !STATE.isRepairing && !STATE.isUpdating) || !STATE.isPaused) return;
         setPaused(false);
         const a = api();
         if (a && a.resume_download) await a.resume_download();
         showToast(t('play.toastResumed'), 'success');
     });
 
+    btnCancel?.addEventListener('click', async () => {
+        if ((!STATE.isLaunching && !STATE.isRepairing && !STATE.isUpdating) || STATE.isCancelled) return;
+        STATE.isCancelled = true;
+        if (btnCancel) btnCancel.disabled = true;
+        btnPause.disabled = true;
+        btnResume.disabled = true;
+        const a = api();
+        if (a && a.cancel_download) {
+            try { await a.cancel_download(); } catch (_) {}
+        }
+        STATE.isLaunching = false;
+        STATE.isRepairing = false;
+        STATE.isUpdating = false;
+        btnPlay?.classList.remove('loading-state');
+        setPaused(false);
+        setIdleLine();
+        showToast(t('play.toastCancelled'));
+    });
+
     function finishLaunch(delay) {
         setTimeout(() => {
             btnPlay.classList.remove('loading-state');
-            btnPlayText.textContent = t('play.idle');
             STATE.isLaunching = false;
             setPaused(false);
             setIdleLine();
@@ -509,6 +616,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return new Promise((resolve) => {
             let p = 5;
             const tick = setInterval(() => {
+                if (STATE.isCancelled) {
+                    clearInterval(tick);
+                    resolve({ status: 'cancelled' });
+                    return;
+                }
                 if (STATE.isPaused) return;
                 p += 4 + Math.random() * 6;
                 if (p >= 100) {
@@ -524,17 +636,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function handleLaunchGame() {
-        if (STATE.isLaunching) return;
+        if (STATE.isLaunching || STATE.isUpdating || STATE.isRepairing) return;
+        if (STATE.updateAvailable) {
+            return handleApplyUpdate();
+        }
         if (!STATE.nickname || STATE.nickname.length < 3) {
             showToast(t('play.nickMin'), 'error');
             return;
         }
 
         STATE.isLaunching = true;
+        STATE.isCancelled = false;
         btnPlay.classList.add('loading-state');
         loadLine.classList.remove('done', 'paused');
         btnPause.disabled = false;
         btnResume.disabled = true;
+        if (btnCancel) btnCancel.disabled = false;
         window.updateLaunchProgress(t('play.checkingFiles'), 3);
 
         try {
@@ -543,10 +660,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? await a.launch_client(STATE.ramMB, STATE.nickname)
                 : await simulateLaunch();
 
+            if (res && res.status === 'cancelled') {
+                const alreadyCancelled = STATE.isCancelled;
+                btnPlay.classList.remove('loading-state');
+                STATE.isLaunching = false;
+                STATE.isCancelled = false;
+                setPaused(false);
+                setIdleLine();
+                if (!alreadyCancelled) showToast(t('play.toastCancelled'));
+                return;
+            }
+
             if (res && res.status === 'error') {
                 btnPlay.classList.remove('loading-state');
                 btnPlayText.textContent = t('play.idle');
                 STATE.isLaunching = false;
+                STATE.isCancelled = false;
                 setPaused(false);
                 setIdleLine();
                 const shortErr = String(res.message || '').split('\n')[0] || t('play.toastErr');
@@ -555,6 +684,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            STATE.isCancelled = false;
             loadLine.classList.add('done');
             loadFill.style.width = '100%';
             loadTitle.textContent = t('play.stageRunning');
@@ -563,6 +693,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btnPlayText.textContent = t('play.stageRunning');
             btnPause.disabled = true;
             btnResume.disabled = true;
+            if (btnCancel) btnCancel.disabled = true;
             showToast(t('play.toastLaunched'), 'success');
             finishLaunch(4000);
         } catch (err) {
@@ -570,6 +701,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btnPlay.classList.remove('loading-state');
             btnPlayText.textContent = t('play.idle');
             STATE.isLaunching = false;
+            STATE.isCancelled = false;
             setPaused(false);
             setIdleLine();
             showToast(t('play.toastErr'), 'error');
@@ -620,20 +752,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         updateProfileUI();
+        if (STATE.githubData && typeof renderGithubUpdates === 'function') {
+            renderGithubUpdates(STATE.githubData, false);
+        }
 
         if (loadLine.classList.contains('done')) {
             loadTitle.textContent = t('play.stageRunning');
             loadStage.textContent = t('play.msgRunning');
-            if (btnPlayText) btnPlayText.textContent = t('play.stageRunning');
-        } else if (STATE.isLaunching) {
+            syncPlayButtonMode();
+        } else if (STATE.isLaunching || STATE.isUpdating || STATE.isRepairing) {
             loadTitle.textContent = STATE.isPaused ? t('play.loadPaused') : t('play.loadActive');
             if (btnPlayText) {
                 btnPlayText.textContent = lastProgressPct >= 100
                     ? t('play.btnStarting')
                     : t('play.btnProgress', { pct: lastProgressPct });
             }
-        } else if (btnPlayText) {
-            btnPlayText.textContent = t('play.idle');
+        } else {
+            syncPlayButtonMode();
         }
 
         if (syncBackend) {
@@ -669,6 +804,279 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.addEventListener('pywebviewready', syncLanguage);
     setTimeout(syncLanguage, 650);
+
+    // ==========================================
+    // GITHUB UPDATES (LIVE PATCHES + PLAY/UPDATE BUTTON)
+    // ==========================================
+    STATE.githubData = null;
+    STATE.isUpdating = false;
+    STATE.updateAvailable = false;
+
+    const btnNotify = $('btn-notify');
+    const btnCheckUpdates = $('btn-check-updates');
+    const githubSyncBadge = $('github-sync-badge');
+    const githubPatchesList = $('github-patches-list');
+    const patchVersionLabel = $('patch-version-label');
+
+    function escapeHtml(str) {
+        return String(str || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function formatGithubDate(isoStr) {
+        if (!isoStr) return '';
+        try {
+            const d = new Date(isoStr);
+            if (Number.isNaN(d.getTime())) return '';
+            const localeMap = { ru: 'ru-RU', uk: 'uk-UA', en: 'en-US' };
+            return d.toLocaleDateString(localeMap[STATE.lang] || 'ru-RU', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+            });
+        } catch (_) {
+            return '';
+        }
+    }
+
+    function markGithubSeen() {
+        const latestSha = STATE.githubData?.latest_commit_sha || STATE.githubData?.commits?.[0]?.sha || '';
+        if (latestSha) {
+            localStorage.setItem('sr_seen_sha', latestSha);
+            const a = api();
+            if (a && typeof a.mark_updates_seen === 'function') {
+                a.mark_updates_seen(latestSha).catch(() => {});
+            }
+        }
+        if (STATE.githubData) STATE.githubData.has_new_commit = false;
+        if (btnNotify && !STATE.githubData?.has_binary_update) {
+            btnNotify.classList.remove('has-updates');
+        }
+    }
+
+    function renderGithubUpdates(data) {
+        if (!data || typeof data !== 'object') return;
+        STATE.githubData = data;
+
+        const commits = Array.isArray(data.commits) ? data.commits : [];
+        const rel = data.latest_release || null;
+        const hasBinaryUpdate = !!data.has_binary_update;
+        const latestSha = data.latest_commit_sha || commits[0]?.sha || '';
+        const localSeen = localStorage.getItem('sr_seen_sha') || '';
+        const isUnseenCommit = !!(latestSha && ((data.has_new_commit && latestSha !== localSeen) || (!api() && latestSha !== localSeen)));
+
+        STATE.updateAvailable = hasBinaryUpdate;
+        syncPlayButtonMode();
+
+        if (githubSyncBadge) {
+            githubSyncBadge.classList.remove('ok', 'err');
+            if (data.status === 'offline') {
+                githubSyncBadge.textContent = t('github.offline');
+                githubSyncBadge.classList.add('err');
+            } else {
+                const shortSha = data.latest_commit_short || (latestSha ? latestSha.slice(0, 7) : '');
+                githubSyncBadge.textContent = shortSha ? `GitHub · #${shortSha}` : t('github.synced');
+                githubSyncBadge.classList.add('ok');
+            }
+        }
+
+        if (patchVersionLabel && data.status === 'ok') {
+            const baseVer = (rel && rel.tag_name) ? rel.tag_name : 'v2.5.0';
+            const shortSha = data.latest_commit_short || '';
+            patchVersionLabel.textContent = shortSha ? `${baseVer} · #${shortSha}` : baseVer;
+        }
+
+        if (githubPatchesList) {
+            const cards = [];
+            if (rel && (rel.name || rel.body)) {
+                const relLines = (rel.body || '')
+                    .split('\n')
+                    .map((l) => l.replace(/^[-*•]\s*/, '').trim())
+                    .filter(Boolean)
+                    .slice(0, 4);
+                const relItems = relLines.length
+                    ? `<ul>${relLines.map((ln) => `<li>${escapeHtml(ln)}</li>`).join('')}</ul>`
+                    : '';
+                cards.push(
+                    `<article class="patch-card featured">` +
+                    `<div class="patch-meta">` +
+                    `<span class="patch-ver">${escapeHtml(rel.tag_name || 'RELEASE')}</span>` +
+                    `<span class="patch-date">${escapeHtml(formatGithubDate(rel.published_at))}</span>` +
+                    `<span class="patch-tag new">${escapeHtml(t('github.tagRelease'))}</span>` +
+                    `</div>` +
+                    `<h3>${escapeHtml(rel.name || rel.tag_name)}</h3>` +
+                    `${relItems}` +
+                    `</article>`
+                );
+            }
+
+            commits.slice(0, 6).forEach((c, idx) => {
+                const detailsHtml = (c.details && c.details.length)
+                    ? `<ul>${c.details.map((ln) => `<li>${escapeHtml(ln)}</li>`).join('')}</ul>`
+                    : '';
+                const isFirst = idx === 0 && !rel;
+                cards.push(
+                    `<article class="patch-card${isFirst ? ' featured' : ''}">` +
+                    `<div class="patch-meta">` +
+                    `<span class="patch-ver">#${escapeHtml(c.short_sha)}</span>` +
+                    `<span class="patch-date">${escapeHtml(formatGithubDate(c.date))}</span>` +
+                    `<span class="patch-tag ${idx === 0 ? 'new' : 'github'}">${escapeHtml(idx === 0 ? t('github.tagNew') : t('github.tagCommit'))}</span>` +
+                    `<span class="patch-author">${escapeHtml(t('github.authorPrefix', { author: c.author || 'GitHub' }))}</span>` +
+                    `</div>` +
+                    `<h3>${escapeHtml(c.title)}</h3>` +
+                    `${detailsHtml}` +
+                    `</article>`
+                );
+            });
+
+            githubPatchesList.innerHTML = cards.join('');
+        }
+
+        if (btnNotify) {
+            btnNotify.classList.toggle('has-updates', hasBinaryUpdate || isUnseenCommit);
+        }
+    }
+
+    window.onGithubUpdates = function (data) {
+        renderGithubUpdates(data);
+    };
+
+    async function fetchGithubUpdates(manual = false) {
+        if (githubSyncBadge) {
+            githubSyncBadge.classList.remove('ok', 'err');
+            githubSyncBadge.textContent = t('github.checking');
+        }
+        const a = api();
+        if (a && typeof a.check_updates === 'function') {
+            try {
+                const res = await a.check_updates(!!manual);
+                renderGithubUpdates(res);
+                if (manual) {
+                    if (res.status === 'offline') showToast(t('github.offline'), 'error');
+                    else if (!res.has_binary_update && !res.has_new_commit) showToast(t('github.upToDate'), 'success');
+                }
+                return res;
+            } catch (err) {
+                console.log('check_updates error', err);
+            }
+        }
+        try {
+            const [relResp, comResp] = await Promise.all([
+                fetch('https://api.github.com/repos/DmutroKhludov/spacerust/releases/latest'),
+                fetch('https://api.github.com/repos/DmutroKhludov/spacerust/commits?sha=main&per_page=8'),
+            ]);
+            const relJson = relResp.ok ? await relResp.json() : null;
+            const comJson = comResp.ok ? await comResp.json() : [];
+            const commits = Array.isArray(comJson) ? comJson.map((item) => {
+                const msg = (item.commit?.message || '').trim();
+                const lines = msg.split('\n').map((s) => s.trim()).filter(Boolean);
+                return {
+                    sha: item.sha || '',
+                    short_sha: (item.sha || '').slice(0, 7),
+                    title: lines[0] || 'Update',
+                    details: lines.slice(1, 4),
+                    author: item.commit?.author?.name || 'Developer',
+                    date: item.commit?.author?.date || '',
+                    url: item.html_url || '',
+                };
+            }) : [];
+            const payload = {
+                status: 'ok',
+                latest_release: relJson ? {
+                    tag_name: relJson.tag_name || '',
+                    name: relJson.name || relJson.tag_name || '',
+                    body: relJson.body || '',
+                    published_at: relJson.published_at || '',
+                    url: relJson.html_url || '',
+                } : null,
+                commits,
+                latest_commit_sha: commits[0]?.sha || '',
+                latest_commit_short: commits[0]?.short_sha || '',
+                has_new_commit: !!(commits[0]?.sha && commits[0].sha !== localStorage.getItem('sr_seen_sha')),
+                has_binary_update: false,
+            };
+            renderGithubUpdates(payload);
+            if (manual && !payload.has_new_commit) showToast(t('github.upToDate'), 'success');
+            return payload;
+        } catch (err) {
+            renderGithubUpdates({ status: 'offline', commits: [] });
+            if (manual) showToast(t('github.offline'), 'error');
+            return { status: 'offline' };
+        }
+    }
+
+    async function handleApplyUpdate() {
+        if (STATE.isUpdating || STATE.isLaunching) return;
+        const a = api();
+        if (!a || typeof a.apply_update !== 'function') {
+            STATE.updateAvailable = false;
+            syncPlayButtonMode();
+            return;
+        }
+        STATE.isUpdating = true;
+        STATE.isCancelled = false;
+        btnPlay?.classList.add('loading-state');
+        loadLine.classList.remove('done', 'paused');
+        btnPause.disabled = false;
+        btnResume.disabled = true;
+        if (btnCancel) btnCancel.disabled = false;
+        window.updateLaunchProgress(t('github.applying'), 5);
+        try {
+            const res = await a.apply_update();
+            if (res && res.status === 'cancelled') {
+                const alreadyCancelled = STATE.isCancelled;
+                STATE.isUpdating = false;
+                STATE.isCancelled = false;
+                btnPlay?.classList.remove('loading-state');
+                setPaused(false);
+                setIdleLine();
+                if (!alreadyCancelled) showToast(t('play.toastCancelled'));
+            } else if (res && res.status === 'restart_required') {
+                loadLine.classList.add('done');
+                btnPause.disabled = true;
+                btnResume.disabled = true;
+                if (btnCancel) btnCancel.disabled = true;
+                showToast(t('github.restarting'), 'success');
+            } else if (res && res.status === 'ok') {
+                STATE.updateAvailable = false;
+                btnPlay?.classList.remove('loading-state');
+                loadLine.classList.add('done');
+                btnPause.disabled = true;
+                btnResume.disabled = true;
+                if (btnCancel) btnCancel.disabled = true;
+                showToast(t('github.updatedMod'), 'success');
+                setTimeout(setIdleLine, 2000);
+                await fetchGithubUpdates(false);
+            } else if (res && res.status === 'up_to_date') {
+                STATE.updateAvailable = false;
+                btnPlay?.classList.remove('loading-state');
+                setIdleLine();
+                showToast(t('github.upToDate'), 'success');
+                await fetchGithubUpdates(false);
+            } else {
+                btnPlay?.classList.remove('loading-state');
+                setIdleLine();
+                showToast((res && res.message) || t('github.offline'), 'error');
+            }
+        } catch (err) {
+            btnPlay?.classList.remove('loading-state');
+            setIdleLine();
+            showToast(t('github.offline'), 'error');
+        } finally {
+            STATE.isUpdating = false;
+            STATE.isCancelled = false;
+            syncPlayButtonMode();
+        }
+    }
+
+    btnCheckUpdates?.addEventListener('click', () => fetchGithubUpdates(true));
+
+    // Trigger initial check (EXE also triggers from on_started)
+    window.addEventListener('pywebviewready', () => fetchGithubUpdates(false));
+    setTimeout(() => { if (!STATE.githubData) fetchGithubUpdates(false); }, 1800);
 
     // ==========================================
     // INIT

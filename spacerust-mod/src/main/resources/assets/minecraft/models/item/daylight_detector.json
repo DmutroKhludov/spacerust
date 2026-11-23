@@ -1,0 +1,11 @@
+{
+  "parent": "minecraft:block/daylight_detector",
+  "overrides": [
+    {
+      "predicate": {
+        "custom_model_data": 1078
+      },
+      "model": "spacerust:item/solar_panel"
+    }
+  ]
+}

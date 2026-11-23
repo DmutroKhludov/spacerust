@@ -1,0 +1,14 @@
+{
+  "parent": "minecraft:item/template_bed",
+  "textures": {
+    "particle": "minecraft:block/white_wool"
+  },
+  "overrides": [
+    {
+      "predicate": {
+        "custom_model_data": 1064
+      },
+      "model": "spacerust:item/bed"
+    }
+  ]
+}

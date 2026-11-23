@@ -13,7 +13,25 @@ public class InGameHudMixin {
     // Hide vanilla hearts, food bar and armor
     @Inject(method = "renderStatusBars", at = @At("HEAD"), cancellable = true)
     private void hideVanillaStatusBars(MatrixStack matrices, CallbackInfo ci) {
-        ci.cancel(); // Completely suppress vanilla hearts and hunger bar in favor of Rust HUD
+        ci.cancel();
+    }
+
+    // Hide vanilla 9-slot hotbar in favor of Rust 5-slot belt HUD
+    @Inject(method = "renderHotbar", at = @At("HEAD"), cancellable = true)
+    private void hideVanillaHotbar(float tickDelta, MatrixStack matrices, CallbackInfo ci) {
+        ci.cancel();
+    }
+
+    // Hide vanilla green XP bar
+    @Inject(method = "renderExperienceBar", at = @At("HEAD"), cancellable = true)
+    private void hideVanillaXpBar(MatrixStack matrices, int x, CallbackInfo ci) {
+        ci.cancel();
+    }
+
+    // Hide vanilla mount jump bar
+    @Inject(method = "renderMountJumpBar", at = @At("HEAD"), cancellable = true)
+    private void hideVanillaMountBar(MatrixStack matrices, int x, CallbackInfo ci) {
+        ci.cancel();
     }
 
     // Hide vanilla static crosshair in favor of Rust tactical dynamic crosshair

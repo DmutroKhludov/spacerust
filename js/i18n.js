@@ -46,6 +46,7 @@ window.SPACERUST_I18N = {
 
         'load.resumeTitle': 'Продолжить загрузку',
         'load.pauseTitle': 'Пауза загрузки',
+        'load.cancelTitle': 'Отменить загрузку',
 
         'play.patchPrefix': 'ПАТЧ:',
         'play.idle': 'ИГРАТЬ',
@@ -61,6 +62,7 @@ window.SPACERUST_I18N = {
         'play.nickMin': 'Укажите никнейм (минимум 3 символа)',
         'play.toastPaused': 'Загрузка приостановлена',
         'play.toastResumed': 'Загрузка продолжена',
+        'play.toastCancelled': 'Загрузка отменена',
         'play.toastLaunched': 'Игра запущена! Открывается SpaceRust...',
         'play.toastErr': 'Ошибка запуска игры',
         'play.alertErr': '⚠️ НЕ УДАЛОСЬ ЗАПУСТИТЬ ИГРУ:\n\n{msg}',
@@ -90,6 +92,11 @@ window.SPACERUST_I18N = {
         'settings.folderBrowseErr': 'Ошибка выбора папки',
         'settings.folderReset': 'Путь сброшен по умолчанию',
         'settings.clientFolder': 'Папка клиента: {path}',
+        'settings.repairBtn': 'ВОССТАНОВИТЬ ИГРУ',
+        'settings.repairTitle': 'Проверить и переустановить повреждённые файлы клиента',
+        'settings.repairRunning': 'Восстановление файлов клиента...',
+        'settings.repairDone': 'Игра успешно восстановлена!',
+        'settings.repairErr': 'Ошибка восстановления игры',
         'settings.vk': 'ВКОНТАКТЕ',
 
         'modal.title': 'ПРОФИЛЬ ИГРОКА',
@@ -104,7 +111,21 @@ window.SPACERUST_I18N = {
         'promo.used': 'Этот промокод уже активирован!',
         'promo.invalid': 'Неверный промокод или срок действия истёк',
         'promo.privLabel': 'Привилегия {rank}',
-        'promo.activated': 'Промокод активирован: {label}!'
+        'promo.activated': 'Промокод активирован: {label}!',
+
+        'github.btnUpdate': 'ОБНОВИТЬ',
+        'github.btnCheck': 'ПРОВЕРИТЬ ОБНОВЛЕНИЯ',
+        'github.checking': 'Проверка GitHub...',
+        'github.synced': 'Синхронизировано',
+        'github.offline': 'Нет связи с GitHub',
+        'github.tagRelease': 'РЕЛИЗ GITHUB',
+        'github.tagCommit': 'ОБНОВЛЕНИЕ GITHUB',
+        'github.tagNew': 'НОВОЕ',
+        'github.authorPrefix': 'Автор: {author}',
+        'github.upToDate': 'Установлено последнее обновление с GitHub',
+        'github.applying': 'Загрузка обновления...',
+        'github.restarting': 'Обновление скачано, перезапуск лаунчера...',
+        'github.updatedMod': 'Обновление клиента установлено!'
     },
 
     uk: {
@@ -153,6 +174,7 @@ window.SPACERUST_I18N = {
 
         'load.resumeTitle': 'Продовжити завантаження',
         'load.pauseTitle': 'Пауза завантаження',
+        'load.cancelTitle': 'Скасувати завантаження',
 
         'play.patchPrefix': 'ПАТЧ:',
         'play.idle': 'ГРАТИ',
@@ -168,6 +190,7 @@ window.SPACERUST_I18N = {
         'play.nickMin': 'Вкажіть нікнейм (мінімум 3 символи)',
         'play.toastPaused': 'Завантаження призупинено',
         'play.toastResumed': 'Завантаження продовжено',
+        'play.toastCancelled': 'Завантаження скасовано',
         'play.toastLaunched': 'Гру запущено! Відкривається SpaceRust...',
         'play.toastErr': 'Помилка запуску гри',
         'play.alertErr': '⚠️ НЕ ВДАЛОСЯ ЗАПУСТИТИ ГРУ:\n\n{msg}',
@@ -197,6 +220,11 @@ window.SPACERUST_I18N = {
         'settings.folderBrowseErr': 'Помилка вибору папки',
         'settings.folderReset': 'Шлях скинуто за замовчуванням',
         'settings.clientFolder': 'Папка клієнта: {path}',
+        'settings.repairBtn': 'ВІДНОВИТИ ГРУ',
+        'settings.repairTitle': 'Перевірити та перевстановити пошкоджені файли клієнта',
+        'settings.repairRunning': 'Відновлення файлів клієнта...',
+        'settings.repairDone': 'Гру успішно відновлено!',
+        'settings.repairErr': 'Помилка відновлення гри',
         'settings.vk': 'ВКОНТАКТЕ',
 
         'modal.title': 'ПРОФІЛЬ ГРАВЦЯ',
@@ -211,7 +239,21 @@ window.SPACERUST_I18N = {
         'promo.used': 'Цей промокод вже активовано!',
         'promo.invalid': 'Невірний промокод або термін дії минув',
         'promo.privLabel': 'Привілей {rank}',
-        'promo.activated': 'Промокод активовано: {label}!'
+        'promo.activated': 'Промокод активовано: {label}!',
+
+        'github.btnUpdate': 'ОНОВИТИ',
+        'github.btnCheck': 'ПЕРЕВІРИТИ ОНОВЛЕННЯ',
+        'github.checking': 'Перевірка GitHub...',
+        'github.synced': 'Синхронізовано',
+        'github.offline': 'Немає зв’язку з GitHub',
+        'github.tagRelease': 'РЕЛІЗ GITHUB',
+        'github.tagCommit': 'ОНОВЛЕННЯ GITHUB',
+        'github.tagNew': 'НОВЕ',
+        'github.authorPrefix': 'Автор: {author}',
+        'github.upToDate': 'Встановлено останнє оновлення з GitHub',
+        'github.applying': 'Завантаження оновлення...',
+        'github.restarting': 'Оновлення завантажено, перезапуск лаунчера...',
+        'github.updatedMod': 'Оновлення клієнта встановлено!'
     },
 
     en: {
@@ -260,6 +302,7 @@ window.SPACERUST_I18N = {
 
         'load.resumeTitle': 'Resume download',
         'load.pauseTitle': 'Pause download',
+        'load.cancelTitle': 'Cancel download',
 
         'play.patchPrefix': 'PATCH:',
         'play.idle': 'PLAY',
@@ -275,6 +318,7 @@ window.SPACERUST_I18N = {
         'play.nickMin': 'Enter a nickname (at least 3 characters)',
         'play.toastPaused': 'Download paused',
         'play.toastResumed': 'Download resumed',
+        'play.toastCancelled': 'Download cancelled',
         'play.toastLaunched': 'Game launched! Opening SpaceRust...',
         'play.toastErr': 'Game launch error',
         'play.alertErr': '⚠️ FAILED TO LAUNCH GAME:\n\n{msg}',
@@ -304,6 +348,11 @@ window.SPACERUST_I18N = {
         'settings.folderBrowseErr': 'Folder selection error',
         'settings.folderReset': 'Default path restored',
         'settings.clientFolder': 'Client folder: {path}',
+        'settings.repairBtn': 'REPAIR GAME',
+        'settings.repairTitle': 'Verify and reinstall damaged client files',
+        'settings.repairRunning': 'Repairing client files...',
+        'settings.repairDone': 'Game repaired successfully!',
+        'settings.repairErr': 'Game repair error',
         'settings.vk': 'VK',
 
         'modal.title': 'PLAYER PROFILE',
@@ -318,6 +367,20 @@ window.SPACERUST_I18N = {
         'promo.used': 'This promo code has already been redeemed!',
         'promo.invalid': 'Invalid or expired promo code',
         'promo.privLabel': '{rank} Privilege',
-        'promo.activated': 'Promo code redeemed: {label}!'
+        'promo.activated': 'Promo code redeemed: {label}!',
+
+        'github.btnUpdate': 'UPDATE',
+        'github.btnCheck': 'CHECK UPDATES',
+        'github.checking': 'Checking GitHub...',
+        'github.synced': 'Synced',
+        'github.offline': 'GitHub offline',
+        'github.tagRelease': 'GITHUB RELEASE',
+        'github.tagCommit': 'GITHUB UPDATE',
+        'github.tagNew': 'NEW',
+        'github.authorPrefix': 'Author: {author}',
+        'github.upToDate': 'You are on the latest GitHub update',
+        'github.applying': 'Downloading update...',
+        'github.restarting': 'Update downloaded, restarting launcher...',
+        'github.updatedMod': 'Client update installed!'
     }
 };

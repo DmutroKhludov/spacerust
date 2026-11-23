@@ -1,0 +1,14 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "minecraft:block/ladder"
+  },
+  "overrides": [
+    {
+      "predicate": {
+        "custom_model_data": 1072
+      },
+      "model": "spacerust:item/ladder"
+    }
+  ]
+}

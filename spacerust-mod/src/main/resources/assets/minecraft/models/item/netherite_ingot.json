@@ -1,0 +1,14 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "minecraft:item/netherite_ingot"
+  },
+  "overrides": [
+    {
+      "predicate": {
+        "custom_model_data": 1083
+      },
+      "model": "spacerust:item/hqm"
+    }
+  ]
+}

@@ -5,13 +5,26 @@
   "compatibilityLevel": "JAVA_8",
   "mixins": [
     "AbstractClientPlayerEntityMixin",
+    "ChestBlockEntityRendererMixin",
+    "ConnectScreenMixin",
+    "DeathScreenMixin",
+    "EntityCollisionMixin",
+    "GameMenuScreenMixin",
+    "GameRendererAccessor",
+    "GameRendererMixin",
+    "HeldItemFeatureRendererMixin",
+    "HeldItemRendererMixin",
     "InGameHudMixin",
     "InventoryScreenMixin",
     "KeyboardMixin",
+    "MinecraftClientMixin",
     "MultiplayerScreenMixin",
+    "MusicTrackerMixin",
+    "OptionsScreenMixin",
     "PlayerListEntryMixin",
     "TitleScreenMixin",
-    "WindowMixin"
+    "WindowMixin",
+    "WorldRendererMixin"
   ],
   "client": [
   ],

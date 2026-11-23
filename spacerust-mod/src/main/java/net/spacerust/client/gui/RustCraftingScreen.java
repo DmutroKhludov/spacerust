@@ -17,9 +17,11 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * 1:1 Rust / CoilRust Crafting Screen matching gameui.crafting.prefab,
- * ui.blueprint.button.prefab, ui.blueprint.category.button.prefab,
- * and ui.blueprint.craft.row.prefab.
+ * 1:1 Rust / CoilRust Crafting Screen matching Screenshot #1:
+ * - World blur shader + soft cream-glass surfaces
+ * - Translucent blueprint grid with genuine Rust 2D PNG item icons
+ * - Large translucent "ОЧЕРЕДЬ КРАФТА" bottom-left
+ * - Exact table headers: "СУММА | ТИП ПРЕДМЕТА | ВСЕГО | ИМЕЕТСЯ".
  */
 public class RustCraftingScreen extends Screen {
 
@@ -85,7 +87,7 @@ public class RustCraftingScreen extends Screen {
         ALL_RECIPES.add(new Recipe("campfire", "Костер", Category.GENERAL, Items.CAMPFIRE,
                 "Базовый источник тепла и приготовления сырого мяса.", 5.0f,
                 Arrays.asList(new Ingredient("Дерево", 100, Items.OAK_PLANKS))));
-        ALL_RECIPES.add(new Recipe("torch", "Факел", Category.GENERAL, Items.TORCH,
+        ALL_RECIPES.add(new Recipe("torch", "Факел", Category.GENERAL, Items.HEART_OF_THE_SEA,
                 "Освещает территорию в ночное время суток.", 2.0f,
                 Arrays.asList(new Ingredient("Дерево", 30, Items.OAK_PLANKS), new Ingredient("Ткань", 5, Items.STRING))));
         ALL_RECIPES.add(new Recipe("small_box", "Деревянный ящик", Category.GENERAL, Items.CHEST,
@@ -97,10 +99,10 @@ public class RustCraftingScreen extends Screen {
 
         // CONSTRUCTION
         ALL_RECIPES.add(new Recipe("build_plan", "План постройки", Category.CONSTRUCTION, Items.MAP,
-                "План постройки. Используется для создания баз — взяв в руки, нажмите ПКМ для просмотра опций.", 30.0f,
+                "План постройки. Используется для создания баз — взяв в руки, нажмите на правую кнопку мыши для просмотра опций.", 30.0f,
                 Arrays.asList(new Ingredient("Дерево", 20, Items.OAK_PLANKS))));
-        ALL_RECIPES.add(new Recipe("wood_hammer", "Строительный молоток", Category.CONSTRUCTION, Items.WOODEN_AXE,
-                "Инструмент для улучшения стен базы до дерева, камня, металла или МВК.", 5.0f,
+        ALL_RECIPES.add(new Recipe("wood_hammer", "Киянка", Category.CONSTRUCTION, Items.WOODEN_AXE,
+                "Киянка для улучшения стен (Дерево, Камень, Металл, МВК), поворота и сноса построек.", 5.0f,
                 Arrays.asList(new Ingredient("Дерево", 100, Items.OAK_PLANKS))));
         ALL_RECIPES.add(new Recipe("wood_door", "Деревянная дверь", Category.CONSTRUCTION, Items.OAK_DOOR,
                 "Базовая входная дверь для закрытия проемов дома.", 15.0f,
@@ -153,15 +155,60 @@ public class RustCraftingScreen extends Screen {
                 Arrays.asList(new Ingredient("Ткань", 10, Items.STRING), new Ingredient("Жир", 30, Items.LEATHER))));
 
         // CLOTHING
+        ALL_RECIPES.add(new Recipe("burlap_headwrap", "Повязка на голову", Category.CLOTHING, Items.LEATHER_HELMET,
+                "Простая тканевая повязка на голову для защиты от солнца и холода.", 4.0f,
+                Arrays.asList(new Ingredient("Ткань", 10, Items.STRING))));
         ALL_RECIPES.add(new Recipe("burlap_shirt", "Рубашка из мешковины", Category.CLOTHING, Items.LEATHER_CHESTPLATE,
                 "Начальная одежда выжившего для защиты от холода и ветра.", 5.0f,
                 Arrays.asList(new Ingredient("Ткань", 40, Items.STRING))));
         ALL_RECIPES.add(new Recipe("burlap_pants", "Штаны из мешковины", Category.CLOTHING, Items.LEATHER_LEGGINGS,
                 "Начальные штаны из грубой ткани.", 5.0f,
                 Arrays.asList(new Ingredient("Ткань", 30, Items.STRING))));
+        ALL_RECIPES.add(new Recipe("burlap_shoes", "Обувь из мешковины", Category.CLOTHING, Items.LEATHER_BOOTS,
+                "Лёгкая самодельная обувь из ткани.", 4.0f,
+                Arrays.asList(new Ingredient("Ткань", 15, Items.STRING))));
+        ALL_RECIPES.add(new Recipe("burlap_gloves", "Перчатки из мешковины", Category.CLOTHING, Items.RABBIT_HIDE,
+                "Простые перчатки, сохраняющие тепло рук.", 4.0f,
+                Arrays.asList(new Ingredient("Ткань", 10, Items.STRING))));
+        ALL_RECIPES.add(new Recipe("wood_helmet", "Деревянный шлем", Category.CLOTHING, Items.CHAINMAIL_HELMET,
+                "Лёгкий шлем из дерева против луков и камней.", 6.0f,
+                Arrays.asList(new Ingredient("Дерево", 150, Items.OAK_PLANKS), new Ingredient("Ткань", 15, Items.STRING))));
         ALL_RECIPES.add(new Recipe("wood_armor", "Деревянная кираса", Category.CLOTHING, Items.CHAINMAIL_CHESTPLATE,
                 "Броня из деревянных досок. Поглощает урон от стрел и дроби.", 10.0f,
                 Arrays.asList(new Ingredient("Дерево", 200, Items.OAK_PLANKS), new Ingredient("Ткань", 30, Items.STRING))));
+        ALL_RECIPES.add(new Recipe("wood_pants", "Деревянные поножи", Category.CLOTHING, Items.CHAINMAIL_LEGGINGS,
+                "Деревянные щитки на ноги.", 8.0f,
+                Arrays.asList(new Ingredient("Дерево", 200, Items.OAK_PLANKS), new Ingredient("Веревка", 1, Items.STRING))));
+        ALL_RECIPES.add(new Recipe("hoodie", "Толстовка (Худи)", Category.CLOTHING, Items.NETHERITE_CHESTPLATE,
+                "Тёплое худи с отличной базовой защитой от холода и пулями под броней.", 12.0f,
+                Arrays.asList(new Ingredient("Ткань", 80, Items.STRING))));
+        ALL_RECIPES.add(new Recipe("pants", "Штаны", Category.CLOTHING, Items.IRON_LEGGINGS,
+                "Плотные штаны, защищающие от радиации и укусов.", 12.0f,
+                Arrays.asList(new Ingredient("Ткань", 70, Items.STRING))));
+        ALL_RECIPES.add(new Recipe("boots", "Кожаные ботинки", Category.CLOTHING, Items.IRON_BOOTS,
+                "Надёжные армейские ботинки из кожи и металла.", 12.0f,
+                Arrays.asList(new Ingredient("Кожа", 20, Items.LEATHER), new Ingredient("Фрагменты металла", 15, Items.IRON_INGOT))));
+        ALL_RECIPES.add(new Recipe("coffeecan_helmet", "Каска из кофейной банки", Category.CLOTHING, Items.GOLDEN_HELMET,
+                "Популярный металлический шлем среднего уровня для перестрелок.", 15.0f,
+                Arrays.asList(new Ingredient("Ткань", 15, Items.STRING), new Ingredient("Фрагменты металла", 60, Items.IRON_INGOT))));
+        ALL_RECIPES.add(new Recipe("roadsign_jacket", "Дорожная броня", Category.CLOTHING, Items.GOLDEN_CHESTPLATE,
+                "Жилет из дорожных знаков и кожи — лучшая броня до МВК.", 20.0f,
+                Arrays.asList(new Ingredient("Кожа", 40, Items.LEATHER), new Ingredient("Скрап", 20, Items.EMERALD))));
+        ALL_RECIPES.add(new Recipe("roadsign_kilt", "Дорожный килт", Category.CLOTHING, Items.GOLDEN_LEGGINGS,
+                "Защита ног из металлических пластин.", 18.0f,
+                Arrays.asList(new Ingredient("Кожа", 20, Items.LEATHER), new Ingredient("Скрап", 15, Items.EMERALD))));
+        ALL_RECIPES.add(new Recipe("roadsign_gloves", "Дорожные перчатки", Category.CLOTHING, Items.SCUTE,
+                "Крепкие перчатки с металлическими накладками.", 12.0f,
+                Arrays.asList(new Ingredient("Кожа", 10, Items.LEATHER), new Ingredient("Ткань", 15, Items.STRING))));
+        ALL_RECIPES.add(new Recipe("tactical_gloves", "Тактические перчатки", Category.CLOTHING, Items.PHANTOM_MEMBRANE,
+                "Военные перчатки, убирающие раскачку прицела.", 15.0f,
+                Arrays.asList(new Ingredient("Ткань", 30, Items.STRING), new Ingredient("Кожа", 20, Items.LEATHER))));
+        ALL_RECIPES.add(new Recipe("hazmat", "Костюм химзащиты (Хазмат)", Category.CLOTHING, Items.DIAMOND_CHESTPLATE,
+                "Полная защита от радиации в самых опасных РТ.", 25.0f,
+                Arrays.asList(new Ingredient("Ткань", 30, Items.STRING), new Ingredient("МВК", 8, Items.NETHERITE_INGOT))));
+        ALL_RECIPES.add(new Recipe("metal_facemask", "Металлическая маска", Category.CLOTHING, Items.IRON_HELMET,
+                "Топовый бронешлем из МВК, спасает от выстрела в голову.", 30.0f,
+                Arrays.asList(new Ingredient("МВК", 15, Items.NETHERITE_INGOT), new Ingredient("Кожа", 50, Items.LEATHER))));
         ALL_RECIPES.add(new Recipe("metal_chest", "Металлическая кираса", Category.CLOTHING, Items.IRON_CHESTPLATE,
                 "Топовая броня для PVP перестрелок с защитой от пуль винтовок.", 30.0f,
                 Arrays.asList(new Ingredient("МВК", 25, Items.NETHERITE_INGOT), new Ingredient("Кожа", 50, Items.LEATHER))));
@@ -174,11 +221,20 @@ public class RustCraftingScreen extends Screen {
                 "Инструмент для эффективного фарма каменных, железных и серных жил.", 5.0f,
                 Arrays.asList(new Ingredient("Дерево", 200, Items.OAK_PLANKS), new Ingredient("Камень", 100, Items.COBBLESTONE))));
         ALL_RECIPES.add(new Recipe("metal_hatchet", "Металлический топор", Category.TOOLS, Items.IRON_AXE,
-                "Профессиональный топор для мгновенной рубки деревьев.", 15.0f,
+                "Профессиональный топор для быстрой рубки деревьев.", 15.0f,
                 Arrays.asList(new Ingredient("Дерево", 100, Items.OAK_PLANKS), new Ingredient("Фрагменты металла", 75, Items.IRON_INGOT))));
         ALL_RECIPES.add(new Recipe("metal_pickaxe", "Металлическая кирка", Category.TOOLS, Items.IRON_PICKAXE,
                 "Профессиональная кирка с максимальным коэффициентом добычи руды.", 15.0f,
                 Arrays.asList(new Ingredient("Дерево", 100, Items.OAK_PLANKS), new Ingredient("Фрагменты металла", 125, Items.IRON_INGOT))));
+        ALL_RECIPES.add(new Recipe("salvaged_axe", "Самодельный топор", Category.TOOLS, Items.DIAMOND_AXE,
+                "Мощный топор 2 верстака — рубит деревья с максимальной скоростью.", 20.0f,
+                Arrays.asList(new Ingredient("Труба", 1, Items.FLINT), new Ingredient("Фрагменты металла", 100, Items.IRON_INGOT))));
+        ALL_RECIPES.add(new Recipe("salvaged_icepick", "Ледоруб", Category.TOOLS, Items.DIAMOND_PICKAXE,
+                "Легендарный ледоруб из Rust — разбивает жилы руды за 5 ударов!", 20.0f,
+                Arrays.asList(new Ingredient("Труба", 1, Items.FLINT), new Ingredient("Фрагменты металла", 100, Items.IRON_INGOT))));
+        ALL_RECIPES.add(new Recipe("jackhammer", "Отбойный молоток", Category.TOOLS, Items.GOLDEN_PICKAXE,
+                "Военный бур для мгновенного фарма камней руды за 3 удара.", 30.0f,
+                Arrays.asList(new Ingredient("МВК", 15, Items.NETHERITE_INGOT), new Ingredient("Фрагменты металла", 150, Items.IRON_INGOT))));
 
         // MEDICAL
         ALL_RECIPES.add(new Recipe("bandage", "Бинт", Category.MEDICAL, Items.PAPER,
@@ -189,35 +245,98 @@ public class RustCraftingScreen extends Screen {
                 Arrays.asList(new Ingredient("Ткань", 15, Items.STRING), new Ingredient("Фрагменты металла", 10, Items.IRON_INGOT), new Ingredient("Топливо", 10, Items.BLAZE_POWDER))));
 
         // WEAPONS
+        ALL_RECIPES.add(new Recipe("wooden_spear", "Деревянное копьё", Category.WEAPONS, Items.STICK,
+                "Базовое копьё для охоты и ближнего боя с дистанции.", 6.0f,
+                Arrays.asList(new Ingredient("Дерево", 300, Items.OAK_PLANKS))));
+        ALL_RECIPES.add(new Recipe("stone_spear", "Каменное копьё", Category.WEAPONS, Items.BLAZE_ROD,
+                "Усиленное копьё с каменным наконечником.", 8.0f,
+                Arrays.asList(new Ingredient("Дерево", 300, Items.OAK_PLANKS), new Ingredient("Камень", 100, Items.COBBLESTONE))));
+        ALL_RECIPES.add(new Recipe("machete", "Мачете", Category.WEAPONS, Items.SHEARS,
+                "Острый мачете для ближнего боя.", 10.0f,
+                Arrays.asList(new Ingredient("Дерево", 100, Items.OAK_PLANKS), new Ingredient("Фрагменты металла", 40, Items.IRON_INGOT))));
         ALL_RECIPES.add(new Recipe("bow", "Охотничий лук", Category.WEAPONS, Items.BOW,
                 "Бесшумное оружие дальнего боя. Наносит высокий урон в голову.", 10.0f,
                 Arrays.asList(new Ingredient("Дерево", 200, Items.OAK_PLANKS), new Ingredient("Ткань", 50, Items.STRING))));
         ALL_RECIPES.add(new Recipe("crossbow", "Арбалет", Category.WEAPONS, Items.CROSSBOW,
                 "Смертоносный арбалет с высокой точностью и скоростью полета стрелы.", 15.0f,
                 Arrays.asList(new Ingredient("Дерево", 200, Items.OAK_PLANKS), new Ingredient("Фрагменты металла", 75, Items.IRON_INGOT), new Ingredient("Веревка", 2, Items.STRING))));
+        ALL_RECIPES.add(new Recipe("eoka", "Самопал (Eoka)", Category.WEAPONS, Items.WOODEN_HOE,
+                "Самое дешёвое огнестрельное оружие ближнего боя на 12 калибр.", 8.0f,
+                Arrays.asList(new Ingredient("Дерево", 75, Items.OAK_PLANKS), new Ingredient("Фрагменты металла", 30, Items.IRON_INGOT))));
         ALL_RECIPES.add(new Recipe("revolver", "Револьвер", Category.WEAPONS, Items.IRON_HOE,
                 "Надежное стартовое огнестрельное оружие на 8 патронов 9 мм.", 15.0f,
-                Arrays.asList(new Ingredient("Фрагменты металла", 75, Items.IRON_INGOT), new Ingredient("Труба", 1, Items.LEVER), new Ingredient("Пружина", 1, Items.TRIPWIRE_HOOK))));
+                Arrays.asList(new Ingredient("Фрагменты металла", 125, Items.IRON_INGOT), new Ingredient("Труба", 1, Items.FLINT))));
         ALL_RECIPES.add(new Recipe("pipe_shotgun", "Двуствольный дробовик", Category.WEAPONS, Items.WOODEN_SHOVEL,
                 "Разрушительный урон в упор дробью 12 калибра.", 20.0f,
-                Arrays.asList(new Ingredient("Фрагменты металла", 150, Items.IRON_INGOT), new Ingredient("Трубы", 2, Items.LEVER))));
+                Arrays.asList(new Ingredient("Фрагменты металла", 175, Items.IRON_INGOT), new Ingredient("Трубы", 2, Items.FLINT))));
+        ALL_RECIPES.add(new Recipe("p250", "Пистолет P250", Category.WEAPONS, Items.STONE_HOE,
+                "Точный полуавтоматический пистолет 9 мм на 10 патронов.", 18.0f,
+                Arrays.asList(new Ingredient("Фрагменты металла", 150, Items.IRON_INGOT), new Ingredient("Труба", 1, Items.FLINT), new Ingredient("Пружина", 1, Items.TRIPWIRE_HOOK))));
+        ALL_RECIPES.add(new Recipe("python", "Револьвер Python", Category.WEAPONS, Items.GOLDEN_HOE,
+                "Мощный крупнокалиберный 6-зарядный револьвер.", 22.0f,
+                Arrays.asList(new Ingredient("МВК", 10, Items.NETHERITE_INGOT), new Ingredient("Трубы", 3, Items.FLINT), new Ingredient("Пружина", 1, Items.TRIPWIRE_HOOK))));
+        ALL_RECIPES.add(new Recipe("custom_smg", "Самодельный ПП", Category.WEAPONS, Items.NETHERITE_HOE,
+                "Компактный скорострельный пистолет-пулемёт на 24 патрона.", 22.0f,
+                Arrays.asList(new Ingredient("МВК", 8, Items.NETHERITE_INGOT), new Ingredient("Фрагменты металла", 100, Items.IRON_INGOT))));
+        ALL_RECIPES.add(new Recipe("thompson", "Томпсон", Category.WEAPONS, Items.DIAMOND_SWORD,
+                "Классический ПП на 20 патронов 9 мм со стабильной отдачей.", 25.0f,
+                Arrays.asList(new Ingredient("МВК", 10, Items.NETHERITE_INGOT), new Ingredient("Дерево", 100, Items.OAK_PLANKS), new Ingredient("Пружина", 1, Items.TRIPWIRE_HOOK))));
+        ALL_RECIPES.add(new Recipe("mp5", "Пистолет-пулемёт MP5", Category.WEAPONS, Items.IRON_SHOVEL,
+                "Военный ПП 9 мм на 30 патронов с высокой скорострельностью.", 28.0f,
+                Arrays.asList(new Ingredient("МВК", 15, Items.NETHERITE_INGOT), new Ingredient("Пружины", 2, Items.TRIPWIRE_HOOK))));
+        ALL_RECIPES.add(new Recipe("sar", "Берданка (SAR)", Category.WEAPONS, Items.GOLDEN_SHOVEL,
+                "Полуавтоматическая винтовка 5.56 мм на 16 патронов — база среднего гейма.", 25.0f,
+                Arrays.asList(new Ingredient("Фрагменты металла", 450, Items.IRON_INGOT), new Ingredient("Пружина", 1, Items.TRIPWIRE_HOOK))));
+        ALL_RECIPES.add(new Recipe("pump_shotgun", "Помповый дробовик", Category.WEAPONS, Items.DIAMOND_SHOVEL,
+                "Надёжный 6-зарядный дробовик 12 калибра для обороны дома.", 25.0f,
+                Arrays.asList(new Ingredient("МВК", 15, Items.NETHERITE_INGOT), new Ingredient("Трубы", 2, Items.FLINT))));
         ALL_RECIPES.add(new Recipe("ak47", "Автомат AK-47", Category.WEAPONS, Items.NETHERITE_SWORD,
                 "Штурмовая винтовка на 30 патронов 5.56 мм. Легендарное оружие Rust.", 30.0f,
                 Arrays.asList(new Ingredient("МВК", 50, Items.NETHERITE_INGOT), new Ingredient("Дерево", 200, Items.OAK_PLANKS), new Ingredient("Корпус винтовки", 1, Items.OBSIDIAN), new Ingredient("Пружины", 4, Items.TRIPWIRE_HOOK))));
+        ALL_RECIPES.add(new Recipe("lr300", "Винтовка LR-300", Category.WEAPONS, Items.IRON_SWORD,
+                "Военная штурмовая винтовка 5.56 мм с минимальной отдачей.", 35.0f,
+                Arrays.asList(new Ingredient("МВК", 60, Items.NETHERITE_INGOT), new Ingredient("Скрап", 250, Items.EMERALD))));
+        ALL_RECIPES.add(new Recipe("m39", "Винтовка M39", Category.WEAPONS, Items.WOODEN_SWORD,
+                "Военная марксманская винтовка 5.56 мм на 20 патронов.", 35.0f,
+                Arrays.asList(new Ingredient("МВК", 50, Items.NETHERITE_INGOT), new Ingredient("Пружины", 2, Items.TRIPWIRE_HOOK))));
+        ALL_RECIPES.add(new Recipe("bolt", "Винтовка Bolt", Category.WEAPONS, Items.GOLDEN_SWORD,
+                "Дальнобойная снайперская винтовка с мощным приближением.", 35.0f,
+                Arrays.asList(new Ingredient("МВК", 30, Items.NETHERITE_INGOT), new Ingredient("Трубы", 3, Items.FLINT))));
+        ALL_RECIPES.add(new Recipe("l96", "Снайперка L96", Category.WEAPONS, Items.STONE_SWORD,
+                "Военная снайперская винтовка с экстремальной дальностью и уроном.", 40.0f,
+                Arrays.asList(new Ingredient("МВК", 80, Items.NETHERITE_INGOT), new Ingredient("Скрап", 500, Items.EMERALD))));
+        ALL_RECIPES.add(new Recipe("hmlmg", "Самодельный ручной пулемёт", Category.WEAPONS, Items.NETHERITE_PICKAXE,
+                "Мощный ленточный пулемёт 5.56 мм на 60 патронов для подавления и рейдов.", 40.0f,
+                Arrays.asList(new Ingredient("МВК", 60, Items.NETHERITE_INGOT), new Ingredient("Корпус винтовки", 1, Items.OBSIDIAN), new Ingredient("Пружины", 3, Items.TRIPWIRE_HOOK))));
+        ALL_RECIPES.add(new Recipe("satchel", "Бобовый заряд (Satchel)", Category.WEAPONS, Items.TNT,
+                "Самодельная рейдовая взрывчатка для пробития дверей.", 20.0f,
+                Arrays.asList(new Ingredient("Порох", 120, Items.GUNPOWDER), new Ingredient("Фрагменты металла", 80, Items.IRON_INGOT), new Ingredient("Веревка", 1, Items.STRING))));
+        ALL_RECIPES.add(new Recipe("f1_grenade", "Граната F1", Category.WEAPONS, Items.FIRE_CHARGE,
+                "Осколочная боевая граната.", 12.0f,
+                Arrays.asList(new Ingredient("Порох", 30, Items.GUNPOWDER), new Ingredient("Фрагменты металла", 25, Items.IRON_INGOT))));
         ALL_RECIPES.add(new Recipe("c4", "Взрывчатка C4 (Timed Explosive)", Category.WEAPONS, Items.REDSTONE_BLOCK,
                 "Мощный кумулятивный заряд с таймером для пробития каменных и металлических стен.", 30.0f,
                 Arrays.asList(new Ingredient("Взрывчатка", 20, Items.TNT), new Ingredient("Ткань", 5, Items.STRING), new Ingredient("Схема", 1, Items.REDSTONE))));
+        ALL_RECIPES.add(new Recipe("rocket_launcher", "Ракетница", Category.WEAPONS, Items.NETHERITE_SHOVEL,
+                "Тяжёлая пусковая установка для реактивных снарядов и рейдов.", 40.0f,
+                Arrays.asList(new Ingredient("МВК", 40, Items.NETHERITE_INGOT), new Ingredient("Трубы", 6, Items.FLINT))));
 
         // AMMO
         ALL_RECIPES.add(new Recipe("wooden_arrows", "Деревянные стрелы (x2)", Category.AMMO, Items.ARROW,
                 "Стрелы для лука и арбалета с каменным наконечником.", 3.0f,
                 Arrays.asList(new Ingredient("Дерево", 25, Items.OAK_PLANKS), new Ingredient("Камень", 10, Items.COBBLESTONE))));
         ALL_RECIPES.add(new Recipe("ammo_9mm", "Патроны 9мм (x3)", Category.AMMO, Items.GOLD_NUGGET,
-                "Пистолетные патроны для револьвера и пистолетов.", 5.0f,
+                "Пистолетные патроны для револьвера и ПП.", 5.0f,
                 Arrays.asList(new Ingredient("Фрагменты металла", 10, Items.IRON_INGOT), new Ingredient("Порох", 10, Items.GUNPOWDER))));
         ALL_RECIPES.add(new Recipe("ammo_556", "Патроны 5.56мм (x3)", Category.AMMO, Items.IRON_NUGGET,
-                "Винтовочные патроны для автоматов AK-47 и болтовок.", 5.0f,
+                "Винтовочные патроны для автоматов AK-47, SAR и снайперок.", 5.0f,
                 Arrays.asList(new Ingredient("Фрагменты металла", 15, Items.IRON_INGOT), new Ingredient("Порох", 20, Items.GUNPOWDER))));
+        ALL_RECIPES.add(new Recipe("ammo_12g", "Дробь 12 калибр (x2)", Category.AMMO, Items.BRICK,
+                "Картечь для самопала, двустволки и помпового дробовика.", 5.0f,
+                Arrays.asList(new Ingredient("Фрагменты металла", 10, Items.IRON_INGOT), new Ingredient("Порох", 15, Items.GUNPOWDER))));
+        ALL_RECIPES.add(new Recipe("ammo_rocket", "Ракета", Category.AMMO, Items.FIREWORK_ROCKET,
+                "Реактивный снаряд для Ракетницы.", 10.0f,
+                Arrays.asList(new Ingredient("Порох", 150, Items.GUNPOWDER), new Ingredient("Трубы", 2, Items.FLINT), new Ingredient("Фрагменты металла", 100, Items.IRON_INGOT))));
 
         // ELECTRICAL
         ALL_RECIPES.add(new Recipe("solar_panel", "Солнечная панель", Category.ELECTRICAL, Items.DAYLIGHT_DETECTOR,
@@ -247,6 +366,13 @@ public class RustCraftingScreen extends Screen {
     protected void init() {
         super.init();
         RustFontRenderer.ensureLoaded();
+        RustUiHelper.enableWorldBlur(this.client);
+    }
+
+    @Override
+    public void removed() {
+        super.removed();
+        RustUiHelper.disableWorldBlur(this.client);
     }
 
     @Override
@@ -295,24 +421,24 @@ public class RustCraftingScreen extends Screen {
 
     private Layout computeLayout(int screenW, int screenH) {
         Layout L = new Layout();
-        // Match Rust gameui.crafting.prefab centered proportions (above belt/hotbar)
         L.panelW = Math.min(screenW - 24, 620);
         L.panelX = (screenW - L.panelW) / 2;
-        L.panelY = 32;
-        L.panelH = screenH - 76; // leaves room for bottom hotbar/HUD bars
+        L.panelY = 28;
+        int hotbarReserve = RustUiHelper.getHotbarSlotSize(screenH) + 18;
+        L.panelH = screenH - 28 - hotbarReserve;
 
         L.leftX = L.panelX;
-        L.leftW = Math.max(210, (int) (L.panelW * 0.45f));
-        L.bpH = L.panelH - 52; // leaves bottom 52px for Queue inside Left pane
+        L.leftW = Math.max(210, (int) (L.panelW * 0.48f));
+        L.bpH = L.panelH - 46;
 
         L.catX = L.leftX;
-        L.catW = 94;
+        L.catW = 92;
         L.catRowH = Math.max(14, Math.min(18, (L.bpH - 2) / Category.values().length));
 
-        L.gridX = L.catX + L.catW + 3;
-        L.gridW = L.leftW - L.catW - 3;
-        L.slotSize = 32;
-        L.slotGap = 3;
+        L.gridX = L.catX + L.catW + 2;
+        L.gridW = L.leftW - L.catW - 2;
+        L.slotSize = 36;
+        L.slotGap = 4;
         L.cols = Math.max(3, (L.gridW - 8) / (L.slotSize + L.slotGap));
 
         L.searchW = L.gridW;
@@ -320,26 +446,24 @@ public class RustCraftingScreen extends Screen {
         L.searchX = L.gridX;
         L.searchY = L.panelY + L.bpH - L.searchH;
 
-        L.rightX = L.leftX + L.leftW + 6;
-        L.rightW = L.panelW - L.leftW - 6;
+        L.rightX = L.leftX + L.leftW + 4;
+        L.rightW = L.panelW - L.leftW - 4;
 
-        // Favorite toggle inside header icon area
         L.favX = L.rightX + 8;
-        L.favY = L.panelY + 42;
-        L.favW = 36;
+        L.favY = L.panelY + 38;
+        L.favW = 46;
         L.favH = 12;
 
-        // Footer controls
         L.btnSize = 18;
         L.btnMaxW = 28;
-        L.qtyW = 28;
-        L.actionY = L.panelY + L.panelH - 24;
+        L.qtyW = 30;
+        L.actionY = L.panelY + L.panelH - 23;
         L.btnSubX = L.rightX + 8;
         L.qtyX = L.btnSubX + L.btnSize + 2;
         L.btnAddX = L.qtyX + L.qtyW + 2;
-        L.btnMaxX = L.btnAddX + L.btnSize + 3;
+        L.btnMaxX = L.btnAddX + L.btnSize + 2;
 
-        L.btnCraftW = 96;
+        L.btnCraftW = 94;
         L.btnCraftH = 20;
         L.btnCraftX = L.rightX + L.rightW - L.btnCraftW - 8;
         L.btnCraftY = L.actionY - 1;
@@ -359,7 +483,7 @@ public class RustCraftingScreen extends Screen {
         int screenH = this.height;
         Layout L = computeLayout(screenW, screenH);
 
-        // Top Switch Button: [ ИНВЕНТАРЬ ]
+        // Top Switch Button: [ <- ИНВЕНТАРЬ ]
         RustUiHelper.drawTopSwitchButton(matrices, this.client, mouseX, mouseY, screenW, true);
 
         RustFontRenderer bfSmall = RustFontRenderer.boldSmall();
@@ -367,9 +491,9 @@ public class RustCraftingScreen extends Screen {
         RustFontRenderer sf = RustFontRenderer.small();
 
         // ==========================================
-        // 1. LEFT: CATEGORIES (UI.Blueprint.Category.Button)
+        // 1. LEFT: CATEGORIES (Screenshot #1)
         // ==========================================
-        DrawableHelper.fill(matrices, L.catX, L.panelY, L.catX + L.catW, L.panelY + L.bpH, 0x0BF7EBE1);
+        DrawableHelper.fill(matrices, L.catX, L.panelY, L.catX + L.catW, L.panelY + L.bpH, 0x16F7EBE1);
 
         int catY = L.panelY;
         for (Category cat : Category.values()) {
@@ -377,17 +501,16 @@ public class RustCraftingScreen extends Screen {
             boolean isHov = RustUiHelper.inRect(mouseX, mouseY, L.catX, catY, L.catW, L.catRowH);
 
             int bg = isSel ? RustUiHelper.COLOR_CAT_ACTIVE
-                    : (isHov ? 0x1AF7EBE1 : 0x0AF7EBE1);
+                    : (isHov ? 0x22F7EBE1 : 0x0BF7EBE1);
             DrawableHelper.fill(matrices, L.catX, catY, L.catX + L.catW, catY + L.catRowH - 1, bg);
 
-            // Real Rust category sprite icon
-            int iconS = Math.min(11, L.catRowH - 4);
+            int iconS = Math.min(10, L.catRowH - 4);
             RustUiHelper.drawSprite(matrices, this.client, cat.icon,
                     L.catX + 4, catY + (L.catRowH - 1 - iconS) / 2, iconS, iconS,
                     isSel ? 0xFFF7EBE1 : 0x65F7EBE1);
 
             int textColor = isSel ? 0xFFF7EBE1 : (isHov ? 0xEEF7EBE1 : 0xB8F7EBE1);
-            bfSmall.drawCenteredY(matrices, bfSmall.trim(cat.title, L.catW - 34), L.catX + 18, catY, L.catRowH - 1, textColor);
+            bfSmall.drawCenteredY(matrices, bfSmall.trim(cat.title, L.catW - 34), L.catX + 17, catY, L.catRowH - 1, textColor);
 
             String cnt = String.valueOf(getCategoryCount(cat));
             float cw = sf.getWidth(cnt);
@@ -397,13 +520,13 @@ public class RustCraftingScreen extends Screen {
         }
 
         // ==========================================
-        // 2. MIDDLE: BLUEPRINT TILES + SEARCH
+        // 2. MIDDLE: TRANSLUCENT BLUEPRINT GRID + SEARCH
         // ==========================================
-        DrawableHelper.fill(matrices, L.gridX, L.panelY, L.gridX + L.gridW, L.searchY - 2, 0x0AF7EBE1);
+        DrawableHelper.fill(matrices, L.gridX, L.panelY, L.gridX + L.gridW, L.searchY - 2, 0x14F7EBE1);
 
         List<Recipe> recipes = getFilteredRecipes();
         int gridPadX = (L.gridW - (L.cols * L.slotSize + (L.cols - 1) * L.slotGap)) / 2;
-        int gridStartY = L.panelY + 4;
+        int gridStartY = L.panelY + 6;
         Recipe hoveredRecipe = null;
 
         for (int i = 0; i < recipes.size(); i++) {
@@ -420,18 +543,21 @@ public class RustCraftingScreen extends Screen {
 
             boolean craftable = canCraftRecipe(this.client.player, r, 1);
 
-            // UI.Blueprint.Button visual style
-            DrawableHelper.fill(matrices, sx, sy, sx + L.slotSize, sy + L.slotSize,
-                    isSel ? RustUiHelper.COLOR_CAT_ACTIVE
-                            : (isHov ? RustUiHelper.COLOR_SLOT_HOVER : RustUiHelper.COLOR_SLOT_OCCUPIED));
-            if (craftable && !isSel) {
-                DrawableHelper.fill(matrices, sx, sy, sx + L.slotSize, sy + L.slotSize, 0x227BC950);
+            // Screenshot #1 style: transparent tile unless selected/hovered/craftable
+            if (isSel) {
+                DrawableHelper.fill(matrices, sx, sy, sx + L.slotSize, sy + L.slotSize, 0x662C8FD4);
+                RustUiHelper.drawBorder(matrices, sx, sy, L.slotSize, L.slotSize, RustUiHelper.COLOR_CAT_ACTIVE);
+            } else if (isHov) {
+                DrawableHelper.fill(matrices, sx, sy, sx + L.slotSize, sy + L.slotSize, 0x26F7EBE1);
+            } else if (craftable) {
+                DrawableHelper.fill(matrices, sx, sy, sx + L.slotSize, sy + L.slotSize, 0x1C7BC950);
             }
 
-            this.itemRenderer.renderInGuiWithOverrides(r.resultStack, sx + (L.slotSize - 16) / 2, sy + (L.slotSize - 16) / 2);
+            RustItemIcons.drawRecipeIcon(matrices, this.client, this.itemRenderer, r.id, r.resultStack,
+                    sx + 4, sy + 4, L.slotSize - 8);
 
-            if (!craftable) {
-                DrawableHelper.fill(matrices, sx, sy, sx + L.slotSize, sy + L.slotSize, 0x451D1B18);
+            if (!craftable && !isSel) {
+                DrawableHelper.fill(matrices, sx + 2, sy + 2, sx + L.slotSize - 2, sy + L.slotSize - 2, 0x45121412);
             }
 
             if (r.isFavorite) {
@@ -442,9 +568,9 @@ public class RustCraftingScreen extends Screen {
 
         // Bottom Search field inside Blueprints column
         DrawableHelper.fill(matrices, L.searchX, L.searchY, L.searchX + L.searchW, L.searchY + L.searchH,
-                isSearchFocused ? 0x28F7EBE1 : 0x14F7EBE1);
+                isSearchFocused ? 0x2AF7EBE1 : 0x1AF7EBE1);
         if (searchQuery.isEmpty()) {
-            rf.drawCenteredY(matrices, isSearchFocused ? "|" : "Поиск...", L.searchX + 6, L.searchY, L.searchH, 0x66F7EBE1);
+            rf.drawCenteredY(matrices, isSearchFocused ? "|" : "Поиск...", L.searchX + 6, L.searchY, L.searchH, 0x77F7EBE1);
         } else {
             String cur = (System.currentTimeMillis() / 500 % 2 == 0 && isSearchFocused) ? "|" : "";
             rf.drawCenteredY(matrices, rf.trim(searchQuery, L.searchW - 20) + cur,
@@ -456,52 +582,50 @@ public class RustCraftingScreen extends Screen {
         // ==========================================
         // 3. LEFT BOTTOM: CRAFTING QUEUE
         // ==========================================
-        RustUiHelper.drawCraftingQueue(matrices, this.client, mouseX, mouseY, L.leftX, L.panelY + L.panelH, this.itemRenderer);
+        DrawableHelper.fill(matrices, L.leftX, L.panelY + L.bpH + 2, L.leftX + L.leftW, L.panelY + L.panelH, 0x12F7EBE1);
+        RustUiHelper.drawCraftingQueue(matrices, this.client, mouseX, mouseY, L.leftX + 4, L.panelY + L.panelH - 4, this.itemRenderer);
 
         // ==========================================
-        // 4. RIGHT: SELECTED BLUEPRINT (gameui.crafting.prefab)
+        // 4. RIGHT: SELECTED BLUEPRINT (Screenshot #1)
         // ==========================================
         DrawableHelper.fill(matrices, L.rightX, L.panelY, L.rightX + L.rightW, L.panelY + L.panelH, RustUiHelper.COLOR_SURFACE);
 
         if (selectedRecipe != null) {
-            // Top Information Row
             int hdrY = L.panelY + 6;
             int iconBoxX = L.rightX + 8;
-            int iconBoxW = 36;
-            DrawableHelper.fill(matrices, iconBoxX, hdrY, iconBoxX + iconBoxW, hdrY + 34, 0x641D201F);
-            this.itemRenderer.renderInGuiWithOverrides(selectedRecipe.resultStack, iconBoxX + 10, hdrY + 9);
+            int iconBoxW = 34;
+            DrawableHelper.fill(matrices, iconBoxX, hdrY, iconBoxX + iconBoxW, hdrY + 30, 0x481D201F);
+            RustItemIcons.drawRecipeIcon(matrices, this.client, this.itemRenderer, selectedRecipe.id, selectedRecipe.resultStack,
+                    iconBoxX + 4, hdrY + 2, 26);
 
-            // Toggle Favourite button right below icon
+            // Toggle Favourite button below icon
             boolean favHov = RustUiHelper.inRect(mouseX, mouseY, L.favX, L.favY, L.favW, L.favH);
-            DrawableHelper.fill(matrices, L.favX, L.favY, L.favX + L.favW, L.favY + L.favH,
-                    favHov ? 0x881D201F : 0x641D201F);
             RustUiHelper.drawSprite(matrices, this.client,
                     selectedRecipe.isFavorite ? RustUiHelper.TEX_FAV_ACTIVE : RustUiHelper.TEX_FAV_INACTIVE,
-                    L.favX + 13, L.favY + 2, 8, 8,
-                    selectedRecipe.isFavorite ? 0xFFE6E000 : 0xBBF7EBE1);
+                    L.favX, L.favY + 2, 8, 8,
+                    selectedRecipe.isFavorite ? 0xFFE6E000 : (favHov ? 0xFFF7EBE1 : 0x88F7EBE1));
+            sf.drawCenteredY(matrices, "ИЗБРАННОЕ", L.favX + 10, L.favY, L.favH,
+                    selectedRecipe.isFavorite ? 0xFFE6E000 : 0x88F7EBE1);
 
-            // Item Title
             RustFontRenderer.boldLarge().draw(matrices,
-                    RustFontRenderer.boldLarge().trim(selectedRecipe.name.toUpperCase(), L.rightW - 110),
-                    iconBoxX + iconBoxW + 10, hdrY + 4, RustUiHelper.COLOR_TEXT_CREAM);
-            sf.draw(matrices, selectedRecipe.category.title,
-                    iconBoxX + iconBoxW + 10, hdrY + 20, RustUiHelper.COLOR_TEXT_DIM);
+                    RustFontRenderer.boldLarge().trim(selectedRecipe.name, L.rightW - 110),
+                    iconBoxX + iconBoxW + 10, hdrY + 8, RustUiHelper.COLOR_TEXT_CREAM);
 
-            // Right Stats chips (Time & Amount)
-            int chipW = 46;
+            // Right Time & Output chips
+            int chipW = 44;
             int chipX = L.rightX + L.rightW - chipW - 8;
-            DrawableHelper.fill(matrices, chipX, hdrY, chipX + chipW, hdrY + 15, 0x641D201F);
-            RustUiHelper.drawSprite(matrices, this.client, RustUiHelper.TEX_STOPWATCH, chipX + 4, hdrY + 3, 9, 9, RustUiHelper.COLOR_TEXT_CREAM);
-            String timeStr = String.format(Locale.US, "%.0fс", selectedRecipe.craftSeconds);
-            bfSmall.drawCenteredY(matrices, timeStr, chipX + 16, hdrY, 15, RustUiHelper.COLOR_TEXT_CREAM);
+            DrawableHelper.fill(matrices, chipX, hdrY, chipX + chipW, hdrY + 14, 0x481D201F);
+            RustUiHelper.drawSprite(matrices, this.client, RustUiHelper.TEX_STOPWATCH, chipX + 4, hdrY + 2, 9, 9, RustUiHelper.COLOR_TEXT_CREAM);
+            String timeStr = String.format(Locale.US, "%.1f", selectedRecipe.craftSeconds);
+            bfSmall.drawCenteredY(matrices, timeStr, chipX + 16, hdrY, 14, RustUiHelper.COLOR_TEXT_CREAM);
 
-            DrawableHelper.fill(matrices, chipX, hdrY + 17, chipX + chipW, hdrY + 32, 0x641D201F);
-            bfSmall.drawCenteredY(matrices, "x" + craftQuantity, chipX + 16, hdrY + 17, 15, RustUiHelper.COLOR_TEXT_CREAM);
+            DrawableHelper.fill(matrices, chipX, hdrY + 16, chipX + chipW, hdrY + 30, 0x481D201F);
+            bfSmall.drawCenteredY(matrices, String.valueOf(craftQuantity), chipX + 22, hdrY + 16, 14, RustUiHelper.COLOR_TEXT_CREAM);
 
-            // Description Box (itemDesc)
-            int descTop = hdrY + 52;
-            int descH = Math.max(36, L.panelH - 165);
-            DrawableHelper.fill(matrices, L.rightX + 8, descTop, L.rightX + L.rightW - 8, descTop + descH, 0x0BF7EBE1);
+            // Description Box
+            int descTop = hdrY + 46;
+            int descH = Math.max(36, L.panelH - 156);
+            DrawableHelper.fill(matrices, L.rightX + 8, descTop, L.rightX + L.rightW - 8, descTop + descH, 0x10F7EBE1);
             int lineY = descTop + 6;
             for (String line : wrapText(selectedRecipe.description, L.rightW - 28, rf)) {
                 if (lineY + 10 > descTop + descH - 4) break;
@@ -509,18 +633,18 @@ public class RustCraftingScreen extends Screen {
                 lineY += 11;
             }
 
-            // Ingredients Table (UI.Blueprint.Craft.Row exact widths & colors)
+            // Ingredients Table (Exact Screenshot #1 headers: СУММА | ТИП ПРЕДМЕТА | ВСЕГО | ИМЕЕТСЯ)
             int tableW = L.rightW - 16;
             int tx = L.rightX + 8;
-            int colAmtW = 42;
+            int colAmtW = 44;
             int colNeedW = 48;
             int colHaveW = 48;
             int colNameW = tableW - colAmtW - colNeedW - colHaveW - 3;
 
             int hdrRowY = L.actionY - 76;
             drawTableRow(matrices, tx, hdrRowY, 13, colAmtW, colNameW, colNeedW, colHaveW,
-                    "КОЛ-ВО", "ПРЕДМЕТ", "НУЖНО", "ЕСТЬ",
-                    0xAA1D201F, 0x80F7EBE1, 0x80F7EBE1, 0x80F7EBE1);
+                    "СУММА", "ТИП ПРЕДМЕТА", "ВСЕГО", "ИМЕЕТСЯ",
+                    0x991D201F, 0x99F7EBE1, 0x99F7EBE1, 0x99F7EBE1);
 
             int rowY = hdrRowY + 14;
             boolean canCraft = true;
@@ -542,7 +666,7 @@ public class RustCraftingScreen extends Screen {
                 rowY += 15;
             }
 
-            // Footer: [-] Qty [+] [MAX] and [ СОЗДАТЬ ]
+            // Footer: [-] Qty [+] [>|] and [ СОЗДАТЬ ]
             drawIconStepBtn(matrices, mouseX, mouseY, L.btnSubX, L.actionY, L.btnSize, L.btnSize, RustUiHelper.TEX_BTN_SUBTRACT);
 
             DrawableHelper.fill(matrices, L.qtyX, L.actionY, L.qtyX + L.qtyW, L.actionY + L.btnSize, RustUiHelper.COLOR_ROW_BG);
@@ -570,9 +694,7 @@ public class RustCraftingScreen extends Screen {
                     canCraft ? 0xFFF7EBE1 : 0x55F7EBE1);
         }
 
-        // ==========================================
-        // 5. BOTTOM: BELT / HOTBAR + METABOLISM BARS
-        // ==========================================
+        // Bottom Belt/Hotbar + Metabolism HUD
         RustUiHelper.drawHotbar(matrices, this.client, mouseX, mouseY, screenW, screenH, this.itemRenderer, false);
         RustUiHelper.drawMetabolismBars(matrices, this.client, screenW, screenH);
 
@@ -632,18 +754,19 @@ public class RustCraftingScreen extends Screen {
             ItemStack stack = player.inventory.getStack(i);
             if (stack.isEmpty()) continue;
 
+            int amt = RustStackUtil.getCount(stack);
             if (target == Items.OAK_PLANKS) {
                 if (stack.getItem() == Items.OAK_PLANKS || stack.getItem() == Items.BIRCH_PLANKS ||
                     stack.getItem() == Items.SPRUCE_PLANKS || stack.getItem() == Items.OAK_LOG ||
                     stack.getItem() == Items.BIRCH_LOG || stack.getItem() == Items.SPRUCE_LOG) {
-                    count += stack.getCount();
+                    count += amt;
                 }
             } else if (target == Items.COBBLESTONE) {
                 if (stack.getItem() == Items.COBBLESTONE || stack.getItem() == Items.STONE) {
-                    count += stack.getCount();
+                    count += amt;
                 }
             } else if (stack.getItem() == target) {
-                count += stack.getCount();
+                count += amt;
             }
         }
         return count;
@@ -668,9 +791,20 @@ public class RustCraftingScreen extends Screen {
             }
 
             if (match) {
-                int take = Math.min(stack.getCount(), remaining);
-                stack.decrement(take);
-                remaining -= take;
+                if (RustStackUtil.isCustomStacked(stack)) {
+                    int cur = RustStackUtil.getCount(stack);
+                    int take = Math.min(cur, remaining);
+                    if (cur - take <= 0) {
+                        stack.setCount(0);
+                    } else {
+                        RustStackUtil.setLocalCount(stack, cur - take);
+                    }
+                    remaining -= take;
+                } else {
+                    int take = Math.min(stack.getCount(), remaining);
+                    stack.decrement(take);
+                    remaining -= take;
+                }
             }
         }
     }
@@ -699,22 +833,19 @@ public class RustCraftingScreen extends Screen {
         int screenH = this.height;
         Layout L = computeLayout(screenW, screenH);
 
-        // Top Switch Button -> Inventory
         if (RustUiHelper.hitTestTopSwitchButton(mouseX, mouseY, screenW)) {
             RustUiHelper.playClick(this.client);
             this.client.openScreen(new RustInventoryScreen());
             return true;
         }
 
-        // Queue click -> cancel task
-        int qIdx = RustUiHelper.hitTestCraftingQueue(mouseX, mouseY, L.leftX, L.panelY + L.panelH);
+        int qIdx = RustUiHelper.hitTestCraftingQueue(mouseX, mouseY, L.leftX + 4, L.panelY + L.panelH - 4);
         if (qIdx >= 0 && qIdx < RustCraftingQueue.queue.size()) {
             RustCraftingQueue.queue.remove(qIdx);
             RustUiHelper.playClick(this.client);
             return true;
         }
 
-        // Categories clicks
         int catY = L.panelY;
         for (Category cat : Category.values()) {
             if (RustUiHelper.inRect(mouseX, mouseY, L.catX, catY, L.catW, L.catRowH)) {
@@ -728,10 +859,9 @@ public class RustCraftingScreen extends Screen {
             catY += L.catRowH;
         }
 
-        // Blueprints clicks
         List<Recipe> recipes = getFilteredRecipes();
         int gridPadX = (L.gridW - (L.cols * L.slotSize + (L.cols - 1) * L.slotGap)) / 2;
-        int gridStartY = L.panelY + 4;
+        int gridStartY = L.panelY + 6;
         for (int i = 0; i < recipes.size(); i++) {
             Recipe r = recipes.get(i);
             int col = i % L.cols;
@@ -749,11 +879,9 @@ public class RustCraftingScreen extends Screen {
             }
         }
 
-        // Search Box
         isSearchFocused = RustUiHelper.inRect(mouseX, mouseY, L.searchX, L.searchY, L.searchW, L.searchH);
         if (isSearchFocused) return true;
 
-        // Right Panel Actions
         if (selectedRecipe != null && this.client != null && this.client.player != null) {
             if (RustUiHelper.inRect(mouseX, mouseY, L.favX, L.favY, L.favW, L.favH)) {
                 selectedRecipe.isFavorite = !selectedRecipe.isFavorite;
@@ -784,12 +912,14 @@ public class RustCraftingScreen extends Screen {
             }
             if (RustUiHelper.inRect(mouseX, mouseY, L.btnCraftX, L.btnCraftY, L.btnCraftW, L.btnCraftH)) {
                 if (canCraftRecipe(this.client.player, selectedRecipe, craftQuantity)) {
-                    for (Ingredient ing : selectedRecipe.ingredients) {
-                        deductPlayerResource(this.client.player, ing.mcItem, ing.amount * craftQuantity);
+                    if (this.client.isInSingleplayer()) {
+                        for (Ingredient ing : selectedRecipe.ingredients) {
+                            deductPlayerResource(this.client.player, ing.mcItem, ing.amount * craftQuantity);
+                        }
                     }
                     ItemStack res = selectedRecipe.resultStack.copy();
                     res.setCount(craftQuantity);
-                    RustCraftingQueue.addTask(selectedRecipe.name, res, craftQuantity, selectedRecipe.craftSeconds);
+                    RustCraftingQueue.addTask(selectedRecipe.id, selectedRecipe.name, res, craftQuantity, selectedRecipe.craftSeconds);
                     RustUiHelper.playClick(this.client);
                 }
                 return true;

@@ -5,18 +5,12 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawableHelper;
 import net.minecraft.client.gui.screen.ConnectScreen;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.option.ControlsOptionsScreen;
-import net.minecraft.client.gui.screen.option.LanguageOptionsScreen;
 import net.minecraft.client.network.ServerInfo;
-import net.minecraft.client.option.GraphicsMode;
-import net.minecraft.client.sound.PositionedSoundInstance;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.sound.SoundCategory;
 import net.minecraft.text.LiteralText;
 import net.minecraft.util.Identifier;
-import net.minecraft.world.Difficulty;
-import net.spacerust.client.SpaceRustClient;
 import net.spacerust.client.character.RustCharacterManager;
+import net.spacerust.client.config.RustSettings;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 
@@ -48,6 +42,8 @@ public class RustServerBrowserScreen extends Screen {
     private static final Identifier TEX_REFRESH       = new Identifier("spacerust", "textures/gui/icon_refresh.png");
     private static final Identifier TEX_RESET         = new Identifier("spacerust", "textures/gui/icon_reset.png");
 
+    public static ServerEntry activeServer = null;
+
     public enum MenuTab {
         HOME("ГЛАВНАЯ"),
         PLAY("ИГРАТЬ"),
@@ -65,18 +61,6 @@ public class RustServerBrowserScreen extends Screen {
 
         public final String title;
         PlayCategory(String title) { this.title = title; }
-    }
-
-    public enum SettingsCategory {
-        GAME("ИГРА"),
-        AUDIO("АУДИО"),
-        DISPLAY("ЭКРАН"),
-        GRAPHICS("ГРАФИКА"),
-        CONTROLS("УПРАВЛЕНИЕ"),
-        LANGUAGE("ЯЗЫК");
-
-        public final String title;
-        SettingsCategory(String title) { this.title = title; }
     }
 
     public static class ServerEntry {
@@ -151,7 +135,6 @@ public class RustServerBrowserScreen extends Screen {
 
     public static MenuTab currentTab = MenuTab.HOME;
     public static PlayCategory selectedPlayCategory = PlayCategory.OFFICIAL;
-    public static SettingsCategory selectedSettingCategory = SettingsCategory.GAME;
 
     private static final String[] WIPE_OPTIONS = {"ВСЕ", "ЕЖЕМЕСЯЧНЫЙ", "ЕЖЕНЕДЕЛЬНЫЙ"};
     private int wipeIndex = 0;
@@ -164,9 +147,8 @@ public class RustServerBrowserScreen extends Screen {
     private long lastRowClickMs = 0L;
     private int lastClickedRowIdx = -1;
 
-    private String hoveredSettingTitle = "ПОЛЕ ЗРЕНИЯ";
-    private String hoveredSettingDesc = "Угол обзора камеры в игре (FOV). Более высокий угол дает широкий обзор окружения.";
-    private String activeSliderId = null;
+    private final RustSettingsPanel settingsPanel = new RustSettingsPanel();
+    private String lastMenuHoverKey = "";
 
     private static final int TOP_H = 32;
     private static final int BOTTOM_H = 26;
@@ -186,6 +168,7 @@ public class RustServerBrowserScreen extends Screen {
     @Override
     public void removed() {
         super.removed();
+        settingsPanel.onClosed();
         MenuVideoPlayer.getInstance().stop();
     }
 
@@ -308,7 +291,17 @@ public class RustServerBrowserScreen extends Screen {
 
     @Override
     public boolean shouldCloseOnEsc() {
-        return false;
+        return this.client != null && this.client.world != null;
+    }
+
+    @Override
+    public void onClose() {
+        if (this.client != null && this.client.world != null) {
+            settingsPanel.onClosed();
+            this.client.openScreen(new RustPauseScreen());
+            return;
+        }
+        super.onClose();
     }
 
     @Override
@@ -389,12 +382,22 @@ public class RustServerBrowserScreen extends Screen {
         // Real SpaceRust project icon on Top-Left
         drawLogoTexture(matrices, 10, 5, 22);
 
-        // Top Center: ONLY ГЛАВНАЯ and ИГРАТЬ
+        // Top Center: (ТЕКУЩИЙ СЕРВЕР if in-game) + ГЛАВНАЯ + ИГРАТЬ
         int tabW = 92;
         int gap = 2;
         int centerX = screenW / 2;
         int homeTabX = centerX - tabW - (gap / 2);
         int playTabX = centerX + (gap / 2);
+
+        if (this.client != null && this.client.world != null) {
+            int backW = 114;
+            int backX = 40;
+            boolean bHov = inRect(mouseX, mouseY, backX, 5, backW, 22);
+            DrawableHelper.fill(matrices, backX, 5, backX + backW, 27, bHov ? 0xEECD412B : 0xCC9A2E1E);
+            RustFontRenderer bbf = RustFontRenderer.boldSmall();
+            String bTxt = "← ВЕРНУТЬСЯ В ИГРУ";
+            bbf.drawCenteredY(matrices, bTxt, backX + (backW - bbf.getWidth(bTxt)) / 2f, 5, 22, 0xFFFFFFFF);
+        }
 
         drawTopNavTab(matrices, mouseX, mouseY, homeTabX, 0, tabW, TOP_H, TEX_HOME, MenuTab.HOME.title, currentTab == MenuTab.HOME);
         drawTopNavTab(matrices, mouseX, mouseY, playTabX, 0, tabW, TOP_H, TEX_PLAY, MenuTab.PLAY.title, currentTab == MenuTab.PLAY);
@@ -409,7 +412,8 @@ public class RustServerBrowserScreen extends Screen {
 
         boolean setActive = currentTab == MenuTab.SETTINGS;
         boolean setHov = inRect(mouseX, mouseY, setX, btnY, setW, btnH);
-        int setBg = setActive ? 0xEE7C3629 : (setHov ? 0x663A3E45 : 0x5522252A);
+        if (setHov) playMenuHover("top:settings");
+        int setBg = setActive ? 0xEECD412B : (setHov ? 0x66452622 : 0x5522252A);
         DrawableHelper.fill(matrices, setX, btnY, setX + setW, btnY + btnH, setBg);
 
         RustFontRenderer bf = RustFontRenderer.boldSmall();
@@ -422,6 +426,7 @@ public class RustServerBrowserScreen extends Screen {
         bf.drawCenteredY(matrices, MenuTab.SETTINGS.title, sStart + sIcon + 5, btnY, btnH, sCol);
 
         boolean exitHov = inRect(mouseX, mouseY, exitX, btnY, exitW, btnH);
+        if (exitHov) playMenuHover("top:exit");
         int exitBg = exitHov ? 0xDDB72820 : 0x5522252A;
         DrawableHelper.fill(matrices, exitX, btnY, exitX + exitW, btnY + btnH, exitBg);
         String exitTxt = "ВЫЙТИ";
@@ -437,7 +442,8 @@ public class RustServerBrowserScreen extends Screen {
     private void drawTopNavTab(MatrixStack matrices, int mouseX, int mouseY, int x, int y, int w, int h,
                                Identifier icon, String title, boolean active) {
         boolean hov = inRect(mouseX, mouseY, x, y, w, h);
-        int bg = active ? 0xEE7C3629 : (hov ? 0x5530343B : 0x331E2024);
+        if (hov) playMenuHover("top:" + title);
+        int bg = active ? 0xEECD412B : (hov ? 0x55422521 : 0x331E2024);
         DrawableHelper.fill(matrices, x, y, x + w, y + h, bg);
 
         RustFontRenderer bf = RustFontRenderer.bold();
@@ -456,12 +462,14 @@ public class RustServerBrowserScreen extends Screen {
         DrawableHelper.fill(matrices, 0, barY, screenW, screenH, 0x99121418);
         DrawableHelper.fill(matrices, 0, barY, screenW, barY + 1, 0x18FFFFFF);
 
-        // Subtle FPS on bottom-left
-        String fpsText = MinecraftClient.getInstance().fpsDebugString;
-        if (fpsText != null && !fpsText.isEmpty()) {
-            int sp = fpsText.indexOf(' ');
-            String shortFps = (sp > 0 ? fpsText.substring(0, sp) : fpsText) + " FPS";
-            RustFontRenderer.small().drawCenteredY(matrices, shortFps, 10, barY, BOTTOM_H, 0x77AAAAAA);
+        // Subtle FPS on bottom-left (controlled by СЧЁТЧИК КАДРОВ)
+        if (RustSettings.get().showFps) {
+            String fpsText = MinecraftClient.getInstance().fpsDebugString;
+            if (fpsText != null && !fpsText.isEmpty()) {
+                int sp = fpsText.indexOf(' ');
+                String shortFps = (sp > 0 ? fpsText.substring(0, sp) : fpsText) + " FPS";
+                RustFontRenderer.small().drawCenteredY(matrices, shortFps, 10, barY, BOTTOM_H, 0x77AAAAAA);
+            }
         }
 
         // Bottom-Right: Static Character Avatar (no hover reaction, no race/nick tooltip)
@@ -602,14 +610,14 @@ public class RustServerBrowserScreen extends Screen {
         if (expandFilters) {
             boolean onlHov = inRect(mouseX, mouseY, sideX, curY, sideW, 18);
             DrawableHelper.fill(matrices, sideX, curY, sideX + sideW, curY + 18,
-                    onlyOnlineFilter ? 0xFF3A4A28 : (onlHov ? 0x33FFFFFF : 0x22181B20));
-            // Crisp drawn square checkbox (no missing Unicode glyphs)
+                    onlyOnlineFilter ? 0xFF6B2820 : (onlHov ? 0x33FFFFFF : 0x22181B20));
+            // Crisp drawn square checkbox
             int cbX = sideX + 7;
             int cbY = curY + 5;
             DrawableHelper.fill(matrices, cbX, cbY, cbX + 8, cbY + 8, 0xAAFFFFFF);
-            DrawableHelper.fill(matrices, cbX + 1, cbY + 1, cbX + 7, cbY + 7, onlyOnlineFilter ? 0xFF7BC950 : 0xFF1A1D22);
+            DrawableHelper.fill(matrices, cbX + 1, cbY + 1, cbX + 7, cbY + 7, onlyOnlineFilter ? 0xFFCD412B : 0xFF1A1D22);
             bfSmall.drawCenteredY(matrices, "ТОЛЬКО ОНЛАЙН", sideX + 19, curY, 18,
-                    onlyOnlineFilter ? 0xFFAED581 : 0xFFC2C7CE);
+                    onlyOnlineFilter ? 0xFFFFFFFF : 0xFFC2C7CE);
             curY += 20;
         }
         curY += 4;
@@ -695,7 +703,7 @@ public class RustServerBrowserScreen extends Screen {
             sf.drawCenteredY(matrices, s.map, tx + 3, ty, 13, 0x88AAAAAA);
 
             // Mode Pill
-            drawMiniPill(matrices, colModeX, y + (rowH - 13) / 2, s.modeBadge, 0xFF435E24, 0xFFAED581);
+            drawMiniPill(matrices, colModeX, y + (rowH - 13) / 2, s.modeBadge, 0xFF6B2820, 0xFFFFD8D1);
 
             // Players
             String countStr = s.isOnline ? (s.currentPlayers + " / " + s.maxPlayers) : "ОФФЛАЙН";
@@ -737,8 +745,8 @@ public class RustServerBrowserScreen extends Screen {
         int bg;
         int fg;
         if (active) {
-            bg = greenTheme ? 0xFF486327 : 0xFF7C3629;
-            fg = greenTheme ? 0xFFAED581 : 0xFFFFFFFF;
+            bg = greenTheme ? 0xFFCD412B : 0xFF9E3122;
+            fg = 0xFFFFFFFF;
         } else {
             bg = hov ? 0x44FFFFFF : 0xAA1D2026;
             fg = hov ? 0xFFFFFFFF : 0xFFB8BDC4;
@@ -806,264 +814,32 @@ public class RustServerBrowserScreen extends Screen {
     }
 
     // =========================================================================
-    // VIEW 3: НАСТРОЙКИ (Authentic Rust Settings with Roboto Condensed)
+    // VIEW 3: НАСТРОЙКИ (CoilRust Settings UI via shared RustSettingsPanel)
     // =========================================================================
     private void renderSettingsTab(MatrixStack matrices, int mouseX, int mouseY, int screenW, int screenH) {
-        int catW = 108;
-        int catX = 14;
         int startY = TOP_H + 12;
-
-        int sBoxH = 18;
-        DrawableHelper.fill(matrices, catX, startY, catX + catW, startY + sBoxH, 0xAA12151B);
-        DrawableHelper.fill(matrices, catX, startY, catX + catW, startY + 1, 0x22FFFFFF);
-        RustFontRenderer.regular().drawCenteredY(matrices, "ПОИСК...", catX + 7, startY, sBoxH, 0x55AAAAAA);
-
-        int curCatY = startY + sBoxH + 8;
-        int itemH = 19;
-        RustFontRenderer bfSmall = RustFontRenderer.boldSmall();
-
-        for (SettingsCategory cat : SettingsCategory.values()) {
-            boolean active = cat == selectedSettingCategory;
-            boolean hov = inRect(mouseX, mouseY, catX, curCatY, catW, itemH);
-            int bg = active ? 0xFF5A7232 : (hov ? 0x33FFFFFF : 0x1A14171E);
-            DrawableHelper.fill(matrices, catX, curCatY, catX + catW, curCatY + itemH, bg);
-            int txtColor = active ? 0xFFFFFFFF : (hov ? 0xFFE0E5EC : 0x88AAAAAA);
-            bfSmall.drawCenteredY(matrices, cat.title, catX + 8, curCatY, itemH, txtColor);
-            curCatY += itemH + 3;
-        }
-
-        int centerColX = catX + catW + 16;
-        int descColW = 200;
-        int centerColW = screenW - centerColX - descColW - 20;
-
-        RustFontRenderer.boldLarge().draw(matrices, selectedSettingCategory.title, centerColX, startY + 1, 0xFFFFFFFF);
-
-        int optY = startY + 24;
-        int rowH = 22;
-
-        if (selectedSettingCategory == SettingsCategory.GAME) {
-            drawSliderRow(matrices, mouseX, mouseY, centerColX, optY, centerColW, "ПОЛЕ ЗРЕНИЯ",
-                    String.valueOf((int) this.client.options.fov), (float) (this.client.options.fov - 30.0) / 80.0f,
-                    "Настройка угла обзора камеры в игре (FOV). Более высокий угол дает широкий обзор.");
-            optY += rowH;
-
-            drawToggleRow(matrices, mouseX, mouseY, centerColX, optY, centerColW, "ПОКАЧИВАНИЕ КАМЕРЫ",
-                    this.client.options.bobView,
-                    "Включает или выключает реалистичное покачивание рук и предметов при ходьбе.");
-            optY += rowH;
-
-            drawToggleRow(matrices, mouseX, mouseY, centerColX, optY, centerColW, "АВТОПРЫЖОК",
-                    this.client.options.autoJump,
-                    "Автоматический прыжок при подходе к блокам высотой в 1 блок.");
-            optY += rowH;
-
-            drawCycleRow(matrices, mouseX, mouseY, centerColX, optY, centerColW, "СЛОЖНОСТЬ",
-                    this.client.options.difficulty.getName(),
-                    "Уровень сложности игрового мира и урон от окружения.");
-            optY += rowH;
-
-            drawInfoRow(matrices, mouseX, mouseY, centerColX, optY, centerColW, "МАСШТАБ ИНТЕРФЕЙСА",
-                    "ФИКСИРОВАН 2 (RUST UI)", "Размер интерфейса зафиксирован для отображения Rust UI.");
-
-        } else if (selectedSettingCategory == SettingsCategory.AUDIO) {
-            drawVolumeSlider(matrices, mouseX, mouseY, centerColX, optY, centerColW, "ОБЩАЯ ГРОМКОСТЬ", SoundCategory.MASTER,
-                    "Регулировка главной громкости всех звуков в игре.");
-            optY += rowH;
-            drawVolumeSlider(matrices, mouseX, mouseY, centerColX, optY, centerColW, "МУЗЫКА", SoundCategory.MUSIC,
-                    "Громкость фоновой музыки в игре.");
-            optY += rowH;
-            drawVolumeSlider(matrices, mouseX, mouseY, centerColX, optY, centerColW, "БЛОКИ И ШАГИ", SoundCategory.BLOCKS,
-                    "Громкость шагов, ломания и установки строительных блоков.");
-            optY += rowH;
-            drawVolumeSlider(matrices, mouseX, mouseY, centerColX, optY, centerColW, "ИГРОКИ", SoundCategory.PLAYERS,
-                    "Звуки других игроков, ударов и перестрелок.");
-            optY += rowH;
-            drawVolumeSlider(matrices, mouseX, mouseY, centerColX, optY, centerColW, "ОКРУЖАЮЩАЯ СРЕДА", SoundCategory.AMBIENT,
-                    "Звуки ветра, природы и ночной атмосферы Rust.");
-
-        } else if (selectedSettingCategory == SettingsCategory.DISPLAY || selectedSettingCategory == SettingsCategory.GRAPHICS) {
-            drawToggleRow(matrices, mouseX, mouseY, centerColX, optY, centerColW, "ПОЛНОЭКРАННЫЙ РЕЖИМ",
-                    this.client.options.fullscreen,
-                    "Полноэкранный режим работы дисплея без рамок Windows.");
-            optY += rowH;
-            drawToggleRow(matrices, mouseX, mouseY, centerColX, optY, centerColW, "ВЕРТИКАЛЬНАЯ СИНХРОНИЗАЦИЯ (VSync)",
-                    this.client.options.enableVsync,
-                    "Синхронизация частоты кадров с герцовкой вашего монитора.");
-            optY += rowH;
-
-            int fps = this.client.options.maxFps;
-            String fpsStr = fps >= 260 ? "МАКСИМУМ" : (fps + " FPS");
-            drawSliderRow(matrices, mouseX, mouseY, centerColX, optY, centerColW, "ЧАСТОТА КАДРОВ (FPS)",
-                    fpsStr, (float) (fps - 10) / 250.0f,
-                    "Максимальный лимит кадров в секунду (FPS).");
-            optY += rowH;
-
-            int dist = this.client.options.viewDistance;
-            drawSliderRow(matrices, mouseX, mouseY, centerColX, optY, centerColW, "ДАЛЬНОСТЬ ПРОРИСОВКИ",
-                    dist + " ЧАНКОВ", (float) (dist - 2) / 30.0f,
-                    "Дальность видимости мира в чанках.");
-            optY += rowH;
-
-            drawCycleRow(matrices, mouseX, mouseY, centerColX, optY, centerColW, "ГРАФИКА",
-                    this.client.options.graphicsMode == GraphicsMode.FAST ? "БЫСТРО" : "ДЕТАЛЬНО",
-                    "Качество отрисовки листьев, прозрачности и частиц мира.");
-
-        } else if (selectedSettingCategory == SettingsCategory.CONTROLS) {
-            int sens = (int) (this.client.options.mouseSensitivity * 200);
-            drawSliderRow(matrices, mouseX, mouseY, centerColX, optY, centerColW, "ЧУВСТВИТЕЛЬНОСТЬ МЫШИ",
-                    sens + "%", (float) this.client.options.mouseSensitivity,
-                    "Скорость поворота прицела и камеры при движении мыши.");
-            optY += rowH;
-            drawToggleRow(matrices, mouseX, mouseY, centerColX, optY, centerColW, "ИНВЕРСИЯ МЫШИ",
-                    this.client.options.invertYMouse,
-                    "Инвертирует вертикальную ось движения мыши.");
-            optY += rowH;
-            drawButtonRow(matrices, mouseX, mouseY, centerColX, optY, centerColW, "НАЗНАЧЕНИЕ КЛАВИШ...", "ОТКРЫТЬ КЛАВИШИ",
-                    "Настройка кнопок управления персонажем, стрельбы и движения.");
-
-        } else if (selectedSettingCategory == SettingsCategory.LANGUAGE) {
-            drawButtonRow(matrices, mouseX, mouseY, centerColX, optY, centerColW, "ЯЗЫК ИНТЕРФЕЙСА...", "ВЫБРАТЬ ЯЗЫК",
-                    "Смена языка интерфейса Minecraft и мода.");
-        }
-
-        int descX = screenW - descColW - 14;
-        int descY = startY + 24;
-        DrawableHelper.fill(matrices, descX, descY, descX + 2, descY + 120, 0xFFCD412B);
-        RustFontRenderer.bold().draw(matrices, hoveredSettingTitle, descX + 8, descY, 0xFFFFFFFF);
-
-        RustFontRenderer rf = RustFontRenderer.regular();
-        List<String> dLines = wrapText(hoveredSettingDesc, descColW - 16, rf);
-        int dy = descY + 16;
-        for (String line : dLines) {
-            rf.draw(matrices, line, descX + 8, dy, 0xFF9EA5AE);
-            dy += 12;
-        }
-    }
-
-    private void drawSliderRow(MatrixStack matrices, int mouseX, int mouseY, int x, int y, int w, String title, String valStr, float ratio, String desc) {
-        if (mouseY >= y && mouseY <= y + 18 && mouseX >= x && mouseX <= x + w) {
-            hoveredSettingTitle = title;
-            hoveredSettingDesc = desc;
-        }
-        RustFontRenderer rf = RustFontRenderer.regular();
-        rf.drawCenteredY(matrices, title, x, y, 18, 0xFFE0E5EC);
-
-        int trackW = 100;
-        int trackH = 4;
-        int trackX = x + w - trackW;
-        int trackY = y + 7;
-
-        float valW = rf.getWidth(valStr);
-        rf.drawCenteredY(matrices, valStr, trackX - valW - 8, y, 18, 0xFFFFFFFF);
-        DrawableHelper.fill(matrices, trackX, trackY, trackX + trackW, trackY + trackH, 0x55000000);
-
-        int fill = (int) (trackW * Math.max(0.0f, Math.min(1.0f, ratio)));
-        if (fill > 0) {
-            DrawableHelper.fill(matrices, trackX, trackY, trackX + fill, trackY + trackH, 0xFFCD412B);
-        }
-    }
-
-    private void drawVolumeSlider(MatrixStack matrices, int mouseX, int mouseY, int x, int y, int w, String title, SoundCategory cat, String desc) {
-        float vol = this.client.options.getSoundVolume(cat);
-        int percent = (int) (vol * 100);
-        drawSliderRow(matrices, mouseX, mouseY, x, y, w, title, percent + "%", vol, desc);
-    }
-
-    private void drawToggleRow(MatrixStack matrices, int mouseX, int mouseY, int x, int y, int w, String title, boolean value, String desc) {
-        if (mouseY >= y && mouseY <= y + 18 && mouseX >= x && mouseX <= x + w) {
-            hoveredSettingTitle = title;
-            hoveredSettingDesc = desc;
-        }
-        RustFontRenderer.regular().drawCenteredY(matrices, title, x, y, 18, 0xFFE0E5EC);
-
-        int btnW = 60;
-        int btnH = 16;
-        int btnX = x + w - btnW;
-        int btnY = y + 1;
-        boolean hov = inRect(mouseX, mouseY, btnX, btnY, btnW, btnH);
-        int bg = value ? (hov ? 0xFF445729 : 0xFF354823) : (hov ? 0x44FFFFFF : 0x22181C22);
-        DrawableHelper.fill(matrices, btnX, btnY, btnX + btnW, btnY + btnH, bg);
-
-        String txt = value ? "ВКЛ" : "ВЫКЛ";
-        RustFontRenderer bf = RustFontRenderer.boldSmall();
-        int col = value ? 0xFF8BC34A : 0x77AAAAAA;
-        bf.drawCenteredY(matrices, txt, btnX + (btnW - bf.getWidth(txt)) / 2f, btnY, btnH, col);
-    }
-
-    private void drawCycleRow(MatrixStack matrices, int mouseX, int mouseY, int x, int y, int w, String title, String valStr, String desc) {
-        if (mouseY >= y && mouseY <= y + 18 && mouseX >= x && mouseX <= x + w) {
-            hoveredSettingTitle = title;
-            hoveredSettingDesc = desc;
-        }
-        RustFontRenderer.regular().drawCenteredY(matrices, title, x, y, 18, 0xFFE0E5EC);
-
-        int btnW = 80;
-        int btnH = 16;
-        int btnX = x + w - btnW;
-        int btnY = y + 1;
-        boolean hov = inRect(mouseX, mouseY, btnX, btnY, btnW, btnH);
-        DrawableHelper.fill(matrices, btnX, btnY, btnX + btnW, btnY + btnH, hov ? 0x33FFFFFF : 0x22181C22);
-
-        RustFontRenderer bf = RustFontRenderer.boldSmall();
-        bf.drawCenteredY(matrices, valStr, btnX + (btnW - bf.getWidth(valStr)) / 2f, btnY, btnH, 0xFFFFFFFF);
-    }
-
-    private void drawButtonRow(MatrixStack matrices, int mouseX, int mouseY, int x, int y, int w, String title, String btnText, String desc) {
-        if (mouseY >= y && mouseY <= y + 18 && mouseX >= x && mouseX <= x + w) {
-            hoveredSettingTitle = title;
-            hoveredSettingDesc = desc;
-        }
-        RustFontRenderer.regular().drawCenteredY(matrices, title, x, y, 18, 0xFFE0E5EC);
-
-        int btnW = 90;
-        int btnH = 16;
-        int btnX = x + w - btnW;
-        int btnY = y + 1;
-        boolean hov = inRect(mouseX, mouseY, btnX, btnY, btnW, btnH);
-        DrawableHelper.fill(matrices, btnX, btnY, btnX + btnW, btnY + btnH, hov ? 0xFF445729 : 0x22181C22);
-
-        RustFontRenderer bf = RustFontRenderer.boldSmall();
-        bf.drawCenteredY(matrices, btnText, btnX + (btnW - bf.getWidth(btnText)) / 2f, btnY, btnH, 0xFFFFFFFF);
-    }
-
-    private void drawInfoRow(MatrixStack matrices, int mouseX, int mouseY, int x, int y, int w, String title, String valStr, String desc) {
-        if (mouseY >= y && mouseY <= y + 18 && mouseX >= x && mouseX <= x + w) {
-            hoveredSettingTitle = title;
-            hoveredSettingDesc = desc;
-        }
-        RustFontRenderer.regular().drawCenteredY(matrices, title, x, y, 18, 0xFFE0E5EC);
-        RustFontRenderer bf = RustFontRenderer.boldSmall();
-        bf.drawCenteredY(matrices, valStr, x + w - bf.getWidth(valStr), y, 18, 0xFFCD412B);
-    }
-
-    private List<String> wrapText(String text, float maxWidth, RustFontRenderer font) {
-        List<String> lines = new ArrayList<>();
-        String[] words = text.split(" ");
-        StringBuilder cur = new StringBuilder();
-        for (String w : words) {
-            if (font.getWidth(cur + " " + w) > maxWidth) {
-                lines.add(cur.toString());
-                cur = new StringBuilder(w);
-            } else {
-                if (cur.length() > 0) cur.append(" ");
-                cur.append(w);
-            }
-        }
-        if (cur.length() > 0) lines.add(cur.toString());
-        return lines;
+        int panelH = Math.max(120, screenH - startY - BOTTOM_H - 10);
+        settingsPanel.render(matrices, this, this.client, mouseX, mouseY, 14, startY, screenW - 28, panelH);
     }
 
     // ==========================================
     // MOUSE & KEYBOARD INTERACTION
     // ==========================================
     private void playClickSound() {
-        if (this.client != null && this.client.getSoundManager() != null) {
-            this.client.getSoundManager().play(PositionedSoundInstance.master(SpaceRustClient.UI_CLICK_SOUND, 1.0f));
-        }
+        RustUiHelper.playMenuClick(this.client);
+    }
+
+    private void playMenuHover(String key) {
+        if (key == null || key.equals(lastMenuHoverKey)) return;
+        lastMenuHoverKey = key;
+        RustUiHelper.playMenuHover(this.client);
     }
 
     @Override
     public boolean charTyped(char chr, int keyCode) {
+        if (currentTab == MenuTab.SETTINGS && settingsPanel.charTyped(chr)) {
+            return true;
+        }
         if (currentTab == MenuTab.PLAY && isSearchFocused) {
             if (chr >= 32 && chr != 127 && serverSearchQuery.length() < 32) {
                 serverSearchQuery += chr;
@@ -1075,6 +851,9 @@ public class RustServerBrowserScreen extends Screen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (currentTab == MenuTab.SETTINGS && settingsPanel.keyPressed(this.client, keyCode, scanCode)) {
+            return true;
+        }
         if (currentTab == MenuTab.PLAY && isSearchFocused) {
             if (keyCode == GLFW.GLFW_KEY_BACKSPACE) {
                 if (!serverSearchQuery.isEmpty()) {
@@ -1103,6 +882,13 @@ public class RustServerBrowserScreen extends Screen {
         int screenW = this.width;
         int screenH = this.height;
 
+        if (this.client != null && this.client.world != null && inRect(mouseX, mouseY, 40, 5, 114, 22)) {
+            if (currentTab == MenuTab.SETTINGS) settingsPanel.onClosed();
+            playClickSound();
+            this.client.openScreen(null);
+            return true;
+        }
+
         // Top Bar Tabs
         int tabW = 92;
         int gap = 2;
@@ -1111,12 +897,14 @@ public class RustServerBrowserScreen extends Screen {
         int playTabX = centerX + (gap / 2);
 
         if (inRect(mouseX, mouseY, homeTabX, 0, tabW, TOP_H)) {
+            if (currentTab == MenuTab.SETTINGS) settingsPanel.onClosed();
             currentTab = MenuTab.HOME;
             isSearchFocused = false;
             playClickSound();
             return true;
         }
         if (inRect(mouseX, mouseY, playTabX, 0, tabW, TOP_H)) {
+            if (currentTab == MenuTab.SETTINGS) settingsPanel.onClosed();
             currentTab = MenuTab.PLAY;
             isSearchFocused = false;
             playClickSound();
@@ -1136,6 +924,8 @@ public class RustServerBrowserScreen extends Screen {
             return true;
         }
         if (inRect(mouseX, mouseY, exitX, 5, exitW, 22)) {
+            playClickSound();
+            settingsPanel.onClosed();
             MenuVideoPlayer.getInstance().stop();
             this.client.scheduleStop();
             return true;
@@ -1313,118 +1103,10 @@ public class RustServerBrowserScreen extends Screen {
 
         // SETTINGS
         if (currentTab == MenuTab.SETTINGS) {
-            int catW = 108;
-            int catX = 14;
             int startY = TOP_H + 12;
-            int curCatY = startY + 18 + 8;
-            int itemH = 19;
-
-            for (SettingsCategory cat : SettingsCategory.values()) {
-                if (inRect(mouseX, mouseY, catX, curCatY, catW, itemH)) {
-                    selectedSettingCategory = cat;
-                    playClickSound();
-                    return true;
-                }
-                curCatY += itemH + 3;
-            }
-
-            int centerColX = catX + catW + 16;
-            int descColW = 200;
-            int centerColW = screenW - centerColX - descColW - 20;
-            int optY = startY + 24;
-            int rowH = 22;
-
-            if (selectedSettingCategory == SettingsCategory.GAME) {
-                if (inRect(mouseX, mouseY, centerColX + centerColW - 100, optY + 2, 100, 14)) {
-                    activeSliderId = "fov";
-                    updateSliderFromMouse(mouseX, centerColX + centerColW - 100, 100, "fov");
-                    return true;
-                }
-                optY += rowH;
-                if (checkToggleClick(mouseX, mouseY, centerColX + centerColW - 60, optY + 1, 60, 16)) {
-                    this.client.options.bobView = !this.client.options.bobView;
-                    saveOptions();
-                    return true;
-                }
-                optY += rowH;
-                if (checkToggleClick(mouseX, mouseY, centerColX + centerColW - 60, optY + 1, 60, 16)) {
-                    this.client.options.autoJump = !this.client.options.autoJump;
-                    saveOptions();
-                    return true;
-                }
-                optY += rowH;
-                if (checkToggleClick(mouseX, mouseY, centerColX + centerColW - 80, optY + 1, 80, 16)) {
-                    int nextId = (this.client.options.difficulty.getId() + 1) % 4;
-                    this.client.options.difficulty = Difficulty.byOrdinal(nextId);
-                    saveOptions();
-                    return true;
-                }
-            } else if (selectedSettingCategory == SettingsCategory.AUDIO) {
-                String[] cats = {"vol_MASTER", "vol_MUSIC", "vol_BLOCKS", "vol_PLAYERS", "vol_AMBIENT"};
-                for (String cid : cats) {
-                    if (inRect(mouseX, mouseY, centerColX + centerColW - 100, optY + 2, 100, 14)) {
-                        activeSliderId = cid;
-                        updateSliderFromMouse(mouseX, centerColX + centerColW - 100, 100, cid);
-                        return true;
-                    }
-                    optY += rowH;
-                }
-            } else if (selectedSettingCategory == SettingsCategory.DISPLAY || selectedSettingCategory == SettingsCategory.GRAPHICS) {
-                if (checkToggleClick(mouseX, mouseY, centerColX + centerColW - 60, optY + 1, 60, 16)) {
-                    this.client.options.fullscreen = !this.client.options.fullscreen;
-                    if (this.client.getWindow().isFullscreen() != this.client.options.fullscreen) {
-                        this.client.getWindow().toggleFullscreen();
-                    }
-                    saveOptions();
-                    return true;
-                }
-                optY += rowH;
-                if (checkToggleClick(mouseX, mouseY, centerColX + centerColW - 60, optY + 1, 60, 16)) {
-                    this.client.options.enableVsync = !this.client.options.enableVsync;
-                    this.client.getWindow().setVsync(this.client.options.enableVsync);
-                    saveOptions();
-                    return true;
-                }
-                optY += rowH;
-                if (inRect(mouseX, mouseY, centerColX + centerColW - 100, optY + 2, 100, 14)) {
-                    activeSliderId = "maxFps";
-                    updateSliderFromMouse(mouseX, centerColX + centerColW - 100, 100, "maxFps");
-                    return true;
-                }
-                optY += rowH;
-                if (inRect(mouseX, mouseY, centerColX + centerColW - 100, optY + 2, 100, 14)) {
-                    activeSliderId = "viewDistance";
-                    updateSliderFromMouse(mouseX, centerColX + centerColW - 100, 100, "viewDistance");
-                    return true;
-                }
-                optY += rowH;
-                if (checkToggleClick(mouseX, mouseY, centerColX + centerColW - 80, optY + 1, 80, 16)) {
-                    this.client.options.graphicsMode = this.client.options.graphicsMode == GraphicsMode.FAST ? GraphicsMode.FANCY : GraphicsMode.FAST;
-                    saveOptions();
-                    return true;
-                }
-            } else if (selectedSettingCategory == SettingsCategory.CONTROLS) {
-                if (inRect(mouseX, mouseY, centerColX + centerColW - 100, optY + 2, 100, 14)) {
-                    activeSliderId = "mouseSensitivity";
-                    updateSliderFromMouse(mouseX, centerColX + centerColW - 100, 100, "mouseSensitivity");
-                    return true;
-                }
-                optY += rowH;
-                if (checkToggleClick(mouseX, mouseY, centerColX + centerColW - 60, optY + 1, 60, 16)) {
-                    this.client.options.invertYMouse = !this.client.options.invertYMouse;
-                    saveOptions();
-                    return true;
-                }
-                optY += rowH;
-                if (checkToggleClick(mouseX, mouseY, centerColX + centerColW - 90, optY + 1, 90, 16)) {
-                    this.client.openScreen(new ControlsOptionsScreen(this, this.client.options));
-                    return true;
-                }
-            } else if (selectedSettingCategory == SettingsCategory.LANGUAGE) {
-                if (checkToggleClick(mouseX, mouseY, centerColX + centerColW - 90, optY + 1, 90, 16)) {
-                    this.client.openScreen(new LanguageOptionsScreen(this, this.client.options, this.client.getLanguageManager()));
-                    return true;
-                }
+            int panelH = Math.max(120, screenH - startY - BOTTOM_H - 10);
+            if (settingsPanel.mouseClicked(this, this.client, mouseX, mouseY, button, 14, startY, screenW - 28, panelH)) {
+                return true;
             }
         }
 
@@ -1435,47 +1117,9 @@ public class RustServerBrowserScreen extends Screen {
         return mx >= x && mx <= x + w && my >= y && my <= y + h;
     }
 
-    private boolean checkToggleClick(double mouseX, double mouseY, int x, int y, int w, int h) {
-        if (inRect(mouseX, mouseY, x, y, w, h)) {
-            playClickSound();
-            return true;
-        }
-        return false;
-    }
-
-    private void updateSliderFromMouse(double mouseX, int trackX, int trackW, String id) {
-        float ratio = (float) (mouseX - trackX) / (float) trackW;
-        ratio = Math.max(0.0f, Math.min(1.0f, ratio));
-
-        if ("fov".equals(id)) {
-            this.client.options.fov = 30.0 + (ratio * 80.0);
-        } else if ("maxFps".equals(id)) {
-            int fps = (int) (10 + ratio * 250);
-            this.client.options.maxFps = fps >= 255 ? 260 : fps;
-        } else if ("viewDistance".equals(id)) {
-            this.client.options.viewDistance = (int) (2 + ratio * 30);
-        } else if ("mouseSensitivity".equals(id)) {
-            this.client.options.mouseSensitivity = ratio;
-        } else if (id.startsWith("vol_")) {
-            String catName = id.substring(4);
-            try {
-                SoundCategory cat = SoundCategory.valueOf(catName);
-                this.client.options.setSoundVolume(cat, ratio);
-            } catch (Exception ignored) {
-            }
-        }
-    }
-
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        if (activeSliderId != null && currentTab == MenuTab.SETTINGS) {
-            int catW = 108;
-            int catX = 14;
-            int descColW = 200;
-            int centerColX = catX + catW + 16;
-            int centerColW = this.width - centerColX - descColW - 20;
-            int trackX = centerColX + centerColW - 100;
-            updateSliderFromMouse(mouseX, trackX, 100, activeSliderId);
+        if (currentTab == MenuTab.SETTINGS && settingsPanel.mouseDragged(mouseX, 14, this.width - 28)) {
             return true;
         }
         return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
@@ -1483,18 +1127,18 @@ public class RustServerBrowserScreen extends Screen {
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (activeSliderId != null) {
-            activeSliderId = null;
-            saveOptions();
+        if (currentTab == MenuTab.SETTINGS && settingsPanel.mouseReleased(this.client)) {
             return true;
         }
         return super.mouseReleased(mouseX, mouseY, button);
     }
 
-    private void saveOptions() {
-        if (this.client != null && this.client.options != null) {
-            this.client.options.write();
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
+        if (currentTab == MenuTab.SETTINGS && settingsPanel.mouseScrolled(amount)) {
+            return true;
         }
+        return super.mouseScrolled(mouseX, mouseY, amount);
     }
 
     private void recordRecentServer(ServerEntry entry) {
@@ -1508,6 +1152,7 @@ public class RustServerBrowserScreen extends Screen {
 
     private void connectToServer(ServerEntry entry) {
         if (this.client != null && entry != null) {
+            activeServer = entry;
             recordRecentServer(entry);
             MenuVideoPlayer.getInstance().stop();
             this.client.openScreen(new ConnectScreen(this, this.client, entry.serverInfo));

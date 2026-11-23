@@ -1,0 +1,20 @@
+name: SpaceRustCore
+version: 1.0.0
+main: net.spacerust.plugin.SpaceRustPlugin
+api-version: 1.16
+description: SpaceRust server engine — RT monuments, roads, ore nodes, barrels, crates, recycler, radiation & client sync.
+commands:
+  rustbuild:
+    description: Rebuild all SpaceRust RT monuments, roads, barrels, and ore nodes around spawn.
+    usage: /rustbuild
+    permission: op
+  map:
+    description: Show coordinates of all RT monuments on SpaceRust island.
+    usage: /map
+  ruststarter:
+    description: Give Rust starter kit (Rock and Torch).
+    usage: /ruststarter
+  rustgive:
+    description: Give any standalone SpaceRust item by id.
+    usage: /rustgive <id|list> [qty]
+    permission: op

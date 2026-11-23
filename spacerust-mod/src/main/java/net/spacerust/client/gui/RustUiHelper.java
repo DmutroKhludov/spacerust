@@ -10,31 +10,32 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Identifier;
 import net.spacerust.client.SpaceRustClient;
+import net.spacerust.client.guns.GunManager;
+import net.spacerust.client.mixin.GameRendererAccessor;
 import org.lwjgl.opengl.GL11;
 
 import java.util.Locale;
 
 /**
- * Authentic Rust / CoilRust UI primitives, colors, sprites, and shared widgets.
- * Palette & proportions derived from CoilRust's inventory_source.json,
- * hud_style.json, and prefab_layout.json.
+ * Shared Rust / CoilRust UI primitives, world blur helper, sprites, and widgets.
  */
 public final class RustUiHelper {
 
-    // Exact extracted Rust/CoilRust sprites
     public static final Identifier TEX_SWITCH_CRAFTING = new Identifier("spacerust", "textures/gui/rust_ui/icon_crafting.png");
     public static final Identifier TEX_STAT_WASH       = new Identifier("spacerust", "textures/gui/rust_ui/stat_wash.png");
     public static final Identifier TEX_SELECTED_DROP   = new Identifier("spacerust", "textures/gui/rust_ui/selected_drop.png");
-    public static final Identifier TEX_SELECTED_BG     = new Identifier("spacerust", "textures/gui/rust_ui/selected_bg.png");
     public static final Identifier TEX_STOPWATCH       = new Identifier("spacerust", "textures/gui/rust_ui/stopwatch.png");
     public static final Identifier TEX_FAV_ACTIVE      = new Identifier("spacerust", "textures/gui/rust_ui/fav_active.png");
     public static final Identifier TEX_FAV_INACTIVE    = new Identifier("spacerust", "textures/gui/rust_ui/fav_inactive.png");
     public static final Identifier TEX_BTN_ADD         = new Identifier("spacerust", "textures/gui/rust_ui/btn_add.png");
     public static final Identifier TEX_BTN_SUBTRACT    = new Identifier("spacerust", "textures/gui/rust_ui/btn_subtract.png");
-    public static final Identifier TEX_BTN_MAX         = new Identifier("spacerust", "textures/gui/rust_ui/btn_max.png");
     public static final Identifier TEX_BTN_CLOSE       = new Identifier("spacerust", "textures/gui/rust_ui/btn_close.png");
-    public static final Identifier TEX_BP_TILE         = new Identifier("spacerust", "textures/gui/rust_ui/bp_tile.png");
-    public static final Identifier TEX_BP_LOCK         = new Identifier("spacerust", "textures/gui/rust_ui/bp_lock.png");
+
+    // 4 Protection icons (Screenshot #2)
+    public static final Identifier TEX_PROT_EXPLOSION  = new Identifier("spacerust", "textures/gui/rust_ui/prot_explosion.png");
+    public static final Identifier TEX_PROT_COLD       = new Identifier("spacerust", "textures/gui/rust_ui/prot_cold.png");
+    public static final Identifier TEX_PROT_RAD        = new Identifier("spacerust", "textures/gui/rust_ui/prot_rad.png");
+    public static final Identifier TEX_PROT_BITE       = new Identifier("spacerust", "textures/gui/rust_ui/prot_bite.png");
 
     // Categories
     public static final Identifier TEX_CAT_FAV          = new Identifier("spacerust", "textures/gui/rust_ui/cat_fav.png");
@@ -46,7 +47,6 @@ public final class RustUiHelper {
     public static final Identifier TEX_CAT_WEAPONS      = new Identifier("spacerust", "textures/gui/rust_ui/cat_weapons.png");
     public static final Identifier TEX_CAT_AMMO         = new Identifier("spacerust", "textures/gui/rust_ui/cat_ammo.png");
     public static final Identifier TEX_CAT_ELECTRIC     = new Identifier("spacerust", "textures/gui/rust_ui/cat_electric.png");
-    public static final Identifier TEX_CAT_FUN          = new Identifier("spacerust", "textures/gui/rust_ui/cat_fun.png");
     public static final Identifier TEX_CAT_OTHER        = new Identifier("spacerust", "textures/gui/rust_ui/cat_other.png");
 
     // HUD rust_kit sprites
@@ -56,37 +56,66 @@ public final class RustUiHelper {
     public static final Identifier TEX_HUD_ICON_HEALTH = new Identifier("spacerust", "textures/gui/rust_ui/hud_icon_health.png");
     public static final Identifier TEX_HUD_ICON_WATER  = new Identifier("spacerust", "textures/gui/rust_ui/hud_icon_water.png");
     public static final Identifier TEX_HUD_ICON_FOOD   = new Identifier("spacerust", "textures/gui/rust_ui/hud_icon_food.png");
-    public static final Identifier TEX_HUD_ICON_CRAFT  = new Identifier("spacerust", "textures/gui/rust_ui/hud_icon_craft.png");
     public static final Identifier TEX_SHIELD          = new Identifier("spacerust", "textures/gui/icon_shield.png");
     public static final Identifier TEX_SEARCH          = new Identifier("spacerust", "textures/gui/icon_search.png");
     public static final Identifier TEX_ARMOR           = new Identifier("spacerust", "textures/gui/icon_armor.png");
 
-    // Exact Rust Color Palette (247, 235, 225 warm cream + 43, 41, 36 dark olive charcoal)
-    public static final int COLOR_BACKDROP       = 0x990D0E0D;
-    public static final int COLOR_SURFACE        = 0x10F7EBE1; // rgba(247,235,225,16)
-    public static final int COLOR_HEADER         = 0x16F7EBE1; // rgba(247,235,225,22)
-    public static final int COLOR_SLOT_EMPTY     = 0x12F7EBE1; // rgba(247,235,225,18)
-    public static final int COLOR_SLOT_HOVER     = 0x26F7EBE1; // rgba(247,235,225,38)
-    public static final int COLOR_SLOT_OCCUPIED  = 0xE82B2924; // rgba(43,41,36,232)
-    public static final int COLOR_SELECTED_BLUE  = 0xC81F6BA0; // rgba(31,107,160,200)
-    public static final int COLOR_CAT_ACTIVE     = 0xA0359FE9; // rgba(53,159,233,0.628)
-    public static final int COLOR_TEXT_CREAM     = 0xDCF7EBE1; // rgba(247,235,225,220)
-    public static final int COLOR_TEXT_DIM       = 0x80F7EBE1; // rgba(247,235,225,128)
-    public static final int COLOR_ROW_BG         = 0x8C1D201F; // rgba(29,32,31,0.549)
-    public static final int COLOR_GOLD_TEXT      = 0xFFEEB436; // rgba(238,180,54,1)
-    public static final int COLOR_SEL_PANEL_BG   = 0xE63A3D35; // #3a3d35
-    public static final int COLOR_SEL_DROP_BG    = 0xC29A9788; // rgba(154,151,136,0.76)
-    public static final int COLOR_SEL_HEADER_BG  = 0x8F888474; // rgba(136,132,116,0.56)
-    public static final int COLOR_QUEUE_TIME     = 0xF0AAEE31; // rgba(170,238,49,0.941)
-    public static final int COLOR_QUEUE_CANCEL   = 0xFFE26C16; // rgba(226,108,22,1)
-    public static final int COLOR_CRAFT_BTN      = 0xEB6B8B35; // Rust olive-green craft button
+    private static final Identifier BLUR_SHADER = new Identifier("shaders/post/blur.json");
+
+    // Exact Rust Translucent Warm Palette (Screenshot #1 & #2)
+    public static final int COLOR_BACKDROP       = 0x62121512; // Soft olive-grey tint over blurred world
+    public static final int COLOR_SURFACE        = 0x16F7EBE1;
+    public static final int COLOR_HEADER         = 0x20F7EBE1;
+    public static final int COLOR_SLOT_EMPTY     = 0x1AF7EBE1; // Translucent warm glass square
+    public static final int COLOR_SLOT_HOVER     = 0x32F7EBE1;
+    public static final int COLOR_SLOT_OCCUPIED  = 0x581E1E1A; // Translucent dark charcoal when occupied
+    public static final int COLOR_SELECTED_BLUE  = 0xCC1E6BA0;
+    public static final int COLOR_CAT_ACTIVE     = 0xCC2C8FD4;
+    public static final int COLOR_TEXT_CREAM     = 0xECF7EBE1;
+    public static final int COLOR_TEXT_DIM       = 0x7AF7EBE1;
+    public static final int COLOR_ROW_BG         = 0x721C1E1B;
+    public static final int COLOR_GOLD_TEXT      = 0xFFEEB436;
+    public static final int COLOR_SEL_PANEL_BG   = 0xE63A3D35;
+    public static final int COLOR_SEL_DROP_BG    = 0xC29A9788;
+    public static final int COLOR_SEL_HEADER_BG  = 0x8F888474;
+    public static final int COLOR_QUEUE_TIME     = 0xF0AAEE31;
+    public static final int COLOR_QUEUE_CANCEL   = 0xFFE26C16;
+    public static final int COLOR_CRAFT_BTN      = 0xEB6B8B35;
     public static final int COLOR_CRAFT_BTN_HOV  = 0xFF7CA13F;
 
     private RustUiHelper() {}
 
+    public static void enableWorldBlur(MinecraftClient client) {
+        if (client != null && client.world != null && client.gameRenderer != null) {
+            try {
+                ((GameRendererAccessor) client.gameRenderer).spaceRustLoadShader(BLUR_SHADER);
+            } catch (Throwable ignored) {}
+        }
+    }
+
+    public static void disableWorldBlur(MinecraftClient client) {
+        if (client != null && client.gameRenderer != null && client.gameRenderer.getShader() != null) {
+            try {
+                client.gameRenderer.disableShader();
+            } catch (Throwable ignored) {}
+        }
+    }
+
     public static void playClick(MinecraftClient client) {
-        if (client != null && client.getSoundManager() != null) {
-            client.getSoundManager().play(PositionedSoundInstance.master(SpaceRustClient.UI_CLICK_SOUND, 1.0f));
+        // Silent in-game inventory clicks per user request
+    }
+
+    public static void playMenuClick(MinecraftClient client) {
+        float uiVol = net.spacerust.client.config.RustSettings.get().uiVolume;
+        if (uiVol > 0.005f && client != null && client.getSoundManager() != null) {
+            client.getSoundManager().play(PositionedSoundInstance.master(SpaceRustClient.UI_CLICK_SOUND, 1.0f, 0.55f * uiVol));
+        }
+    }
+
+    public static void playMenuHover(MinecraftClient client) {
+        float uiVol = net.spacerust.client.config.RustSettings.get().uiVolume;
+        if (uiVol > 0.005f && client != null && client.getSoundManager() != null) {
+            client.getSoundManager().play(PositionedSoundInstance.master(SpaceRustClient.UI_HOVER_SOUND, 1.0f, 0.28f * uiVol));
         }
     }
 
@@ -103,7 +132,7 @@ public final class RustUiHelper {
 
     public static void drawSprite(MatrixStack matrices, MinecraftClient client, Identifier tex,
                                   int x, int y, int w, int h, int argb) {
-        if (client == null) return;
+        if (client == null || tex == null) return;
         float a = ((argb >>> 24) & 0xFF) / 255.0f;
         float r = ((argb >>> 16) & 0xFF) / 255.0f;
         float g = ((argb >>> 8) & 0xFF) / 255.0f;
@@ -120,55 +149,61 @@ public final class RustUiHelper {
     }
 
     /**
-     * Rust top-center Switch Button (GameUI.Navigation / Switch Button).
-     * Shows "КРАФТ >" inside Inventory, "< ИНВЕНТАРЬ" inside Crafting.
+     * Exact top-center Rust Switch Button:
+     * Inventory shows "КРАФТ ->" with right exit icon;
+     * Crafting shows "<- ИНВЕНТАРЬ" with left exit icon (Screenshot #1 & #2).
      */
     public static void drawTopSwitchButton(MatrixStack matrices, MinecraftClient client,
                                            int mouseX, int mouseY, int screenW, boolean inCrafting) {
-        int btnW = 128;
+        int btnW = 122;
         int btnH = 22;
         int x = (screenW - btnW) / 2;
-        int y = 4;
+        int y = 2;
         boolean hov = inRect(mouseX, mouseY, x, y, btnW, btnH);
 
-        int bg = hov ? 0x2AF7EBE1 : 0x16F7EBE1;
-        DrawableHelper.fill(matrices, x, y, x + btnW, y + btnH, bg);
+        DrawableHelper.fill(matrices, x, y, x + btnW, y + btnH, hov ? 0x38F7EBE1 : 0x22F7EBE1);
 
         String label = inCrafting ? "ИНВЕНТАРЬ" : "КРАФТ";
         RustFontRenderer bf = RustFontRenderer.bold();
         float tw = bf.getWidth(label);
-        int iconS = 12;
-        float total = iconS + 6 + tw;
-        int sx = Math.round(x + (btnW - total) / 2f);
-        int fg = hov ? 0xFFF7EBE1 : 0xB8F7EBE1;
+        int iconS = 11;
+        int fg = hov ? 0xFFF7EBE1 : 0xCCF7EBE1;
 
-        drawSprite(matrices, client, TEX_SWITCH_CRAFTING, sx, y + (btnH - iconS) / 2, iconS, iconS, fg);
-        bf.drawCenteredY(matrices, label, sx + iconS + 6, y, btnH, fg);
+        if (inCrafting) {
+            int sx = Math.round(x + (btnW - (iconS + 7 + tw)) / 2f);
+            drawSprite(matrices, client, TEX_SWITCH_CRAFTING, sx, y + (btnH - iconS) / 2, iconS, iconS, fg);
+            bf.drawCenteredY(matrices, label, sx + iconS + 7, y, btnH, fg);
+        } else {
+            int sx = Math.round(x + (btnW - (tw + 7 + iconS)) / 2f);
+            bf.drawCenteredY(matrices, label, sx, y, btnH, fg);
+            drawSprite(matrices, client, TEX_SWITCH_CRAFTING, Math.round(sx + tw + 7), y + (btnH - iconS) / 2, iconS, iconS, fg);
+        }
     }
 
     public static boolean hitTestTopSwitchButton(double mouseX, double mouseY, int screenW) {
-        int btnW = 128;
+        int btnW = 122;
         int btnH = 22;
         int x = (screenW - btnW) / 2;
-        int y = 4;
+        int y = 2;
         return inRect(mouseX, mouseY, x, y, btnW, btnH);
     }
 
     /**
-     * Authentic Rust Crafting Queue (CraftingQueue.Icon prefab: green time chip top, cream xN bottom-right).
+     * Rust Crafting Queue: matches Screenshot #1 large semi-transparent "ОЧЕРЕДЬ КРАФТА" text
+     * plus live queue tiles when tasks are running.
      */
     public static void drawCraftingQueue(MatrixStack matrices, MinecraftClient client,
                                          int mouseX, int mouseY, int startX, int bottomY,
                                          ItemRenderer itemRenderer) {
-        int qSize = 32;
+        int qSize = 30;
         int qBoxY = bottomY - qSize;
-        RustFontRenderer.boldSmall().draw(matrices, "ОЧЕРЕДЬ КРАФТА", startX, qBoxY - 12, COLOR_TEXT_DIM);
 
         if (RustCraftingQueue.queue.isEmpty()) {
-            DrawableHelper.fill(matrices, startX, qBoxY, startX + qSize, qBoxY + qSize, 0x0BF7EBE1);
+            RustFontRenderer.boldLarge().drawCenteredY(matrices, "ОЧЕРЕДЬ КРАФТА", startX + 2, qBoxY + 4, 22, 0x36F7EBE1);
             return;
         }
 
+        RustFontRenderer.boldSmall().draw(matrices, "ОЧЕРЕДЬ КРАФТА", startX, qBoxY - 11, 0x66F7EBE1);
         int qx = startX;
         RustFontRenderer sf = RustFontRenderer.small();
 
@@ -177,10 +212,10 @@ public final class RustUiHelper {
             boolean hov = inRect(mouseX, mouseY, qx, qBoxY, qSize, qSize);
 
             DrawableHelper.fill(matrices, qx, qBoxY, qx + qSize, qBoxY + qSize, COLOR_SLOT_OCCUPIED);
-            itemRenderer.renderInGuiWithOverrides(task.resultItem, qx + 8, qBoxY + 8);
+            RustItemIcons.drawRecipeIcon(matrices, client, itemRenderer, task.recipeId, task.resultItem,
+                    qx + 4, qBoxY + 4, qSize - 8);
 
             if (i == 0) {
-                // Green time pill at top center (rgba(170,238,49,0.941))
                 String timeStr = String.format(Locale.US, "%.0f", Math.ceil(task.remainingSeconds));
                 int pillW = Math.max(18, Math.round(sf.getWidth(timeStr)) + 12);
                 int pillX = qx + (qSize - pillW) / 2;
@@ -206,7 +241,7 @@ public final class RustUiHelper {
     }
 
     public static int hitTestCraftingQueue(double mouseX, double mouseY, int startX, int bottomY) {
-        int qSize = 32;
+        int qSize = 30;
         int qBoxY = bottomY - qSize;
         int qx = startX;
         for (int i = 0; i < RustCraftingQueue.queue.size() && i < 6; i++) {
@@ -218,30 +253,36 @@ public final class RustUiHelper {
         return -1;
     }
 
-    public static int getHotbarStartX(int screenW) {
-        int slotSize = 28;
-        int gap = 2;
-        int totalW = 9 * slotSize + 8 * gap;
+    public static final int HOTBAR_SLOTS = 6;
+    public static final int HOTBAR_GAP = 3;
+
+    public static int getHotbarSlotSize(int screenH) {
+        return Math.max(28, Math.min(38, (int) (screenH * 0.088f)));
+    }
+
+    public static int getHotbarStartX(int screenW, int screenH) {
+        int slotSize = getHotbarSlotSize(screenH);
+        int totalW = HOTBAR_SLOTS * slotSize + (HOTBAR_SLOTS - 1) * HOTBAR_GAP;
         return (screenW - totalW) / 2;
     }
 
-    /**
-     * Rust bottom-center Belt / Hotbar (interactive inside menus).
-     * Returns hovered PlayerScreenHandler slot (36..44) or -1.
-     */
     public static int drawHotbar(MatrixStack matrices, MinecraftClient client,
                                  int mouseX, int mouseY, int screenW, int screenH,
                                  ItemRenderer itemRenderer, boolean interactive) {
+        return drawHotbarAt(matrices, client, mouseX, mouseY,
+                getHotbarStartX(screenW, screenH), screenH, getHotbarSlotSize(screenH), HOTBAR_GAP,
+                itemRenderer, interactive);
+    }
+
+    public static int drawHotbarAt(MatrixStack matrices, MinecraftClient client,
+                                   int mouseX, int mouseY, int startX, int screenH,
+                                   int slotSize, int gap, ItemRenderer itemRenderer, boolean interactive) {
         if (client == null || client.player == null) return -1;
         PlayerInventory inv = client.player.inventory;
-        int slotSize = 28;
-        int gap = 2;
-        int startX = getHotbarStartX(screenW);
-        int y = screenH - slotSize - 6;
+        int y = screenH - slotSize - 8;
         int hoveredHandlerSlot = -1;
-        RustFontRenderer sf = RustFontRenderer.small();
 
-        for (int i = 0; i < 9; i++) {
+        for (int i = 0; i < HOTBAR_SLOTS; i++) {
             int sx = startX + i * (slotSize + gap);
             boolean isSelected = (inv.selectedSlot == i);
             boolean isHov = interactive && inRect(mouseX, mouseY, sx, y, slotSize, slotSize);
@@ -253,19 +294,24 @@ public final class RustUiHelper {
                     : (stack.isEmpty() ? COLOR_SLOT_EMPTY : COLOR_SLOT_OCCUPIED));
             DrawableHelper.fill(matrices, sx, y, sx + slotSize, y + slotSize, bg);
 
-            sf.draw(matrices, String.valueOf(i + 1), sx + 2, y + 1.5f, isSelected ? 0xFFF7EBE1 : 0x55F7EBE1);
-
             if (!stack.isEmpty()) {
-                int itemOff = (slotSize - 16) / 2;
-                itemRenderer.renderInGuiWithOverrides(stack, sx + itemOff, y + itemOff);
-                itemRenderer.renderGuiItemOverlay(client.textRenderer, stack, sx + itemOff, y + itemOff);
+                RustItemIcons.drawSlotItem(matrices, client, itemRenderer, stack, sx, y, slotSize);
+                // Show remaining magazine ammo ONLY on active belt weapon slots
+                GunManager.GunInfo gun = GunManager.getGunForStack(stack);
+                if (gun != null) {
+                    int ammo = isSelected ? Math.min(gun.maxAmmo, Math.max(0, GunManager.currentAmmo)) : gun.maxAmmo;
+                    String aStr = String.valueOf(ammo);
+                    RustFontRenderer sf = slotSize >= 32 ? RustFontRenderer.boldSmall() : RustFontRenderer.small();
+                    float aw = sf.getWidth(aStr);
+                    sf.drawShadow(matrices, aStr, sx + slotSize - aw - 3, y + slotSize - 10, 0xFFF7EBE1);
+                }
             }
         }
         return hoveredHandlerSlot;
     }
 
     /**
-     * CoilRust / Rust bottom-right metabolism bars using real rust_kit PNG sprites.
+     * CoilRust / Rust bottom-right metabolism bars matching Screenshot #1 & #2.
      */
     public static void drawMetabolismBars(MatrixStack matrices, MinecraftClient client, int screenW, int screenH) {
         if (client == null || client.player == null) return;
@@ -290,7 +336,6 @@ public final class RustUiHelper {
     private static void drawMetabolismRow(MatrixStack matrices, MinecraftClient client, int x, int y,
                                           int w, int h, Identifier icon, Identifier fillTex, int fallbackFill,
                                           int value, int max) {
-        // Real CoilRust hud bar background sprite (05fab.png)
         drawSprite(matrices, client, TEX_HUD_BAR_BG, x, y, w, h, 0xF0FFFFFF);
 
         float ratio = Math.max(0.0f, Math.min(1.0f, value / (float) max));
