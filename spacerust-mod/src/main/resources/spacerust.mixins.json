@@ -21,6 +21,7 @@
     "MultiplayerScreenMixin",
     "MusicTrackerMixin",
     "OptionsScreenMixin",
+    "PlayerInventoryMixin",
     "PlayerListEntryMixin",
     "TitleScreenMixin",
     "WindowMixin",

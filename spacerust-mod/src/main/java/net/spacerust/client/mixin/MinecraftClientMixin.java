@@ -17,9 +17,12 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.spacerust.client.SpaceRustItems;
+import net.spacerust.client.deployables.RustDeployableManager;
+import net.spacerust.client.deployables.RustDeployableType;
 import net.spacerust.client.gui.RustBuildWheelScreen;
 import net.spacerust.client.gui.RustLootScreen;
 import net.spacerust.client.guns.GunManager;
+import net.spacerust.client.guns.RustShootingManager;
 import net.spacerust.client.guns.RustViewModelAnimator;
 import net.spacerust.client.world.RustBuildingSystem;
 import net.spacerust.client.world.RustWorldCollider;
@@ -30,7 +33,7 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(MinecraftClient.class)
-public class MinecraftClientMixin {
+public abstract class MinecraftClientMixin {
 
     @ModifyVariable(method = "openScreen", at = @At("HEAD"), argsOnly = true)
     private Screen replaceGenericContainerWithRustLoot(Screen screen) {
@@ -61,6 +64,11 @@ public class MinecraftClientMixin {
                 ci.cancel();
                 return;
             }
+        }
+        if (RustShootingManager.getHeldWeapon(mc) != null) {
+            RustShootingManager.onAttackPressed(mc);
+            ci.cancel();
+            return;
         }
         if (RustBuildingSystem.isHoldingPlan(mc)) {
             RustBuildingSystem.placeCurrentBlueprint(mc);
@@ -162,6 +170,24 @@ public class MinecraftClientMixin {
         }
         if (RustViewModelAnimator.tryUseMedical(mc, stack)) {
             ci.cancel();
+            return;
+        }
+        if (RustDeployableManager.heldDeployableType == RustDeployableType.KEY_LOCK
+                || RustDeployableManager.heldDeployableType == RustDeployableType.CODE_LOCK) {
+            if (RustDeployableManager.tryPlaceHeld(mc)) {
+                ci.cancel();
+                return;
+            }
+        }
+        if (RustDeployableManager.hoveredDeployable != null) {
+            RustDeployableManager.interact(mc);
+            ci.cancel();
+            return;
+        }
+        if (RustDeployableManager.heldDeployableType != null) {
+            if (RustDeployableManager.tryPlaceHeld(mc) || RustDeployableManager.previewPos != null) {
+                ci.cancel();
+            }
         }
     }
 }

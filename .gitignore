@@ -33,3 +33,4 @@ spacerust-mod/build/
 .idea/
 .vscode/
 *.iml
+*.hprof

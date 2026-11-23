@@ -85,6 +85,9 @@ public class RustHudOverlay implements HudRenderCallback {
         if (isBleeding) {
             DrawableHelper.fill(matrices, statusX + 54, statusY, statusX + 104, statusY + 11, 0xE6C73E2B);
             sf.drawCenteredY(matrices, "КРОВОТОК", statusX + 57, statusY, 11, 0xFFFFFFFF);
+        } else if (comfort > 0 && radiation == 0 && !cold) {
+            DrawableHelper.fill(matrices, statusX + 54, statusY, statusX + 104, statusY + 11, 0xCC3E822A);
+            sf.drawCenteredY(matrices, "УЮТ " + comfort + "%", statusX + 57, statusY, 11, 0xFFFFFFFF);
         }
 
         // Crafting queue progress bar right above bottom-right metabolism bars (like Rust)

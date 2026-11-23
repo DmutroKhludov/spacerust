@@ -4,6 +4,7 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.sound.SoundEvent;
@@ -11,9 +12,12 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
 import net.spacerust.client.audio.MenuMusicPlayer;
 import net.spacerust.client.config.RustSettings;
+import net.spacerust.client.deployables.RustDeployableManager;
 import net.spacerust.client.gui.RustCraftingQueue;
 import net.spacerust.client.gui.RustMapScreen;
 import net.spacerust.client.guns.GunManager;
+import net.spacerust.client.guns.RustRecoilManager;
+import net.spacerust.client.guns.RustShootingManager;
 import net.spacerust.client.guns.RustViewModelAnimator;
 import net.spacerust.client.hud.GunHudOverlay;
 import net.spacerust.client.hud.RustCrosshairOverlay;
@@ -128,6 +132,12 @@ public class SpaceRustClient implements ClientModInitializer {
         RustTreeRenderer.register();
         RustCrateRenderer.register();
         RustVoiceEngine.get().register();
+        RustDeployableManager.init();
+        RustRecoilManager.init();
+
+        WorldRenderEvents.AFTER_ENTITIES.register(context -> {
+            RustDeployableManager.renderAll(context.matrixStack(), context.consumers(), context.camera(), context.tickDelta());
+        });
 
         // 3. Register Keybind & Menu Music Tick Check
         final int[] prevHotbarSlot = {0};
@@ -164,6 +174,15 @@ public class SpaceRustClient implements ClientModInitializer {
                 prevHotbarSlot[0] = client.player.inventory.selectedSlot;
             }
 
+            // Tick deployables manager (doors, locks, TC, boxes, decay, interaction)
+            RustDeployableManager.tick(client);
+
+            // Tick shooting manager (continuous auto-fire, recoil recovery, ADS)
+            RustShootingManager.tick(client);
+            if (!client.options.keyAttack.isPressed()) {
+                RustShootingManager.onAttackReleased();
+            }
+
             // Map on G
             while (keyMap.wasPressed()) {
                 if (client.player != null) {
@@ -183,6 +202,8 @@ public class SpaceRustClient implements ClientModInitializer {
                     } else if (GunManager.getHeldGun(client) != null) {
                         rHoldStartMs[0] = System.currentTimeMillis();
                         rOpenedWheel[0] = false;
+                    } else if (RustShootingManager.getHeldWeapon(client) != null) {
+                        RustShootingManager.reload(client);
                     }
                 }
             }

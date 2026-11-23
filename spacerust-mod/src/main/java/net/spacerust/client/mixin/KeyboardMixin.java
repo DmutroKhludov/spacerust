@@ -19,6 +19,14 @@ public class KeyboardMixin {
             if (client != null && client.player != null && client.currentScreen == null) {
                 client.openScreen(new RustCraftingScreen());
                 ci.cancel(); // Consume Q so vanilla dropItem is not triggered!
+                return;
+            }
+        }
+        // Block keys 7, 8, 9 from switching to inactive hotbar slots
+        if ((key == GLFW.GLFW_KEY_7 || key == GLFW.GLFW_KEY_8 || key == GLFW.GLFW_KEY_9) && action == GLFW.GLFW_PRESS) {
+            MinecraftClient client = MinecraftClient.getInstance();
+            if (client != null && client.currentScreen == null) {
+                ci.cancel();
             }
         }
     }

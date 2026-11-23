@@ -79,6 +79,81 @@ public class RustCraftingScreen extends Screen {
             this.craftSeconds = seconds;
             this.ingredients = ingredients;
         }
+
+        public String get3DModelName() {
+            switch (this.id) {
+                case "campfire": return "deploy_campfire";
+                case "torch": return "held_torch";
+                case "small_box": return "deploy_small_box";
+                case "bed": return "deploy_sleeping_bag";
+                case "build_plan":
+                case "building_plan": return "held_plan";
+                case "wood_hammer": return "held_hammer";
+                case "wood_door": return "door_wood_0";
+                case "sheet_door": return "door_metal_0";
+                case "armored_door": return "door_armored_0";
+                case "garage_door": return "garage_door_0";
+                case "tool_cupboard": return "deploy_tool_cupboard";
+                case "code_lock": return "lock_code_locked";
+                case "key_lock": return "lock_key_locked";
+                case "large_box": return "deploy_large_box";
+                case "furnace": return "deploy_furnace";
+                case "workbench_1": return "deploy_workbench1";
+                case "workbench_2": return "deploy_workbench2";
+                case "stone_hatchet": return "held_stone_hatchet";
+                case "stone_pickaxe": return "held_stone_pickaxe";
+                case "metal_hatchet": return "held_hatchet";
+                case "metal_pickaxe": return "held_pickaxe";
+                case "bandage": return "held_bandage";
+                case "syringe": return "held_syringe";
+                case "bow": return "held_hunting_bow";
+                case "crossbow": return "held_crossbow";
+                case "revolver": return "held_revolver";
+                case "pipe_shotgun": return "held_doublebarrel";
+                case "ak47": return "held_ak";
+                case "thompson": return "held_thompson";
+                case "sar": return "held_sar";
+                case "mp5": return "held_mp5";
+                case "bolt": return "held_bolt";
+                case "pump_shotgun": return "held_pump_shotgun";
+                case "c4": return "held_c4";
+                default: return null;
+            }
+        }
+
+        public float get3DModelScale() {
+            switch (this.id) {
+                case "campfire": return 55.0f;
+                case "furnace": return 30.0f;
+                case "small_box": return 50.0f;
+                case "large_box": return 35.0f;
+                case "tool_cupboard": return 26.0f;
+                case "wood_door":
+                case "sheet_door":
+                case "armored_door": return 26.0f;
+                case "garage_door": return 22.0f;
+                case "code_lock":
+                case "key_lock": return 110.0f;
+                case "build_plan":
+                case "building_plan": return 70.0f;
+                case "wood_hammer": return 110.0f;
+                case "revolver": return 130.0f;
+                case "ak47":
+                case "thompson":
+                case "sar":
+                case "mp5":
+                case "bolt":
+                case "pump_shotgun":
+                case "pipe_shotgun": return 95.0f;
+                case "stone_hatchet":
+                case "stone_pickaxe":
+                case "metal_hatchet":
+                case "metal_pickaxe": return 85.0f;
+                case "bandage":
+                case "syringe": return 110.0f;
+                default: return 50.0f;
+            }
+        }
     }
 
     public static final List<Recipe> ALL_RECIPES = new ArrayList<>();
@@ -110,6 +185,15 @@ public class RustCraftingScreen extends Screen {
         ALL_RECIPES.add(new Recipe("sheet_door", "Металлическая дверь", Category.CONSTRUCTION, Items.IRON_DOOR,
                 "Прочная дверь из фрагментов металла, защищает от начальных рейдов.", 30.0f,
                 Arrays.asList(new Ingredient("Фрагменты металла", 150, Items.IRON_INGOT))));
+        ALL_RECIPES.add(new Recipe("armored_door", "Бронированная дверь", Category.CONSTRUCTION, Items.NETHERITE_BLOCK,
+                "Тяжелая бронированная дверь из МВК. Выдерживает несколько ракет и C4.", 45.0f,
+                Arrays.asList(new Ingredient("МВК", 25, Items.NETHERITE_INGOT), new Ingredient("Шестеренки", 5, Items.TRIPWIRE_HOOK))));
+        ALL_RECIPES.add(new Recipe("garage_door", "Гаражная дверь", Category.CONSTRUCTION, Items.IRON_TRAPDOOR,
+                "Роллетные ворота для широких проемов (Frame). Открываются вверх.", 30.0f,
+                Arrays.asList(new Ingredient("Фрагменты металла", 300, Items.IRON_INGOT), new Ingredient("Шестеренки", 2, Items.TRIPWIRE_HOOK))));
+        ALL_RECIPES.add(new Recipe("tool_cupboard", "Шкаф с инструментами", Category.CONSTRUCTION, Items.BOOKSHELF,
+                "Главный объект базы. Защищает постройки от гниения и дает право на строительство.", 30.0f,
+                Arrays.asList(new Ingredient("Дерево", 1000, Items.OAK_PLANKS))));
         ALL_RECIPES.add(new Recipe("code_lock", "Кодовый замок", Category.CONSTRUCTION, Items.LEVER,
                 "Электронный замок с 4-значным PIN-кодом для защиты дверей и ящиков.", 15.0f,
                 Arrays.asList(new Ingredient("Фрагменты металла", 100, Items.IRON_INGOT))));
@@ -299,9 +383,21 @@ public class RustCraftingScreen extends Screen {
         ALL_RECIPES.add(new Recipe("m39", "Винтовка M39", Category.WEAPONS, Items.WOODEN_SWORD,
                 "Военная марксманская винтовка 5.56 мм на 20 патронов.", 35.0f,
                 Arrays.asList(new Ingredient("МВК", 50, Items.NETHERITE_INGOT), new Ingredient("Пружины", 2, Items.TRIPWIRE_HOOK))));
-        ALL_RECIPES.add(new Recipe("bolt", "Винтовка Bolt", Category.WEAPONS, Items.GOLDEN_SWORD,
-                "Дальнобойная снайперская винтовка с мощным приближением.", 35.0f,
-                Arrays.asList(new Ingredient("МВК", 30, Items.NETHERITE_INGOT), new Ingredient("Трубы", 3, Items.FLINT))));
+        ALL_RECIPES.add(new Recipe("thompson", "Томпсон", Category.WEAPONS, Items.DIAMOND_SWORD,
+                "Пистолет-пулемет на 20 патронов 9 мм с отличной скорострельностью.", 25.0f,
+                Arrays.asList(new Ingredient("Фрагменты металла", 250, Items.IRON_INGOT), new Ingredient("Корпус SMG", 1, Items.IRON_BLOCK), new Ingredient("Пружина", 1, Items.TRIPWIRE_HOOK))));
+        ALL_RECIPES.add(new Recipe("sar", "Винтовка SAR", Category.WEAPONS, Items.STONE_HOE,
+                "Полуавтоматическая винтовка на 16 патронов 5.56 мм. Идеальна для средних дистанций.", 30.0f,
+                Arrays.asList(new Ingredient("Фрагменты металла", 450, Items.IRON_INGOT), new Ingredient("Корпус", 1, Items.COBBLESTONE), new Ingredient("Труба", 1, Items.LEVER))));
+        ALL_RECIPES.add(new Recipe("mp5", "Пистолет-пулемет MP5A4", Category.WEAPONS, Items.IRON_SHOVEL,
+                "Военный пистолет-пулемет на 30 патронов с высокой точностью.", 30.0f,
+                Arrays.asList(new Ingredient("МВК", 15, Items.NETHERITE_INGOT), new Ingredient("Корпус SMG", 1, Items.IRON_BLOCK), new Ingredient("Пружины", 2, Items.TRIPWIRE_HOOK))));
+        ALL_RECIPES.add(new Recipe("bolt", "Винтовка Bolt Action", Category.WEAPONS, Items.DIAMOND_HOE,
+                "Мощная снайперская винтовка с колоссальным уроном в голову.", 40.0f,
+                Arrays.asList(new Ingredient("МВК", 30, Items.NETHERITE_INGOT), new Ingredient("Корпус винтовки", 1, Items.OBSIDIAN), new Ingredient("Трубы", 3, Items.LEVER))));
+        ALL_RECIPES.add(new Recipe("pump_shotgun", "Помповый дробовик", Category.WEAPONS, Items.DIAMOND_SHOVEL,
+                "Классический дробовик на 6 патронов с сокрушительной убойной силой в упор.", 20.0f,
+                Arrays.asList(new Ingredient("Фрагменты металла", 150, Items.IRON_INGOT), new Ingredient("Трубы", 2, Items.LEVER))));
         ALL_RECIPES.add(new Recipe("l96", "Снайперка L96", Category.WEAPONS, Items.STONE_SWORD,
                 "Военная снайперская винтовка с экстремальной дальностью и уроном.", 40.0f,
                 Arrays.asList(new Ingredient("МВК", 80, Items.NETHERITE_INGOT), new Ingredient("Скрап", 500, Items.EMERALD))));
@@ -622,13 +718,24 @@ public class RustCraftingScreen extends Screen {
             DrawableHelper.fill(matrices, chipX, hdrY + 16, chipX + chipW, hdrY + 30, 0x481D201F);
             bfSmall.drawCenteredY(matrices, String.valueOf(craftQuantity), chipX + 22, hdrY + 16, 14, RustUiHelper.COLOR_TEXT_CREAM);
 
-            // Description Box
-            int descTop = hdrY + 46;
-            int descH = Math.max(36, L.panelH - 156);
-            DrawableHelper.fill(matrices, L.rightX + 8, descTop, L.rightX + L.rightW - 8, descTop + descH, 0x10F7EBE1);
-            int lineY = descTop + 6;
+            // Description & 3D Rotating Model Box
+            int hdrRowY = L.actionY - 76;
+            int descTop = hdrY + 38;
+            int descH = Math.max(50, hdrRowY - descTop - 6);
+            DrawableHelper.fill(matrices, L.rightX + 8, descTop, L.rightX + L.rightW - 8, descTop + descH, 0x0BF7EBE1);
+
+            // 3D Rotating Model of the item (1:1 with Rust)
+            String m3d = selectedRecipe.get3DModelName();
+            if (m3d != null) {
+                int previewCenterX = L.rightX + L.rightW / 2;
+                int previewCenterY = descTop + (descH / 2) - 10;
+                float rotY = (System.currentTimeMillis() % 6000L) / 6000.0f * 360.0f;
+                RustUiHelper.render3DModelInGui(previewCenterX, previewCenterY, selectedRecipe.get3DModelScale(), rotY, m3d);
+            }
+
+            // Item Description text beneath 3D preview
+            int lineY = descTop + descH - 16;
             for (String line : wrapText(selectedRecipe.description, L.rightW - 28, rf)) {
-                if (lineY + 10 > descTop + descH - 4) break;
                 rf.draw(matrices, line, L.rightX + 14, lineY, RustUiHelper.COLOR_TEXT_CREAM);
                 lineY += 11;
             }
@@ -641,7 +748,6 @@ public class RustCraftingScreen extends Screen {
             int colHaveW = 48;
             int colNameW = tableW - colAmtW - colNeedW - colHaveW - 3;
 
-            int hdrRowY = L.actionY - 76;
             drawTableRow(matrices, tx, hdrRowY, 13, colAmtW, colNameW, colNeedW, colHaveW,
                     "СУММА", "ТИП ПРЕДМЕТА", "ВСЕГО", "ИМЕЕТСЯ",
                     0x991D201F, 0x99F7EBE1, 0x99F7EBE1, 0x99F7EBE1);

@@ -254,10 +254,16 @@ public final class RustUiHelper {
     }
 
     public static final int HOTBAR_SLOTS = 6;
+    public static final int HOTBAR_SLOT_SIZE = 48;
     public static final int HOTBAR_GAP = 3;
 
     public static int getHotbarSlotSize(int screenH) {
         return Math.max(28, Math.min(38, (int) (screenH * 0.088f)));
+    }
+
+    public static int getHotbarStartX(int screenW) {
+        int totalW = HOTBAR_SLOTS * HOTBAR_SLOT_SIZE + (HOTBAR_SLOTS - 1) * HOTBAR_GAP;
+        return (screenW - totalW) / 2;
     }
 
     public static int getHotbarStartX(int screenW, int screenH) {
@@ -266,6 +272,24 @@ public final class RustUiHelper {
         return (screenW - totalW) / 2;
     }
 
+    /**
+     * Map a 6x5 grid (30 slots) to PlayerScreenHandler slots:
+     * Indices 0..26 map to slots 9..35 (main inventory)
+     * Indices 27..29 map to slots 42..44 (hotbar slots 6..8)
+     */
+    public static int getStorageHandlerSlot(int row, int col) {
+        int idx = row * 6 + col;
+        if (idx < 27) {
+            return 9 + idx;
+        } else {
+            return 42 + (idx - 27);
+        }
+    }
+
+    /**
+     * Rust bottom-center Belt / Hotbar (interactive inside menus or rendered in-game).
+     * Returns hovered PlayerScreenHandler slot (36..41) or -1.
+     */
     public static int drawHotbar(MatrixStack matrices, MinecraftClient client,
                                  int mouseX, int mouseY, int screenW, int screenH,
                                  ItemRenderer itemRenderer, boolean interactive) {
@@ -279,8 +303,12 @@ public final class RustUiHelper {
                                    int slotSize, int gap, ItemRenderer itemRenderer, boolean interactive) {
         if (client == null || client.player == null) return -1;
         PlayerInventory inv = client.player.inventory;
+        if (inv.selectedSlot >= HOTBAR_SLOTS) {
+            inv.selectedSlot = HOTBAR_SLOTS - 1;
+        }
         int y = screenH - slotSize - 8;
         int hoveredHandlerSlot = -1;
+        RustFontRenderer bsf = slotSize >= 32 ? RustFontRenderer.boldSmall() : RustFontRenderer.small();
 
         for (int i = 0; i < HOTBAR_SLOTS; i++) {
             int sx = startX + i * (slotSize + gap);
@@ -289,21 +317,45 @@ public final class RustUiHelper {
             if (isHov) hoveredHandlerSlot = 36 + i;
 
             ItemStack stack = inv.getStack(i);
-            int bg = isSelected ? COLOR_SELECTED_BLUE
-                    : (isHov ? COLOR_SLOT_HOVER
-                    : (stack.isEmpty() ? COLOR_SLOT_EMPTY : COLOR_SLOT_OCCUPIED));
+
+            // Dark translucent charcoal/slate background matching Rust 1:1
+            int bg = isSelected ? 0xD8353230 : (isHov ? 0xD0383634 : 0xBB232120);
             DrawableHelper.fill(matrices, sx, y, sx + slotSize, y + slotSize, bg);
+
+            // Clean 1px border (bright cream on active slot, no green stripe)
+            if (isSelected) {
+                drawBorder(matrices, sx, y, slotSize, slotSize, 0xFFF7EBE1);
+            } else {
+                drawBorder(matrices, sx, y, slotSize, slotSize, isHov ? 0x66F7EBE1 : 0x24F7EBE1);
+            }
 
             if (!stack.isEmpty()) {
                 RustItemIcons.drawSlotItem(matrices, client, itemRenderer, stack, sx, y, slotSize);
+
+                // Vertical durability bar on the LEFT edge of slot
+                if (stack.isDamageable()) {
+                    int maxDmg = stack.getMaxDamage();
+                    int dmg = stack.getDamage();
+                    float ratio = Math.max(0.0f, Math.min(1.0f, (maxDmg - dmg) / (float) maxDmg));
+                    int barX = sx + 2;
+                    int barY = y + 2;
+                    int barW = 2;
+                    int barH = slotSize - 4;
+                    DrawableHelper.fill(matrices, barX, barY, barX + barW, barY + barH, 0xBB7A1C1C);
+                    int filledH = Math.round(barH * ratio);
+                    if (filledH > 0) {
+                        int durColor = (ratio > 0.5f) ? 0xFF8DC63F : ((ratio > 0.2f) ? 0xFFE5A823 : 0xFFD3362D);
+                        DrawableHelper.fill(matrices, barX, barY + (barH - filledH), barX + barW, barY + barH, durColor);
+                    }
+                }
+
                 // Show remaining magazine ammo ONLY on active belt weapon slots
                 GunManager.GunInfo gun = GunManager.getGunForStack(stack);
                 if (gun != null) {
                     int ammo = isSelected ? Math.min(gun.maxAmmo, Math.max(0, GunManager.currentAmmo)) : gun.maxAmmo;
                     String aStr = String.valueOf(ammo);
-                    RustFontRenderer sf = slotSize >= 32 ? RustFontRenderer.boldSmall() : RustFontRenderer.small();
-                    float aw = sf.getWidth(aStr);
-                    sf.drawShadow(matrices, aStr, sx + slotSize - aw - 3, y + slotSize - 10, 0xFFF7EBE1);
+                    float aw = bsf.getWidth(aStr);
+                    bsf.drawShadow(matrices, aStr, sx + slotSize - aw - 3, y + slotSize - 10, 0xFFF7EBE1);
                 }
             }
         }
@@ -311,7 +363,7 @@ public final class RustUiHelper {
     }
 
     /**
-     * CoilRust / Rust bottom-right metabolism bars matching Screenshot #1 & #2.
+     * CoilRust / Rust enlarged bottom-right metabolism bars using real rust_kit PNG sprites.
      */
     public static void drawMetabolismBars(MatrixStack matrices, MinecraftClient client, int screenW, int screenH) {
         if (client == null || client.player == null) return;
@@ -319,11 +371,11 @@ public final class RustUiHelper {
         int food = client.player.getHungerManager().getFoodLevel() * 25;
         int water = 230;
 
-        int barW = 104;
-        int barH = 14;
-        int gap = 2;
-        int x = screenW - barW - 10;
-        int startY = screenH - (barH * 3 + gap * 2) - 8;
+        int barW = 188;
+        int barH = 24;
+        int gap = 5;
+        int x = screenW - barW - 14;
+        int startY = screenH - (barH * 3 + gap * 2) - 12;
 
         drawMetabolismRow(matrices, client, x, startY, barW, barH,
                 TEX_HUD_ICON_HEALTH, TEX_HUD_HEALTH_FILL, 0xFF7CB846, hp, 100);
@@ -336,12 +388,12 @@ public final class RustUiHelper {
     private static void drawMetabolismRow(MatrixStack matrices, MinecraftClient client, int x, int y,
                                           int w, int h, Identifier icon, Identifier fillTex, int fallbackFill,
                                           int value, int max) {
-        drawSprite(matrices, client, TEX_HUD_BAR_BG, x, y, w, h, 0xF0FFFFFF);
+        drawSprite(matrices, client, TEX_HUD_BAR_BG, x, y, w, h, 0xF5FFFFFF);
 
         float ratio = Math.max(0.0f, Math.min(1.0f, value / (float) max));
-        int fillAreaX = x + 15;
+        int fillAreaX = x + 24;
         int fillAreaY = y + 2;
-        int fillMaxW = w - 18;
+        int fillMaxW = w - 28;
         int fillH = h - 4;
         int fw = Math.round(fillMaxW * ratio);
         if (fw > 0) {
@@ -352,7 +404,75 @@ public final class RustUiHelper {
             }
         }
 
-        drawSprite(matrices, client, icon, x + 3, y + 3, 8, 8, 0xCCE8E2D8);
-        RustFontRenderer.boldSmall().drawCenteredY(matrices, String.valueOf(value), x + 19, y, h, 0xFFF7EBE1);
+        drawSprite(matrices, client, icon, x + 5, y + (h - 14) / 2, 14, 14, 0xCCE8E2D8);
+        String displayVal = (icon == TEX_HUD_ICON_HEALTH && value >= 0) ? ("+ " + value) : String.valueOf(value);
+        RustFontRenderer.bold().drawCenteredY(matrices, displayVal, x + 28, y, h, 0xFFF7EBE1);
+    }
+
+    public static void drawStatusChips(MatrixStack matrices, int screenW, int screenH,
+                                       int radiation, boolean isBleeding, int comfort) {
+        int barW = 188;
+        int barH = 24;
+        int gap = 5;
+        int startY = screenH - (barH * 3 + gap * 2) - 12;
+        int statusY = startY - 26;
+        int statusX = screenW - barW - 14;
+        RustFontRenderer sf = RustFontRenderer.bold();
+
+        int chipW = 86;
+        int chipH = 18;
+        int cx = statusX;
+
+        if (radiation > 0) {
+            DrawableHelper.fill(matrices, cx, statusY, cx + chipW, statusY + chipH, 0xE6C73E2B);
+            drawBorder(matrices, cx, statusY, chipW, chipH, 0x44FFFFFF);
+            sf.drawCenteredY(matrices, "РАД " + radiation, cx + 6, statusY, chipH, 0xFFFFFFFF);
+            cx += chipW + 5;
+        }
+        if (isBleeding) {
+            DrawableHelper.fill(matrices, cx, statusY, cx + chipW, statusY + chipH, 0xE6C73E2B);
+            drawBorder(matrices, cx, statusY, chipW, chipH, 0x44FFFFFF);
+            sf.drawCenteredY(matrices, "КРОВОТОК", cx + 6, statusY, chipH, 0xFFFFFFFF);
+            cx += chipW + 5;
+        }
+        if (comfort > 0 && radiation == 0 && !isBleeding) {
+            DrawableHelper.fill(matrices, cx, statusY, cx + chipW, statusY + chipH, 0xCC3E822A);
+            drawBorder(matrices, cx, statusY, chipW, chipH, 0x44FFFFFF);
+            sf.drawCenteredY(matrices, "УЮТ " + comfort + "%", cx + 6, statusY, chipH, 0xFFFFFFFF);
+        }
+    }
+
+    /**
+     * Renders an authentic rotating 3D Rust Binary Model (.rbm) inside GUI panels (e.g. Crafting Preview).
+     */
+    public static void render3DModelInGui(int centerX, int centerY, float size, float rotY, String modelName) {
+        if (modelName == null) return;
+        net.spacerust.client.building.RbmModel model = net.spacerust.client.building.RbmModel.get(modelName);
+        if (model == null) return;
+
+        MinecraftClient client = MinecraftClient.getInstance();
+        net.minecraft.client.render.VertexConsumerProvider.Immediate immediate = client.getBufferBuilders().getEntityVertexConsumers();
+
+        RenderSystem.pushMatrix();
+        RenderSystem.translatef((float) centerX, (float) centerY, 1050.0F);
+        RenderSystem.scalef(1.0F, 1.0F, -1.0F);
+
+        MatrixStack ms = new MatrixStack();
+        ms.translate(0.0D, 0.0D, 1000.0D);
+        ms.scale(size, size, size);
+
+        // Tilt forward into isometric view and rotate around Y
+        ms.multiply(net.minecraft.util.math.Vec3f.POSITIVE_X.getDegreesQuaternion(20.0F));
+        ms.multiply(net.minecraft.util.math.Vec3f.POSITIVE_Y.getDegreesQuaternion(rotY));
+
+        RenderSystem.enableDepthTest();
+        net.minecraft.client.render.DiffuseLighting.enableGuiDepthLighting();
+
+        model.render(ms, immediate, 0x00F000F0, net.minecraft.client.render.OverlayTexture.DEFAULT_UV, 1.0f, 1.0f, 1.0f, 1.0f);
+        immediate.draw();
+
+        RenderSystem.enableDepthTest();
+        net.minecraft.client.render.DiffuseLighting.disableGuiDepthLighting();
+        RenderSystem.popMatrix();
     }
 }

@@ -107,6 +107,17 @@ def main():
     except Exception as e:
         log(f"Could not copy to Desktop: {e}")
 
+    # Ensure SpaceRust Desktop Shortcut
+    try:
+        ico = os.path.join(root_dir, "spacerust_icon.ico")
+        sc_path = os.path.join(desktop_dir, "SpaceRust.lnk")
+        ps_cmd = f'$ws=New-Object -ComObject WScript.Shell;$s=$ws.CreateShortcut("{sc_path}");$s.TargetPath="C:\\Python312\\pythonw.exe";$s.Arguments="run_launcher.py";$s.WorkingDirectory="{root_dir}";$s.IconLocation="{ico}, 0";$s.Description="SpaceRust 1.16.5";$s.Save()'
+        import subprocess
+        subprocess.run(["powershell", "-NoProfile", "-Command", ps_cmd], check=False)
+        log(f"Created/Updated Desktop Shortcut: {sc_path}")
+    except Exception as e:
+        log(f"Shortcut warning: {e}")
+
     log("==================================================")
     log("  PACKAGING FINISHED SUCCESSFULLY!")
     log(f"  Send 'SpaceRust_Client.zip' to your friend!")
