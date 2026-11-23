@@ -270,19 +270,18 @@ public final class RustUiHelper {
 
             ItemStack stack = inv.getStack(i);
 
-            // Dark translucent charcoal/olive background
-            int bg = isSelected ? 0xD8353830 : (isHov ? 0xD0383C32 : 0xD0232522);
+            // Dark translucent charcoal/slate background matching Rust 1:1
+            int bg = isSelected ? 0xD8353230 : (isHov ? 0xD0383634 : 0xBB232120);
             DrawableHelper.fill(matrices, sx, y, sx + slotSize, y + slotSize, bg);
 
-            // Clean 1px border - active slot gets bright cream border (NO green stripe)
+            // Clean 1px border - active slot gets bright cream/white border (NO green stripe)
             if (isSelected) {
                 drawBorder(matrices, sx, y, slotSize, slotSize, 0xFFF7EBE1);
             } else {
-                drawBorder(matrices, sx, y, slotSize, slotSize, isHov ? 0x55F7EBE1 : 0x24F7EBE1);
+                drawBorder(matrices, sx, y, slotSize, slotSize, isHov ? 0x66F7EBE1 : 0x24F7EBE1);
             }
 
-            // Slot number 1..6 (subtle in top-left)
-            sf.draw(matrices, String.valueOf(i + 1), sx + 7, y + 3f, isSelected ? 0xFFF7EBE1 : 0x55F7EBE1);
+            // Rust hotbar has no distracting numbers (1:1 with reference)
 
             if (!stack.isEmpty()) {
                 // Item icon: rendered directly at correct slot center coordinates
@@ -291,7 +290,7 @@ public final class RustUiHelper {
                 itemRenderer.renderInGuiWithOverrides(stack, itemX, itemY);
                 itemRenderer.renderGuiItemOverlay(client.textRenderer, stack, itemX, itemY, "");
 
-                // Vertical durability bar on the LEFT edge of slot (1:1 with Rust)
+                // Vertical durability bar on the LEFT edge of slot (1:1 with Rust reference)
                 if (stack.isDamageable()) {
                     int maxDmg = stack.getMaxDamage();
                     int dmg = stack.getDamage();
@@ -299,24 +298,25 @@ public final class RustUiHelper {
 
                     int barX = sx + 2;
                     int barY = y + 2;
-                    int barW = 3;
+                    int barW = 2;
                     int barH = slotSize - 4;
 
-                    // Dark track behind durability
-                    DrawableHelper.fill(matrices, barX, barY, barX + barW, barY + barH, 0x99181614);
+                    // Red damaged background groove (visible as health drops)
+                    DrawableHelper.fill(matrices, barX, barY, barX + barW, barY + barH, 0xBB7A1C1C);
 
                     int filledH = Math.round(barH * ratio);
                     if (filledH > 0) {
                         int durColor = (ratio > 0.5f) ? 0xFF8DC63F : ((ratio > 0.2f) ? 0xFFE5A823 : 0xFFD3362D);
+                        // Fills from bottom to top
                         DrawableHelper.fill(matrices, barX, barY + (barH - filledH), barX + barW, barY + barH, durColor);
                     }
                 }
 
-                // Item count: formatted as xN (or N) in bottom-right corner in bold cream font
+                // Item count: formatted in bottom-right corner in bold cream font
                 if (stack.getCount() > 1) {
-                    String countStr = "x" + stack.getCount();
+                    String countStr = (stack.getCount() <= 99) ? String.valueOf(stack.getCount()) : ("x" + stack.getCount());
                     float tw = bsf.getWidth(countStr);
-                    bsf.draw(matrices, countStr, sx + slotSize - tw - 4, y + slotSize - 12, 0xFFF7EBE1);
+                    bsf.draw(matrices, countStr, sx + slotSize - tw - 3, y + slotSize - 11, 0xFFF7EBE1);
                 }
             }
         }

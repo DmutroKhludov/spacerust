@@ -2,10 +2,12 @@ package net.spacerust.client.hud;
 
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawableHelper;
 import net.minecraft.client.util.math.MatrixStack;
-import net.spacerust.client.guns.GunManager;
+import net.spacerust.client.gui.RustFontRenderer;
+import net.spacerust.client.gui.RustUiHelper;
+import net.spacerust.client.guns.RustShootingManager;
+import net.spacerust.client.guns.RustWeapon;
 
 public class GunHudOverlay implements HudRenderCallback {
 
@@ -16,42 +18,52 @@ public class GunHudOverlay implements HudRenderCallback {
             return;
         }
 
-        GunManager.GunInfo gun = GunManager.getHeldGun(client);
-        if (gun == null) {
+        RustWeapon weapon = RustShootingManager.getHeldWeapon(client);
+        if (weapon == null) {
             return; // Not holding a weapon
         }
 
         int screenW = client.getWindow().getScaledWidth();
         int screenH = client.getWindow().getScaledHeight();
-        TextRenderer textRenderer = client.textRenderer;
 
-        // Display above metabolism HUD
-        int boxW = 140;
-        int boxH = 22;
-        int x = screenW - boxW - 16;
-        int y = screenH - 95;
+        RustFontRenderer bf = RustFontRenderer.bold();
+        RustFontRenderer bfSmall = RustFontRenderer.boldSmall();
+        RustFontRenderer sf = RustFontRenderer.small();
 
-        // Dark background plate with orange corner accent
-        DrawableHelper.fill(matrices, x - 1, y - 1, x + boxW + 1, y + boxH + 1, 0xEE12161f);
-        DrawableHelper.fill(matrices, x - 1, y - 1, x + 2, y + boxH + 1, 0xFFe0462c);
+        int ammo = RustShootingManager.getAmmo(weapon);
+        int maxAmmo = weapon.maxAmmo;
 
-        // Weapon Name
-        textRenderer.draw(matrices, gun.name, x + 8, y + 4, 0xFFFFFFFF);
+        // Position bottom-right, just above Rust metabolism bars
+        int cardW = 155;
+        int cardH = 44;
+        int cardX = screenW - cardW - 12;
+        int cardY = screenH - 105;
+
+        // Background plate (Rust signature slate-olive)
+        DrawableHelper.fill(matrices, cardX, cardY, cardX + cardW, cardY + cardH, 0xD81B1C1A);
+        RustUiHelper.drawBorder(matrices, cardX, cardY, cardW, cardH, 0x44F7EBE1);
+
+        // Weapon Icon
+        int iconS = 28;
+        RustUiHelper.drawSprite(matrices, client, weapon.icon, cardX + 8, cardY + (cardH - iconS) / 2, iconS, iconS, 0xFFFFFFFF);
+
+        // Weapon Title
+        bfSmall.draw(matrices, weapon.title.toUpperCase(), cardX + 42, cardY + 8, 0xFFF7EBE1);
+
+        // Caliber
+        sf.draw(matrices, weapon.ammoName, cardX + 42, cardY + 24, 0x88F7EBE1);
 
         // Ammo Counter (e.g. "30 / 30")
-        int ammoColor = GunManager.currentAmmo <= 5 ? 0xFFf44336 : 0xFFffb74d;
-        String ammoText = GunManager.currentAmmo + " / " + gun.maxAmmo;
-        int ammoW = textRenderer.getWidth(ammoText);
-        textRenderer.draw(matrices, ammoText, x + boxW - ammoW - 8, y + 4, ammoColor);
+        String ammoText = ammo + " / " + maxAmmo;
+        int ammoColor = (ammo == 0) ? 0xFFE0462C : ((ammo <= 5) ? 0xFFE5A823 : 0xFF8DC63F);
+        float tw = bf.getWidth(ammoText);
+        bf.draw(matrices, ammoText, cardX + cardW - tw - 10, cardY + 12, ammoColor);
 
-        // Caliber subtitle
-        String calText = gun.ammoType;
-        textRenderer.draw(matrices, calText, x + 8, y + 14, 0x66FFFFFF);
-
-        if (GunManager.currentAmmo == 0) {
-            String reloadAlert = "НЕТ ПАТРОНОВ [R]";
-            int alertW = textRenderer.getWidth(reloadAlert);
-            textRenderer.draw(matrices, reloadAlert, x + boxW - alertW - 8, y + 14, 0xFFf44336);
+        // Reload prompt if empty
+        if (ammo == 0) {
+            String rPrompt = "НАЖМИТЕ [R]";
+            float rw = sf.getWidth(rPrompt);
+            sf.draw(matrices, rPrompt, cardX + cardW - rw - 10, cardY + 28, 0xFFE0462C);
         }
     }
 }

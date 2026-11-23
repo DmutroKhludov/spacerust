@@ -1,0 +1,1847 @@
+{
+  "hmlmg": {
+    "pitchMin": 3.0,
+    "pitchMax": 4.0,
+    "yawMin": -1.25,
+    "yawMax": -2.5,
+    "ads": 0.5,
+    "shots": 20,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.0,
+        "value": 0.10000000149011612,
+        "inSlope": 6.562916278839111,
+        "outSlope": 6.562916278839111,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.03402341529726982
+      },
+      {
+        "time": 0.5,
+        "value": 1.0,
+        "inSlope": 0.027903109788894653,
+        "outSlope": 0.027903109788894653,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.10409784317016602
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ]
+  },
+  "uzi": {
+    "pitchMin": 1.25,
+    "pitchMax": 1.75,
+    "yawMin": 0.5,
+    "yawMax": 0.6000000238418579,
+    "ads": 1.0,
+    "shots": 30,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 0.0,
+        "inSlope": 2.0,
+        "outSlope": 2.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.0,
+        "value": 0.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 0.10976642370223999,
+        "value": 1.0128313302993774,
+        "inSlope": 0.5275965332984924,
+        "outSlope": 0.5275965332984924,
+        "weightedMode": 0,
+        "inWeight": 0.2965587079524994,
+        "outWeight": 0.3491038382053375
+      },
+      {
+        "time": 0.21039517223834991,
+        "value": 1.2847299575805664,
+        "inSlope": 3.3156609535217285,
+        "outSlope": 3.3156609535217285,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.0874568447470665
+      },
+      {
+        "time": 0.5091054439544678,
+        "value": 1.56607186794281,
+        "inSlope": 1.7549278736114502,
+        "outSlope": 1.7549278736114502,
+        "weightedMode": 0,
+        "inWeight": 0.1054384857416153,
+        "outWeight": 0.13869959115982056
+      },
+      {
+        "time": 0.75,
+        "value": 2.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 2.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ]
+  },
+  "pump_shotgun": {
+    "pitchMin": 10.0,
+    "pitchMax": 14.0,
+    "yawMin": 4.0,
+    "yawMax": 8.0,
+    "ads": 0.699999988079071,
+    "shots": 30,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ]
+  },
+  "rocketlauncher": {
+    "pitchMin": 15.0,
+    "pitchMax": 20.0,
+    "yawMin": 5.0,
+    "yawMax": 10.0,
+    "ads": 0.75,
+    "shots": 30,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ]
+  },
+  "hunting_bow": {
+    "pitchMin": 3.0,
+    "pitchMax": 6.0,
+    "yawMin": -3.0,
+    "yawMax": 3.0,
+    "ads": 0.6000000238418579,
+    "shots": 30,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ]
+  },
+  "nailgun": {
+    "pitchMin": 3.0,
+    "pitchMax": 6.0,
+    "yawMin": -1.0,
+    "yawMax": 1.0,
+    "ads": 0.6000000238418579,
+    "shots": 30,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ]
+  },
+  "waterpipe": {
+    "pitchMin": 10.0,
+    "pitchMax": 14.0,
+    "yawMin": 4.0,
+    "yawMax": 8.0,
+    "ads": 0.699999988079071,
+    "shots": 30,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ]
+  },
+  "m15": {
+    "pitchMin": 2.0,
+    "pitchMax": 2.5,
+    "yawMin": -1.0,
+    "yawMax": 1.0,
+    "ads": 0.6000000238418579,
+    "shots": 10,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ]
+  },
+  "python": {
+    "pitchMin": 15.0,
+    "pitchMax": 16.0,
+    "yawMin": -2.0,
+    "yawMax": 2.0,
+    "ads": 0.5,
+    "shots": 30,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ]
+  },
+  "revolver": {
+    "pitchMin": 3.0,
+    "pitchMax": 6.0,
+    "yawMin": -1.0,
+    "yawMax": 1.0,
+    "ads": 0.6000000238418579,
+    "shots": 30,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ]
+  },
+  "bolt": {
+    "pitchMin": 2.0,
+    "pitchMax": 3.0,
+    "yawMin": -4.0,
+    "yawMax": 4.0,
+    "ads": 0.800000011920929,
+    "shots": 30,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ]
+  },
+  "ak": {
+    "pitchMin": 2.5,
+    "pitchMax": 3.5,
+    "yawMin": 1.5,
+    "yawMax": 2.5,
+    "ads": 0.75,
+    "shots": 10,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 0.0,
+        "inSlope": 2.084455728530884,
+        "outSlope": 2.084455728530884,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.33850687742233276,
+        "value": 0.407755047082901,
+        "inSlope": 0.25563880801200867,
+        "outSlope": 0.25563880801200867,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.7064922451972961,
+        "value": 0.7545874118804932,
+        "inSlope": 0.05295747146010399,
+        "outSlope": 0.05295747146010399,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 1.0,
+        "value": 0.998077392578125,
+        "inSlope": 0.4056554436683655,
+        "outSlope": 0.4056554436683655,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.0,
+        "value": 0.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.0476679727435112,
+        "value": 0.16332782804965973,
+        "inSlope": -6.5535078048706055,
+        "outSlope": -6.5535078048706055,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.12967877089977264,
+        "value": 0.6297505497932434,
+        "inSlope": 1.853388786315918,
+        "outSlope": 1.853388786315918,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.450390100479126,
+        "value": -0.645051121711731,
+        "inSlope": -0.08712585270404816,
+        "outSlope": -0.08712585270404816,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.801452100276947,
+        "value": 0.999671995639801,
+        "inSlope": 0.37407371401786804,
+        "outSlope": 0.37407371401786804,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 1.0,
+        "value": 0.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      }
+    ]
+  },
+  "spas12": {
+    "pitchMin": 10.0,
+    "pitchMax": 14.0,
+    "yawMin": 4.0,
+    "yawMax": 8.0,
+    "ads": 0.699999988079071,
+    "shots": 30,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ]
+  },
+  "sks": {
+    "pitchMin": 3.0,
+    "pitchMax": 3.5,
+    "yawMin": -0.30000001192092896,
+    "yawMax": 0.30000001192092896,
+    "ads": 0.6000000238418579,
+    "shots": 3,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ]
+  },
+  "handmade_smg": {
+    "pitchMin": 2.0,
+    "pitchMax": 2.5,
+    "yawMin": -1.0,
+    "yawMax": 1.0,
+    "ads": 0.5,
+    "shots": 30,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 0.0,
+        "inSlope": 2.084455728530884,
+        "outSlope": 2.084455728530884,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.30005472898483276,
+        "value": 0.5479222536087036,
+        "inSlope": 1.2325495481491089,
+        "outSlope": 1.2325495481491089,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.4056554436683655,
+        "outSlope": 0.4056554436683655,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.0,
+        "value": 0.0,
+        "inSlope": 2.0,
+        "outSlope": 2.0,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.10969475656747818,
+        "value": 0.10162465274333954,
+        "inSlope": -0.02316332422196865,
+        "outSlope": -0.02316332422196865,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.33818569779396057,
+        "value": -0.09872851520776749,
+        "inSlope": 0.01999872736632824,
+        "outSlope": 0.01999872736632824,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.5587593913078308,
+        "value": 0.09852320700883865,
+        "inSlope": 0.03068951889872551,
+        "outSlope": 0.03068951889872551,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.8041695356369019,
+        "value": -0.09944610297679901,
+        "inSlope": 0.020202068611979485,
+        "outSlope": 0.020202068611979485,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 1.0,
+        "value": 0.0,
+        "inSlope": 0.13250376284122467,
+        "outSlope": 0.13250376284122467,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      }
+    ]
+  },
+  "m4_shotgun": {
+    "pitchMin": 7.0,
+    "pitchMax": 10.0,
+    "yawMin": 2.0,
+    "yawMax": 4.0,
+    "ads": 0.4000000059604645,
+    "shots": 30,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ]
+  },
+  "crossbow": {
+    "pitchMin": 3.0,
+    "pitchMax": 6.0,
+    "yawMin": -3.0,
+    "yawMax": 3.0,
+    "ads": 0.6000000238418579,
+    "shots": 30,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ]
+  },
+  "custom_smg": {
+    "pitchMin": 1.5,
+    "pitchMax": 2.0,
+    "yawMin": -1.0,
+    "yawMax": 1.0,
+    "ads": 0.5,
+    "shots": 30,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 0.0,
+        "inSlope": 2.084455728530884,
+        "outSlope": 2.084455728530884,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.30005472898483276,
+        "value": 0.5479222536087036,
+        "inSlope": 1.2325495481491089,
+        "outSlope": 1.2325495481491089,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.4056554436683655,
+        "outSlope": 0.4056554436683655,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.0,
+        "value": 0.0,
+        "inSlope": 2.0,
+        "outSlope": 2.0,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.10969475656747818,
+        "value": 0.10162465274333954,
+        "inSlope": -0.02316332422196865,
+        "outSlope": -0.02316332422196865,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.33818569779396057,
+        "value": -0.09872851520776749,
+        "inSlope": 0.01999872736632824,
+        "outSlope": 0.01999872736632824,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.5587593913078308,
+        "value": 0.09852320700883865,
+        "inSlope": 0.03068951889872551,
+        "outSlope": 0.03068951889872551,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.8041695356369019,
+        "value": -0.09944610297679901,
+        "inSlope": 0.020202068611979485,
+        "outSlope": 0.020202068611979485,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 1.0,
+        "value": 0.0,
+        "inSlope": 0.13250376284122467,
+        "outSlope": 0.13250376284122467,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      }
+    ]
+  },
+  "m16a2": {
+    "pitchMin": 2.0,
+    "pitchMax": 3.0,
+    "yawMin": -0.5,
+    "yawMax": 0.5,
+    "ads": 0.75,
+    "shots": 15,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 0.0,
+        "inSlope": 2.084455728530884,
+        "outSlope": 2.084455728530884,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.16275615990161896,
+        "value": 0.479440838098526,
+        "inSlope": 2.2630186080932617,
+        "outSlope": 2.2630186080932617,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.42188531160354614,
+        "value": 0.8100683689117432,
+        "inSlope": 0.542224645614624,
+        "outSlope": 0.542224645614624,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.4056554436683655,
+        "outSlope": 0.4056554436683655,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.0,
+        "value": 0.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.07034394145011902,
+        "value": 0.07611441612243652,
+        "inSlope": 1.853388786315918,
+        "outSlope": 1.853388786315918,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.25833946466445923,
+        "value": 0.604744553565979,
+        "inSlope": 0.04448280856013298,
+        "outSlope": 0.04448280856013298,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.444844126701355,
+        "value": -0.0005576610565185547,
+        "inSlope": 0.05036592483520508,
+        "outSlope": 0.05036592483520508,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.830382764339447,
+        "value": 0.9851303696632385,
+        "inSlope": 0.37407371401786804,
+        "outSlope": 0.37407371401786804,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 1.0,
+        "value": 0.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      }
+    ]
+  },
+  "thompson": {
+    "pitchMin": 1.5,
+    "pitchMax": 2.0,
+    "yawMin": -1.0,
+    "yawMax": 1.0,
+    "ads": 0.5,
+    "shots": 30,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 0.0,
+        "inSlope": 2.084455728530884,
+        "outSlope": 2.084455728530884,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.30005472898483276,
+        "value": 0.5479222536087036,
+        "inSlope": 1.2325495481491089,
+        "outSlope": 1.2325495481491089,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.4056554436683655,
+        "outSlope": 0.4056554436683655,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.0,
+        "value": 0.0,
+        "inSlope": 2.0,
+        "outSlope": 2.0,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.10969475656747818,
+        "value": 0.10162465274333954,
+        "inSlope": -0.02316332422196865,
+        "outSlope": -0.02316332422196865,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.33818569779396057,
+        "value": -0.09872851520776749,
+        "inSlope": 0.01999872736632824,
+        "outSlope": 0.01999872736632824,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.5587593913078308,
+        "value": 0.09852320700883865,
+        "inSlope": 0.03068951889872551,
+        "outSlope": 0.03068951889872551,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.8041695356369019,
+        "value": -0.09944610297679901,
+        "inSlope": 0.020202068611979485,
+        "outSlope": 0.020202068611979485,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 1.0,
+        "value": 0.0,
+        "inSlope": 0.13250376284122467,
+        "outSlope": 0.13250376284122467,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      }
+    ]
+  },
+  "prototype17": {
+    "pitchMin": 2.0,
+    "pitchMax": 2.5,
+    "yawMin": -1.0,
+    "yawMax": 1.0,
+    "ads": 0.6000000238418579,
+    "shots": 10,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ]
+  },
+  "l96": {
+    "pitchMin": 1.0,
+    "pitchMax": 1.5,
+    "yawMin": -2.0,
+    "yawMax": 2.0,
+    "ads": 0.800000011920929,
+    "shots": 30,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ]
+  },
+  "hc_revolver": {
+    "pitchMin": 15.0,
+    "pitchMax": 16.0,
+    "yawMin": -2.0,
+    "yawMax": 2.0,
+    "ads": 0.5,
+    "shots": 30,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ]
+  },
+  "m92": {
+    "pitchMin": 7.0,
+    "pitchMax": 8.0,
+    "yawMin": -1.0,
+    "yawMax": 1.0,
+    "ads": 0.6000000238418579,
+    "shots": 10,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 0.0,
+        "inSlope": 2.0,
+        "outSlope": 2.0,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.0,
+        "value": 7.729977369308472e-06,
+        "inSlope": -0.029393507167696953,
+        "outSlope": -0.029393507167696953,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.13182437419891357,
+        "value": 0.0022657252848148346,
+        "inSlope": 0.03670578822493553,
+        "outSlope": 0.03670578822493553,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.3771515488624573,
+        "value": -0.39818909764289856,
+        "inSlope": 0.046218447387218475,
+        "outSlope": 0.046218447387218475,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.6684064269065857,
+        "value": 0.23066866397857666,
+        "inSlope": 0.9394437074661255,
+        "outSlope": 0.9394437074661255,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 1.0,
+        "value": 1.1786818504333496e-05,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      }
+    ]
+  },
+  "sar": {
+    "pitchMin": 2.0,
+    "pitchMax": 3.0,
+    "yawMin": -0.5,
+    "yawMax": 0.5,
+    "ads": 0.6000000238418579,
+    "shots": 3,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ]
+  },
+  "semipistol": {
+    "pitchMin": 2.0,
+    "pitchMax": 2.5,
+    "yawMin": -1.0,
+    "yawMax": 1.0,
+    "ads": 0.6000000238418579,
+    "shots": 10,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ]
+  },
+  "m39": {
+    "pitchMin": 3.0,
+    "pitchMax": 4.0,
+    "yawMin": 1.5,
+    "yawMax": 2.5,
+    "ads": 0.6000000238418579,
+    "shots": 4,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ]
+  },
+  "m249": {
+    "pitchMin": 3.0,
+    "pitchMax": 4.0,
+    "yawMin": 1.25,
+    "yawMax": 2.25,
+    "ads": 0.5,
+    "shots": 20,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.0,
+        "outWeight": 0.0
+      }
+    ]
+  },
+  "mp5": {
+    "pitchMin": 1.0,
+    "pitchMax": 3.0,
+    "yawMin": -1.0,
+    "yawMax": 1.0,
+    "ads": 0.5,
+    "shots": 10,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 0.0,
+        "inSlope": 2.0,
+        "outSlope": 2.0,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.21503698825836182,
+        "value": 0.7054337859153748,
+        "inSlope": 1.4460086822509766,
+        "outSlope": 1.4460086822509766,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.09999999403953552,
+        "value": 0.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.25044894218444824,
+        "value": -0.6764053106307983,
+        "inSlope": 0.0290069542825222,
+        "outSlope": 0.0290069542825222,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.38739916682243347,
+        "value": -0.2104591429233551,
+        "inSlope": 0.04036131128668785,
+        "outSlope": 0.04036131128668785,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.6048402786254883,
+        "value": -0.7077900767326355,
+        "inSlope": -0.008228234946727753,
+        "outSlope": -0.008228234946727753,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 1.0,
+        "value": 0.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      }
+    ]
+  },
+  "lr300": {
+    "pitchMin": 2.0,
+    "pitchMax": 3.0,
+    "yawMin": -0.5,
+    "yawMax": 0.5,
+    "ads": 0.75,
+    "shots": 15,
+    "pitch": [
+      {
+        "time": 0.0,
+        "value": 0.0,
+        "inSlope": 2.084455728530884,
+        "outSlope": 2.084455728530884,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.16275615990161896,
+        "value": 0.479440838098526,
+        "inSlope": 2.2630186080932617,
+        "outSlope": 2.2630186080932617,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.42188531160354614,
+        "value": 0.8100683689117432,
+        "inSlope": 0.542224645614624,
+        "outSlope": 0.542224645614624,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 1.0,
+        "value": 1.0,
+        "inSlope": 0.4056554436683655,
+        "outSlope": 0.4056554436683655,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      }
+    ],
+    "yaw": [
+      {
+        "time": 0.0,
+        "value": 0.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.07034394145011902,
+        "value": 0.07611441612243652,
+        "inSlope": 1.853388786315918,
+        "outSlope": 1.853388786315918,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.25833946466445923,
+        "value": 0.604744553565979,
+        "inSlope": 0.04448280856013298,
+        "outSlope": 0.04448280856013298,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.444844126701355,
+        "value": -0.0005576610565185547,
+        "inSlope": 0.05036592483520508,
+        "outSlope": 0.05036592483520508,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 0.830382764339447,
+        "value": 0.9851303696632385,
+        "inSlope": 0.37407371401786804,
+        "outSlope": 0.37407371401786804,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      },
+      {
+        "time": 1.0,
+        "value": 0.0,
+        "inSlope": 0.0,
+        "outSlope": 0.0,
+        "weightedMode": 0,
+        "inWeight": 0.3333333432674408,
+        "outWeight": 0.3333333432674408
+      }
+    ]
+  }
+}

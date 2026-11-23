@@ -12,10 +12,13 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
 import net.spacerust.client.building.RustBuildingHudOverlay;
 import net.spacerust.client.building.RustBuildingManager;
+import net.spacerust.client.deployables.RustDeployableManager;
 import net.spacerust.client.gui.RustCraftingScreen;
 import net.spacerust.client.gui.RustCraftingQueue;
 import net.spacerust.client.gui.RustUiHelper;
 import net.spacerust.client.guns.GunManager;
+import net.spacerust.client.guns.RustRecoilManager;
+import net.spacerust.client.guns.RustShootingManager;
 import net.spacerust.client.hud.GunHudOverlay;
 import net.spacerust.client.hud.RustCrosshairOverlay;
 import net.spacerust.client.hud.RustHudOverlay;
@@ -54,19 +57,32 @@ public class SpaceRustClient implements ClientModInitializer {
         HudRenderCallback.EVENT.register(new GunHudOverlay());
         HudRenderCallback.EVENT.register(new RustBuildingHudOverlay());
 
-        // 3. Register Rust Building World Renderer (models & hologram preview)
+        // 3. Register Rust Building & Deployable World Renderer (models & hologram preview)
         RustBuildingManager.init();
+        RustDeployableManager.init();
+        RustRecoilManager.init();
+
         WorldRenderEvents.AFTER_ENTITIES.register(context -> {
             RustBuildingManager.renderAll(context.matrixStack(), context.consumers(), context.camera(), context.tickDelta());
+            RustDeployableManager.renderAll(context.matrixStack(), context.consumers(), context.camera(), context.tickDelta());
         });
 
-        // 4. Register Keybind Tick Check & Building Tick
+        // 4. Register Keybind Tick Check & Building / Gun / Deployable Tick
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             // Tick crafting queue in background
             RustCraftingQueue.tick(client);
 
             // Tick building manager (snapping, hologram, hover, collision)
             RustBuildingManager.tick(client);
+
+            // Tick deployables manager (doors, locks, TC, boxes, decay, interaction)
+            RustDeployableManager.tick(client);
+
+            // Tick shooting manager (continuous auto-fire, recoil recovery, ADS)
+            RustShootingManager.tick(client);
+            if (!client.options.keyAttack.isPressed()) {
+                RustShootingManager.onAttackReleased();
+            }
 
             // Map on G
             while (keyMap.wasPressed()) {
@@ -81,6 +97,8 @@ public class SpaceRustClient implements ClientModInitializer {
                     if (RustBuildingManager.isHoldingBuildingPlan(client)) {
                         RustBuildingManager.previewYaw = (RustBuildingManager.previewYaw + 90f) % 360f;
                         RustUiHelper.playClick(client);
+                    } else if (RustShootingManager.getHeldWeapon(client) != null) {
+                        RustShootingManager.reload(client);
                     } else {
                         GunManager.GunInfo gun = GunManager.getHeldGun(client);
                         if (gun != null) {

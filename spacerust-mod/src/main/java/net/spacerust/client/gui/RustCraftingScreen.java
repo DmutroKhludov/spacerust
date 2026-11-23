@@ -108,6 +108,15 @@ public class RustCraftingScreen extends Screen {
         ALL_RECIPES.add(new Recipe("sheet_door", "Металлическая дверь", Category.CONSTRUCTION, Items.IRON_DOOR,
                 "Прочная дверь из фрагментов металла, защищает от начальных рейдов.", 30.0f,
                 Arrays.asList(new Ingredient("Фрагменты металла", 150, Items.IRON_INGOT))));
+        ALL_RECIPES.add(new Recipe("armored_door", "Бронированная дверь", Category.CONSTRUCTION, Items.NETHERITE_BLOCK,
+                "Тяжелая бронированная дверь из МВК. Выдерживает несколько ракет и C4.", 45.0f,
+                Arrays.asList(new Ingredient("МВК", 25, Items.NETHERITE_INGOT), new Ingredient("Шестеренки", 5, Items.TRIPWIRE_HOOK))));
+        ALL_RECIPES.add(new Recipe("garage_door", "Гаражная дверь", Category.CONSTRUCTION, Items.IRON_TRAPDOOR,
+                "Роллетные ворота для широких проемов (Frame). Открываются вверх.", 30.0f,
+                Arrays.asList(new Ingredient("Фрагменты металла", 300, Items.IRON_INGOT), new Ingredient("Шестеренки", 2, Items.TRIPWIRE_HOOK))));
+        ALL_RECIPES.add(new Recipe("tool_cupboard", "Шкаф с инструментами", Category.CONSTRUCTION, Items.BOOKSHELF,
+                "Главный объект базы. Защищает постройки от гниения и дает право на строительство.", 30.0f,
+                Arrays.asList(new Ingredient("Дерево", 1000, Items.OAK_PLANKS))));
         ALL_RECIPES.add(new Recipe("code_lock", "Кодовый замок", Category.CONSTRUCTION, Items.LEVER,
                 "Электронный замок с 4-значным PIN-кодом для защиты дверей и ящиков.", 15.0f,
                 Arrays.asList(new Ingredient("Фрагменты металла", 100, Items.IRON_INGOT))));
@@ -204,6 +213,21 @@ public class RustCraftingScreen extends Screen {
         ALL_RECIPES.add(new Recipe("ak47", "Автомат AK-47", Category.WEAPONS, Items.NETHERITE_SWORD,
                 "Штурмовая винтовка на 30 патронов 5.56 мм. Легендарное оружие Rust.", 30.0f,
                 Arrays.asList(new Ingredient("МВК", 50, Items.NETHERITE_INGOT), new Ingredient("Дерево", 200, Items.OAK_PLANKS), new Ingredient("Корпус винтовки", 1, Items.OBSIDIAN), new Ingredient("Пружины", 4, Items.TRIPWIRE_HOOK))));
+        ALL_RECIPES.add(new Recipe("thompson", "Томпсон", Category.WEAPONS, Items.IRON_SWORD,
+                "Пистолет-пулемет на 20 патронов 9 мм с отличной скорострельностью.", 25.0f,
+                Arrays.asList(new Ingredient("Фрагменты металла", 250, Items.IRON_INGOT), new Ingredient("Корпус SMG", 1, Items.IRON_BLOCK), new Ingredient("Пружина", 1, Items.TRIPWIRE_HOOK))));
+        ALL_RECIPES.add(new Recipe("sar", "Винтовка SAR", Category.WEAPONS, Items.STONE_HOE,
+                "Полуавтоматическая винтовка на 16 патронов 5.56 мм. Идеальна для средних дистанций.", 30.0f,
+                Arrays.asList(new Ingredient("Фрагменты металла", 450, Items.IRON_INGOT), new Ingredient("Корпус", 1, Items.COBBLESTONE), new Ingredient("Труба", 1, Items.LEVER))));
+        ALL_RECIPES.add(new Recipe("mp5", "Пистолет-пулемет MP5A4", Category.WEAPONS, Items.GOLDEN_SWORD,
+                "Военный пистолет-пулемет на 30 патронов с высокой точностью.", 30.0f,
+                Arrays.asList(new Ingredient("МВК", 15, Items.NETHERITE_INGOT), new Ingredient("Корпус SMG", 1, Items.IRON_BLOCK), new Ingredient("Пружины", 2, Items.TRIPWIRE_HOOK))));
+        ALL_RECIPES.add(new Recipe("bolt", "Винтовка Bolt Action", Category.WEAPONS, Items.DIAMOND_HOE,
+                "Мощная снайперская винтовка с колоссальным уроном в голову.", 40.0f,
+                Arrays.asList(new Ingredient("МВК", 30, Items.NETHERITE_INGOT), new Ingredient("Корпус винтовки", 1, Items.OBSIDIAN), new Ingredient("Трубы", 3, Items.LEVER))));
+        ALL_RECIPES.add(new Recipe("pump_shotgun", "Помповый дробовик", Category.WEAPONS, Items.STONE_SHOVEL,
+                "Классический дробовик на 6 патронов с сокрушительной убойной силой в упор.", 20.0f,
+                Arrays.asList(new Ingredient("Фрагменты металла", 150, Items.IRON_INGOT), new Ingredient("Трубы", 2, Items.LEVER))));
         ALL_RECIPES.add(new Recipe("c4", "Взрывчатка C4 (Timed Explosive)", Category.WEAPONS, Items.REDSTONE_BLOCK,
                 "Мощный кумулятивный заряд с таймером для пробития каменных и металлических стен.", 30.0f,
                 Arrays.asList(new Ingredient("Взрывчатка", 20, Items.TNT), new Ingredient("Ткань", 5, Items.STRING), new Ingredient("Схема", 1, Items.REDSTONE))));
