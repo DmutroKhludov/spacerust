@@ -339,6 +339,55 @@ document.addEventListener('DOMContentLoaded', () => {
         else showToast(t('settings.clientFolder', { path: gamePathInput ? gamePathInput.value : '%APPDATA%\\.spacerust' }));
     });
 
+    $('btn-repair-game')?.addEventListener('click', async () => {
+        if (STATE.isLaunching || STATE.isUpdating || STATE.isRepairing) {
+            return showToast(t('settings.waitLaunch'), 'error');
+        }
+        const a = api();
+        if (!a || typeof a.repair_game !== 'function') {
+            return showToast(t('settings.folderExeOnly'));
+        }
+        STATE.isRepairing = true;
+        closeDrawer();
+        btnPlay?.classList.add('loading-state');
+        btnPlay?.classList.remove('update-ready');
+        loadLine.classList.remove('done', 'paused');
+        btnPause.disabled = false;
+        btnResume.disabled = true;
+        window.updateLaunchProgress(t('settings.repairRunning'), 3);
+        try {
+            const res = await a.repair_game();
+            if (res && res.status === 'ok') {
+                loadLine.classList.add('done');
+                loadFill.style.width = '100%';
+                loadPct.textContent = '100%';
+                btnPause.disabled = true;
+                btnResume.disabled = true;
+                showToast(t('settings.repairDone'), 'success');
+                setTimeout(() => {
+                    STATE.isRepairing = false;
+                    btnPlay?.classList.remove('loading-state');
+                    setPaused(false);
+                    setIdleLine();
+                }, 2200);
+            } else {
+                STATE.isRepairing = false;
+                btnPlay?.classList.remove('loading-state');
+                setPaused(false);
+                setIdleLine();
+                const shortErr = String((res && res.message) || t('settings.repairErr')).split('\n')[0];
+                if (loadStage) loadStage.textContent = shortErr;
+                showToast(shortErr, 'error');
+            }
+        } catch (err) {
+            STATE.isRepairing = false;
+            btnPlay?.classList.remove('loading-state');
+            setPaused(false);
+            setIdleLine();
+            showToast(t('settings.repairErr'), 'error');
+        }
+    });
+
     // ==========================================
     // WINDOW CONTROLS + NATIVE DRAG + RESIZE
     // ==========================================
@@ -454,7 +503,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btnPlayText.textContent = t('play.stageRunning');
             return;
         }
-        if (STATE.isLaunching || STATE.isUpdating) return;
+        if (STATE.isLaunching || STATE.isUpdating || STATE.isRepairing) return;
         if (STATE.updateAvailable) {
             btnPlay.classList.add('update-ready');
             btnPlayText.textContent = t('github.btnUpdate');
@@ -498,7 +547,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     btnPause?.addEventListener('click', async () => {
-        if (!STATE.isLaunching || STATE.isPaused) return;
+        if ((!STATE.isLaunching && !STATE.isRepairing) || STATE.isPaused) return;
         setPaused(true);
         const a = api();
         if (a && a.pause_download) await a.pause_download();
@@ -506,7 +555,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     btnResume?.addEventListener('click', async () => {
-        if (!STATE.isLaunching || !STATE.isPaused) return;
+        if ((!STATE.isLaunching && !STATE.isRepairing) || !STATE.isPaused) return;
         setPaused(false);
         const a = api();
         if (a && a.resume_download) await a.resume_download();
@@ -542,7 +591,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function handleLaunchGame() {
-        if (STATE.isLaunching || STATE.isUpdating) return;
+        if (STATE.isLaunching || STATE.isUpdating || STATE.isRepairing) return;
         if (STATE.updateAvailable) {
             return handleApplyUpdate();
         }
@@ -649,7 +698,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loadTitle.textContent = t('play.stageRunning');
             loadStage.textContent = t('play.msgRunning');
             syncPlayButtonMode();
-        } else if (STATE.isLaunching || STATE.isUpdating) {
+        } else if (STATE.isLaunching || STATE.isUpdating || STATE.isRepairing) {
             loadTitle.textContent = STATE.isPaused ? t('play.loadPaused') : t('play.loadActive');
             if (btnPlayText) {
                 btnPlayText.textContent = lastProgressPct >= 100

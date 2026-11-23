@@ -466,6 +466,12 @@ class LauncherApi:
         except Exception as e:
             return {"status": "error", "message": str(e)}
 
+    def repair_game(self):
+        try:
+            return self._manager.repair_client(progress_callback=self.report_progress)
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
     def launch_client(self, ram_mb=None, nickname=None):
         try:
             res = self._manager.launch(

@@ -712,6 +712,17 @@ body.no-anim .btn-play::after, body.no-anim .btn-play.loading-state { animation:
 .browse-btn:hover { background: rgba(255,255,255,0.2); }
 .browse-btn.accent { background: var(--red); color: #fff; }
 .browse-btn.accent:hover { background: var(--red-bright); }
+.browse-btn.repair {
+    width: 100%;
+    background: rgba(201, 144, 47, 0.14);
+    border: 1px solid rgba(201, 144, 47, 0.35);
+    color: var(--amber-bright);
+}
+.browse-btn.repair:hover {
+    background: rgba(201, 144, 47, 0.28);
+    border-color: var(--amber-bright);
+    color: #fff;
+}
 
 .set-group.socials { flex-direction: row; }
 .social-btn {

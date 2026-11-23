@@ -34,6 +34,11 @@ BACKEND_MESSAGES = {
         'update_done': 'Обновление успешно установлено!',
         'update_none': 'Установлена последняя версия!',
         'update_err': 'Ошибка обновления: {err}',
+        'repair_start': 'Проверка и восстановление файлов игры...',
+        'repair_downloading': 'Загрузка файлов восстановления...',
+        'repair_extracting': 'Восстановление файлов клиента...',
+        'repair_done': 'Клиент восстановлен и готов к запуску!',
+        'repair_failed': 'Не удалось восстановить игру:\n{err}',
     },
     'uk': {
         'mb': 'МБ',
@@ -57,6 +62,11 @@ BACKEND_MESSAGES = {
         'update_done': 'Оновлення успішно встановлено!',
         'update_none': 'Встановлено останню версію!',
         'update_err': 'Помилка оновлення: {err}',
+        'repair_start': 'Перевірка та відновлення файлів гри...',
+        'repair_downloading': 'Завантаження файлів відновлення...',
+        'repair_extracting': 'Відновлення файлів клієнта...',
+        'repair_done': 'Клієнт відновлено та готово до запуску!',
+        'repair_failed': 'Не вдалося відновити гру:\n{err}',
     },
     'en': {
         'mb': 'MB',
@@ -80,6 +90,11 @@ BACKEND_MESSAGES = {
         'update_done': 'Update installed successfully!',
         'update_none': 'You are already on the latest version!',
         'update_err': 'Update error: {err}',
+        'repair_start': 'Verifying and repairing game files...',
+        'repair_downloading': 'Downloading repair files...',
+        'repair_extracting': 'Restoring client files...',
+        'repair_done': 'Client repaired and ready to launch!',
+        'repair_failed': 'Failed to repair game:\n{err}',
     },
 }
 
@@ -281,7 +296,7 @@ class SpaceRustClientManager:
                 h.update(chunk)
         return h.hexdigest()
 
-    def sync_latest_mod(self):
+    def sync_latest_mod(self, force=False):
         """Always ensure the latest spacerust-mod-1.0.0.jar is installed in game_dir/mods"""
         if getattr(sys, 'frozen', False):
             base_dir = getattr(sys, '_MEIPASS', self.exe_dir)
@@ -306,7 +321,8 @@ class SpaceRustClientManager:
                 try:
                     bundled_hash = self._file_sha256(mod_path)
                     need_copy = (
-                        not os.path.isfile(target)
+                        force
+                        or not os.path.isfile(target)
                         or cfg.get('last_bundled_mod_hash') != bundled_hash
                         or (not cfg.get('remote_mod_asset_id') and self._file_sha256(target) != bundled_hash)
                     )
@@ -990,7 +1006,7 @@ class SpaceRustClientManager:
             return True
 
         # 4. Auto-download from GitHub Release (RustMe-style cloud bootstrap)
-        cloud_url = "https://github.com/DmutroKhludov/spacerust/releases/download/v1.0.0/SpaceRust-Files.zip"
+        cloud_url = self._get_client_zip_url()
         notify(self._msg('first_launch'), 5)
         self.log(f"Downloading game client from {cloud_url}...")
 
@@ -999,9 +1015,7 @@ class SpaceRustClientManager:
             self.download_file_with_progress(cloud_url, temp_zip, notify)
             notify(self._msg('extracting'), 90)
             self.log("Extracting client package...")
-            import zipfile
-            with zipfile.ZipFile(temp_zip, 'r') as zf:
-                zf.extractall(self.game_dir)
+            self._extract_zip_package(temp_zip, preserve_options=True)
             if os.path.isfile(temp_zip):
                 os.remove(temp_zip)
             self.sync_latest_mod()
@@ -1015,6 +1029,95 @@ class SpaceRustClientManager:
                     pass
             self.log(f"Cloud download failed: {e}")
             raise RuntimeError(self._msg('dl_failed', err=e))
+
+    def _get_client_zip_url(self):
+        default_url = f"https://github.com/{GITHUB_REPO}/releases/download/v1.0.0/SpaceRust-Files.zip"
+        try:
+            rel = self._fetch_latest_release()
+            if isinstance(rel, dict):
+                for a in rel.get('assets', []):
+                    if isinstance(a, dict) and a.get('name') == 'SpaceRust-Files.zip' and a.get('browser_download_url'):
+                        return a['browser_download_url']
+        except Exception:
+            pass
+        return default_url
+
+    def _extract_zip_package(self, zip_path, preserve_options=True):
+        import zipfile
+        options_path = os.path.join(self.game_dir, 'options.txt')
+        has_options = preserve_options and os.path.isfile(options_path)
+        with zipfile.ZipFile(zip_path, 'r') as zf:
+            for member in zf.infolist():
+                norm = member.filename.replace('\\', '/').lstrip('/')
+                if has_options and norm == 'options.txt':
+                    continue
+                zf.extract(member, self.game_dir)
+
+    def repair_client(self, progress_callback=None):
+        """Re-verifies and repairs SpaceRust client files, mod JAR, libraries, assets, and runtime."""
+        self._pause_event.set()
+        def notify(stage, percent):
+            self.log(f"[Repair] {stage} ({percent}%)")
+            if progress_callback:
+                progress_callback(stage, percent)
+
+        temp_zip = os.path.join(self.game_dir, 'client_repair.tmp.zip')
+        try:
+            notify(self._msg('repair_start'), 5)
+            self.ensure_directories()
+
+            # Remove stale/corrupt version folder so clean client files are restored
+            ver_dir = os.path.join(self.game_dir, 'versions', self.version_id)
+            if os.path.isdir(ver_dir):
+                shutil.rmtree(ver_dir, ignore_errors=True)
+            os.makedirs(ver_dir, exist_ok=True)
+
+            self._save_config({
+                'last_bundled_mod_hash': None,
+                'remote_mod_asset_id': None,
+                'remote_mod_updated_at': None,
+            })
+
+            portable_data = os.path.join(self.exe_dir, 'data')
+            repaired_from_portable = False
+            if os.path.isdir(portable_data):
+                notify(self._msg('unpacking_dir'), 30)
+                self.log(f"Repairing client from portable data: {portable_data}")
+                for item in os.listdir(portable_data):
+                    if item == 'options.txt' and os.path.isfile(os.path.join(self.game_dir, 'options.txt')):
+                        continue
+                    src_item = os.path.join(portable_data, item)
+                    dst_item = os.path.join(self.game_dir, item)
+                    if os.path.isdir(src_item):
+                        shutil.copytree(src_item, dst_item, dirs_exist_ok=True)
+                    else:
+                        shutil.copy2(src_item, dst_item)
+                ver_jar = os.path.join(ver_dir, f"{self.version_id}.jar")
+                ver_json = os.path.join(ver_dir, f"{self.version_id}.json")
+                repaired_from_portable = os.path.isfile(ver_jar) and os.path.isfile(ver_json)
+
+            if not repaired_from_portable:
+                cloud_url = self._get_client_zip_url()
+                notify(self._msg('repair_downloading'), 8)
+                self.log(f"Repairing client from {cloud_url}...")
+                self.download_file_with_progress(cloud_url, temp_zip, notify)
+                notify(self._msg('repair_extracting'), 90)
+                self.log("Extracting repair package...")
+                self._extract_zip_package(temp_zip, preserve_options=True)
+                if os.path.isfile(temp_zip):
+                    os.remove(temp_zip)
+
+            self.sync_latest_mod(force=True)
+            notify(self._msg('repair_done'), 100)
+            return {'status': 'ok', 'message': self._msg('repair_done')}
+        except Exception as e:
+            if os.path.isfile(temp_zip):
+                try:
+                    os.remove(temp_zip)
+                except Exception:
+                    pass
+            self.log(f"Repair failed: {e}")
+            return {'status': 'error', 'message': self._msg('repair_failed', err=e)}
 
     def launch(self, nickname, ram_mb, progress_callback=None, playtime_callback=None):
         """Launches the isolated SpaceRust client directly into the Rust Main Menu."""
