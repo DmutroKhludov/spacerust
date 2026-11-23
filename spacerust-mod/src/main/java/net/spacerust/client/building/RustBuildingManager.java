@@ -55,6 +55,10 @@ public class RustBuildingManager {
         public Box getBoundingBox() {
             return piece.createBoundingBox(x, y, z, yaw);
         }
+
+        public List<Box> getCollisionBoxes() {
+            return piece.getCollisionBoxes(x, y, z, yaw);
+        }
     }
 
     public static final List<BuildingPieceData> pieces = new ArrayList<>();
@@ -115,6 +119,46 @@ public class RustBuildingManager {
                 || name.contains("киян") || name.contains("молот") || name.contains("hammer");
     }
 
+    public static Vec3d getAimTarget(MinecraftClient client, double maxReach) {
+        if (client.player == null) return null;
+        Vec3d camPos = client.player.getCameraPosVec(1.0f);
+        Vec3d lookVec = client.player.getRotationVec(1.0f);
+        Vec3d reachVec = camPos.add(lookVec.multiply(maxReach));
+
+        Vec3d closestHit = null;
+        double closestDistSq = maxReach * maxReach;
+
+        // 1. Raycast against placed building pieces
+        for (BuildingPieceData b : pieces) {
+            Box box = b.getBoundingBox();
+            Optional<Vec3d> hit = box.raycast(camPos, reachVec);
+            if (hit.isPresent()) {
+                double distSq = camPos.squaredDistanceTo(hit.get());
+                if (distSq < closestDistSq) {
+                    closestDistSq = distSq;
+                    closestHit = hit.get();
+                }
+            }
+        }
+
+        // 2. Raycast against vanilla blocks
+        HitResult bHit = client.player.raycast(maxReach, 1.0f, false);
+        if (bHit.getType() == HitResult.Type.BLOCK) {
+            double distSq = camPos.squaredDistanceTo(bHit.getPos());
+            if (distSq < closestDistSq) {
+                closestDistSq = distSq;
+                closestHit = bHit.getPos();
+            }
+        }
+
+        // 3. Fallback: looking into air (forward projection along look vector)
+        if (closestHit == null) {
+            closestHit = camPos.add(lookVec.multiply(4.5));
+        }
+
+        return closestHit;
+    }
+
     public static void tick(MinecraftClient client) {
         if (client.player == null || client.world == null) return;
 
@@ -139,10 +183,8 @@ public class RustBuildingManager {
 
         // 2. Hologram Preview Position calculation for Building Plan
         if (isHoldingBuildingPlan(client)) {
-            HitResult hit = client.player.raycast(7.0, 1.0f, false);
-            if (hit.getType() == HitResult.Type.BLOCK) {
-                BlockHitResult bHit = (BlockHitResult) hit;
-                Vec3d target = bHit.getPos();
+            Vec3d target = getAimTarget(client, 8.0);
+            if (target != null) {
                 previewPos = calculateSnap(target, selectedPiece, previewYaw);
             } else {
                 previewPos = null;
@@ -156,7 +198,7 @@ public class RustBuildingManager {
     }
 
     private static Vec3d calculateSnap(Vec3d hitPos, RustBuildingPiece piece, float yaw) {
-        double snapDist = 2.2;
+        double snapDist = 3.5;
         Vec3d bestSnap = null;
         Float bestYaw = null;
         double bestDist = snapDist;
@@ -164,11 +206,62 @@ public class RustBuildingManager {
         for (BuildingPieceData b : pieces) {
             Vec3d pieceCenter = new Vec3d(b.x, b.y, b.z);
             double dist = pieceCenter.distanceTo(hitPos);
-            if (dist > 5.0) continue;
+            if (dist > 7.0) continue;
 
-            if (piece.isWall) {
+            // --- FLOOR & FLOOR_TRIANGLE (Ceilings / Roofs) ---
+            if (piece == RustBuildingPiece.FLOOR || piece == RustBuildingPiece.FLOOR_TRIANGLE) {
+                // A) Snap directly above foundation (room ceiling)
                 if (b.piece.isFoundation) {
-                    // Wall connects to 4 edges of foundation with matching yaw
+                    Vec3d ceilPos = new Vec3d(b.x, b.y + 3.5, b.z);
+                    double d = ceilPos.distanceTo(hitPos);
+                    if (d < bestDist) {
+                        bestDist = d;
+                        bestSnap = ceilPos;
+                    }
+                }
+                // B) Snap to top of walls (covers the room on either side of wall)
+                else if (b.piece.isWall) {
+                    double topY = b.y + b.piece.height;
+                    float normYaw = (b.yaw % 360f + 360f) % 360f;
+                    Vec3d side1, side2;
+                    if ((normYaw > 45 && normYaw < 135) || (normYaw > 225 && normYaw < 315)) {
+                        side1 = new Vec3d(b.x + 1.5, topY, b.z);
+                        side2 = new Vec3d(b.x - 1.5, topY, b.z);
+                    } else {
+                        side1 = new Vec3d(b.x, topY, b.z + 1.5);
+                        side2 = new Vec3d(b.x, topY, b.z - 1.5);
+                    }
+                    double d1 = side1.distanceTo(hitPos);
+                    double d2 = side2.distanceTo(hitPos);
+                    if (d1 < bestDist && d1 <= d2) {
+                        bestDist = d1;
+                        bestSnap = side1;
+                    } else if (d2 < bestDist) {
+                        bestDist = d2;
+                        bestSnap = side2;
+                    }
+                }
+                // C) Snap to edges of existing floors
+                else if (b.piece == RustBuildingPiece.FLOOR) {
+                    Vec3d[] floorEdges = {
+                            new Vec3d(b.x, b.y, b.z - 3.0),
+                            new Vec3d(b.x, b.y, b.z + 3.0),
+                            new Vec3d(b.x - 3.0, b.y, b.z),
+                            new Vec3d(b.x + 3.0, b.y, b.z)
+                    };
+                    for (Vec3d edge : floorEdges) {
+                        double d = edge.distanceTo(hitPos);
+                        if (d < bestDist) {
+                            bestDist = d;
+                            bestSnap = edge;
+                        }
+                    }
+                }
+            }
+            // --- WALLS (Wall, Doorway, Window, Frame, Half Wall, Low Wall) ---
+            else if (piece.isWall) {
+                if (b.piece.isFoundation) {
+                    // Connects to 4 edges of foundation with auto yaw
                     Vec3d[] edges = {
                             new Vec3d(b.x, b.y + 0.5, b.z - 1.5), // North
                             new Vec3d(b.x, b.y + 0.5, b.z + 1.5), // South
@@ -185,41 +278,37 @@ public class RustBuildingManager {
                             bestYaw = yaws[i];
                         }
                     }
-                } else if (b.piece.isWall) {
-                    // Wall on top of wall
-                    Vec3d top = new Vec3d(b.x, b.y + 3.0, b.z);
-                    double d = top.distanceTo(hitPos);
-                    if (d < bestDist) {
-                        bestDist = d;
-                        bestSnap = top;
-                        bestYaw = b.yaw;
-                    }
-                }
-            } else if (piece == RustBuildingPiece.FLOOR || piece == RustBuildingPiece.FLOOR_TRIANGLE) {
-                if (b.piece.isWall) {
-                    Vec3d top = new Vec3d(b.x, b.y + 3.0, b.z);
-                    double d = top.distanceTo(hitPos);
-                    if (d < bestDist) {
-                        bestDist = d;
-                        bestSnap = top;
-                        bestYaw = b.yaw;
-                    }
                 } else if (b.piece == RustBuildingPiece.FLOOR) {
-                    Vec3d[] floorEdges = {
-                            new Vec3d(b.x, b.y, b.z - 3.0),
-                            new Vec3d(b.x, b.y, b.z + 3.0),
-                            new Vec3d(b.x - 3.0, b.y, b.z),
-                            new Vec3d(b.x + 3.0, b.y, b.z)
+                    // Wall on 2nd floor (edges of floor)
+                    Vec3d[] edges = {
+                            new Vec3d(b.x, b.y, b.z - 1.5), // North
+                            new Vec3d(b.x, b.y, b.z + 1.5), // South
+                            new Vec3d(b.x - 1.5, b.y, b.z), // West
+                            new Vec3d(b.x + 1.5, b.y, b.z)  // East
                     };
-                    for (Vec3d edge : floorEdges) {
+                    float[] yaws = { 0f, 180f, 90f, 270f };
+                    for (int i = 0; i < edges.length; i++) {
+                        Vec3d edge = edges[i];
                         double d = edge.distanceTo(hitPos);
                         if (d < bestDist) {
                             bestDist = d;
                             bestSnap = edge;
+                            bestYaw = yaws[i];
                         }
                     }
+                } else if (b.piece.isWall) {
+                    // Wall on top of wall (2nd floor)
+                    Vec3d top = new Vec3d(b.x, b.y + b.piece.height, b.z);
+                    double d = top.distanceTo(hitPos);
+                    if (d < bestDist) {
+                        bestDist = d;
+                        bestSnap = top;
+                        bestYaw = b.yaw;
+                    }
                 }
-            } else if (piece.isFoundation) {
+            }
+            // --- FOUNDATION ---
+            else if (piece.isFoundation) {
                 if (b.piece.isFoundation) {
                     Vec3d[] foundEdges = {
                             new Vec3d(b.x, b.y, b.z - 3.0),
@@ -359,24 +448,21 @@ public class RustBuildingManager {
         Box pBox = player.getBoundingBox();
 
         for (BuildingPieceData b : pieces) {
-            Box bBox = b.getBoundingBox();
-            if (pBox.intersects(bBox)) {
-                // Standing on foundation / floor top
-                if (b.piece.isFoundation || b.piece == RustBuildingPiece.FLOOR) {
-                    double topY = b.y + b.piece.height;
-                    if (player.getY() >= topY - 0.25 && player.getY() <= topY + 0.4 && player.getVelocity().y <= 0) {
+            for (Box bBox : b.getCollisionBoxes()) {
+                if (pBox.intersects(bBox)) {
+                    double topY = bBox.maxY;
+                    // Player standing / landing on top of this collision surface:
+                    // (foundation top, floor surface, low wall top, half wall top, wall top)
+                    if (player.getY() >= topY - 0.35 && player.getY() <= topY + 0.4 && player.getVelocity().y <= 0) {
                         if (player.getY() < topY) {
                             player.setPosition(player.getX(), topY, player.getZ());
                             player.setVelocity(player.getVelocity().x, Math.max(0, player.getVelocity().y), player.getVelocity().z);
                             player.setOnGround(true);
                         }
-                    } else if (player.getY() < topY - 0.25) {
+                    } else if (player.getY() < topY - 0.35) {
+                        // Walking into side of box: push out horizontally with zero penetration
                         pushPlayerOutOfBox(player, pBox, bBox);
                     }
-                }
-                // Wall collision: gentle overlap push, no teleportation
-                else if (b.piece.isWall) {
-                    pushPlayerOutOfBox(player, pBox, bBox);
                 }
             }
         }
