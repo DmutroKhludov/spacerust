@@ -1,0 +1,18 @@
+{
+  "ui_click": {
+    "sounds": ["spacerust:ui_click"]
+  },
+  "ui_hover": {
+    "sounds": ["spacerust:ui_hover"]
+  },
+  "menu_music_classic": {
+    "sounds": [
+      { "name": "spacerust:menu_classic", "stream": true }
+    ]
+  },
+  "menu_music_safe_zone": {
+    "sounds": [
+      { "name": "spacerust:menu_safe_zone", "stream": true }
+    ]
+  }
+}

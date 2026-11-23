@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "spacerust_ui",
+  "version": "${version}",
+  "name": "SpaceRust UI",
+  "description": "Custom SpaceRust menu, Escape screen, loading screen, and settings for 1.21.11.",
+  "authors": ["SpaceRust"],
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "net.spacerust.client.SpaceRustClient"
+    ]
+  },
+  "mixins": [
+    "spacerust_ui.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.18.4",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}

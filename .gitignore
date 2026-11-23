@@ -21,13 +21,22 @@ server/world_the_end/
 server/logs/
 server/cache/
 server/server.jar
+server_1_21_11/world/
+server_1_21_11/logs/
+server_1_21_11/crash-reports/
+server_1_21_11/libraries/
+server_1_21_11/.fabric/
+mods_1_21_11/
 
 # Gradle / Java Mod build files
 spacerust-mod/.gradle/
 spacerust-mod/build/
+spacerust-ui/.gradle/
+spacerust-ui/build/
 *.class
 *.jar
 !spacerust-mod/gradle/wrapper/gradle-wrapper.jar
+!spacerust-ui/gradle/wrapper/gradle-wrapper.jar
 
 # IDE files
 .idea/

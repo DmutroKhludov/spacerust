@@ -1,0 +1,10 @@
+{
+  "enabled": true,
+  "oresPerChunk": 0.14,
+  "treesPerChunk": 0.2,
+  "distributionVersion": 2,
+  "respawnMinutes": 5,
+  "generationChunksPerTick": 8,
+  "respawnVersion": 1,
+  "populationVersion": 1
+}

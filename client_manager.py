@@ -118,7 +118,7 @@ class SpaceRustClientManager:
         self.playtime_seconds = int(cfg.get('playtime_seconds', 0) or 0)
         saved_lang = str(cfg.get('lang') or 'ru').strip().lower()
         self.lang = saved_lang if saved_lang in SUPPORTED_LANGS else 'ru'
-        self.version_id = 'SpaceRust-1.16.5'
+        self.version_id = 'SpaceRust-1.21.11'
         self.log_file = os.path.join(self.game_dir, 'launcher.log')
         self._pause_event = threading.Event()
         self._pause_event.set()
@@ -258,36 +258,34 @@ class SpaceRustClientManager:
             os.makedirs(os.path.join(self.game_dir, sub), exist_ok=True)
 
     def find_java(self):
-        # 1. Check portable JRE next to executable / launcher
+        """Find Java 21+ required for Minecraft 1.21.11."""
+        import glob
         portable_candidates = [
-            os.path.join(self.exe_dir, 'jre', 'bin', 'javaw.exe'),
-            os.path.join(self.exe_dir, 'jre', 'bin', 'java.exe'),
-            os.path.join(self.exe_dir, 'java', 'bin', 'javaw.exe'),
-            os.path.join(self.exe_dir, '..', 'jre', 'bin', 'javaw.exe'),
-            os.path.join(self.game_dir, 'runtime', 'jre', 'bin', 'javaw.exe'),
-            os.path.join(self.game_dir, 'runtime', 'bin', 'javaw.exe'),
+            os.path.join(self.exe_dir, 'jre21', 'bin', 'javaw.exe'),
+            os.path.join(self.exe_dir, 'jre21', 'bin', 'java.exe'),
+            os.path.join(self.exe_dir, '..', 'jre21', 'bin', 'javaw.exe'),
+            os.path.join(self.game_dir, 'runtime', 'jre21', 'bin', 'javaw.exe'),
+            os.path.join(self.game_dir, 'runtime', 'jre-21', 'bin', 'javaw.exe'),
         ]
         for p in portable_candidates:
             if os.path.isfile(p):
-                self.log(f"Found portable Java: {p}")
+                self.log(f"Found portable Java 21: {p}")
                 return p
 
-        # 2. Check installed Java paths
-        system_candidates = [
-            r'C:\Program Files\Java\jre1.8.0_351\bin\javaw.exe',
-            r'C:\Program Files\Java\jre1.8.0_351\bin\java.exe',
-            r'C:\Program Files\Java\jdk-17\bin\javaw.exe',
-            r'C:\Program Files\Java\jdk-16\bin\javaw.exe',
-            r'C:\Program Files\Java\jdk-23\bin\javaw.exe',
-            r'C:\Program Files (x86)\Java\jre1.8.0_351\bin\javaw.exe',
-            r'C:\Program Files (x86)\Common Files\Oracle\Java\javapath\javaw.exe'
+        system_globs = [
+            r'C:\Program Files\Java\jdk-21*\bin\javaw.exe',
+            r'C:\Program Files\Java\jdk-22*\bin\javaw.exe',
+            r'C:\Program Files\Java\jdk-23*\bin\javaw.exe',
+            r'C:\Program Files\Eclipse Adoptium\jdk-21*\bin\javaw.exe',
+            r'C:\Program Files\Microsoft\jdk-21*\bin\javaw.exe',
+            os.path.expandvars(r'%USERPROFILE%\.gradle\jdks\*21*\bin\javaw.exe'),
         ]
-        for p in system_candidates:
-            if os.path.isfile(p):
-                self.log(f"Found system Java: {p}")
-                return p
+        for pat in system_globs:
+            for p in sorted(glob.glob(pat), reverse=True):
+                if os.path.isfile(p):
+                    self.log(f"Found Java 21+: {p}")
+                    return p
 
-        # 3. Check environment PATH
         which_javaw = shutil.which('javaw')
         if which_javaw and os.path.isfile(which_javaw):
             self.log(f"Found PATH Java: {which_javaw}")
@@ -308,51 +306,70 @@ class SpaceRustClientManager:
                 h.update(chunk)
         return h.hexdigest()
 
-    def sync_latest_mod(self, force=False):
-        """Always ensure the latest spacerust-mod-1.0.0.jar is installed in game_dir/mods"""
-        if getattr(sys, 'frozen', False):
-            base_dir = getattr(sys, '_MEIPASS', self.exe_dir)
-        else:
-            base_dir = self.exe_dir
-
-        dst_mods = os.path.join(self.game_dir, 'mods')
-        os.makedirs(dst_mods, exist_ok=True)
-
-        candidates = [
-            os.path.join(base_dir, 'spacerust-mod-1.0.0.jar'),
-            os.path.join(self.exe_dir, 'data', 'mods', 'spacerust-mod-1.0.0.jar'),
-            os.path.join(base_dir, 'spacerust-mod', 'build', 'libs', 'spacerust-mod-1.0.0.jar'),
-            os.path.join(self.exe_dir, 'spacerust-mod', 'build', 'libs', 'spacerust-mod-1.0.0.jar')
-        ]
-
+    def _sync_single_mod(self, dst_mods, target_name, candidate_paths, cfg_key):
+        target = os.path.join(dst_mods, target_name)
         cfg = self._load_config()
-        target = os.path.join(dst_mods, 'spacerust-mod-1.0.0.jar')
-
-        for mod_path in candidates:
-            if os.path.isfile(mod_path):
+        for mod_path in candidate_paths:
+            if mod_path and os.path.isfile(mod_path):
                 try:
-                    bundled_hash = self._file_sha256(mod_path)
+                    src_hash = self._file_sha256(mod_path)
                     need_copy = (
-                        force
-                        or not os.path.isfile(target)
-                        or cfg.get('last_bundled_mod_hash') != bundled_hash
-                        or (not cfg.get('remote_mod_asset_id') and self._file_sha256(target) != bundled_hash)
+                        not os.path.isfile(target)
+                        or cfg.get(cfg_key) != src_hash
+                        or self._file_sha256(target) != src_hash
                     )
                     if need_copy:
                         shutil.copy2(mod_path, target)
-                        self._save_config({
-                            'last_bundled_mod_hash': bundled_hash,
-                            'remote_mod_asset_id': None,
-                            'remote_mod_updated_at': None,
-                        })
-                        self.log(f"Synced latest SpaceRust mod: {target}")
+                        self._save_config({cfg_key: src_hash})
+                        self.log(f"Synced 1.21.11 mod: {target}")
                 except Exception as e:
-                    self.log(f"Could not sync mod: {e}")
-                break
+                    self.log(f"Could not sync {target_name}: {e}")
+                return True
+        return False
+
+    def sync_latest_mod(self, force=False):
+        """Ensure Spacerust 1.21.11 mod, spacerust-ui addon, and Fabric API are installed in game_dir/mods."""
+        base_dir = getattr(sys, '_MEIPASS', self.exe_dir) if getattr(sys, 'frozen', False) else self.exe_dir
+        dst_mods = os.path.join(self.game_dir, 'mods')
+        os.makedirs(dst_mods, exist_ok=True)
+
+        # Remove incompatible legacy 1.16.5 mod jars if present
+        for legacy_name in ('spacerust-mod-1.0.0.jar', 'fabric-api-0.42.0+1.16.jar'):
+            legacy_mod = os.path.join(dst_mods, legacy_name)
+            if os.path.isfile(legacy_mod):
+                try:
+                    os.remove(legacy_mod)
+                    self.log(f"Removed legacy 1.16.5 mod: {legacy_mod}")
+                except Exception:
+                    pass
+
+        desktop_dir = os.path.expandvars(r'%USERPROFILE%\Desktop')
+        self._sync_single_mod(dst_mods, 'Spacerust.jar', [
+            os.path.join(base_dir, 'mods_1_21_11', 'Spacerust.jar'),
+            os.path.join(self.exe_dir, 'mods_1_21_11', 'Spacerust.jar'),
+            os.path.join(self.exe_dir, 'data', 'mods', 'Spacerust.jar'),
+            r'd:\Спейсраст\mods_1_21_11\Spacerust.jar',
+            os.path.join(desktop_dir, 'Spacerust.jar'),
+        ], 'last_spacerust_jar_hash')
+
+        self._sync_single_mod(dst_mods, 'spacerust-ui-1.0.0.jar', [
+            os.path.join(base_dir, 'spacerust-ui-1.0.0.jar'),
+            os.path.join(self.exe_dir, 'spacerust-ui', 'build', 'libs', 'spacerust-ui-1.0.0.jar'),
+            os.path.join(self.exe_dir, 'data', 'mods', 'spacerust-ui-1.0.0.jar'),
+            r'd:\Спейсраст\spacerust-ui\build\libs\spacerust-ui-1.0.0.jar',
+        ], 'last_spacerust_ui_hash')
+
+        self._sync_single_mod(dst_mods, 'fabric-api-0.141.6+1.21.11.jar', [
+            os.path.join(base_dir, 'fabric-api-0.141.6+1.21.11.jar'),
+            os.path.join(self.exe_dir, 'mods_1_21_11', 'fabric-api-0.141.6+1.21.11.jar'),
+            os.path.join(self.exe_dir, 'data', 'mods', 'fabric-api-0.141.6+1.21.11.jar'),
+            os.path.expandvars(r'%APPDATA%\.minecraft\mods\fabric-api-0.141.6+1.21.11.jar'),
+            r'd:\Спейсраст\mods_1_21_11\fabric-api-0.141.6+1.21.11.jar',
+        ], 'last_fabric_api_hash')
 
         self.sync_menu_videos(base_dir)
         # Never overwrite a locally built workspace/bundled mod JAR with an older GitHub Release
-        local_dev_mod = os.path.join(self.exe_dir, 'spacerust-mod', 'build', 'libs', 'spacerust-mod-1.0.0.jar')
+        local_dev_mod = os.path.join(self.exe_dir, 'spacerust-ui', 'build', 'libs', 'spacerust-ui-1.0.0.jar')
         if not os.path.isfile(local_dev_mod):
             self.check_cloud_updates()
 
@@ -505,8 +522,9 @@ class SpaceRustClientManager:
     def _get_bundled_mod_mtime(self):
         bundled_mtime = 0.0
         for cand in [
-            os.path.join(getattr(sys, '_MEIPASS', self.exe_dir), 'spacerust-mod-1.0.0.jar'),
-            os.path.join(self.exe_dir, 'spacerust-mod', 'build', 'libs', 'spacerust-mod-1.0.0.jar'),
+            os.path.join(getattr(sys, '_MEIPASS', self.exe_dir), 'spacerust-ui-1.0.0.jar'),
+            os.path.join(self.exe_dir, 'spacerust-ui', 'build', 'libs', 'spacerust-ui-1.0.0.jar'),
+            os.path.join(self.exe_dir, 'mods_1_21_11', 'Spacerust.jar'),
         ]:
             if os.path.isfile(cand):
                 bundled_mtime = max(bundled_mtime, os.path.getmtime(cand))
@@ -780,19 +798,14 @@ class SpaceRustClientManager:
         cfg = self._load_config()
         assets = {a.get('name'): a for a in release.get('assets', []) if isinstance(a, dict)}
 
-        # 1. Check updated mod jar asset (only if strictly newer than local bundled mod)
-        mod_asset = assets.get('spacerust-mod-1.0.0.jar')
+        # 1. Legacy 1.16.5 spacerust-mod-1.0.0.jar release assets are intentionally skipped on 1.21.11.
+        # Optional 1.21.11 UI mod update only if spacerust-ui-1.0.0.jar is published on releases.
+        mod_asset = assets.get('spacerust-ui-1.0.0.jar')
         if mod_asset:
             asset_id = mod_asset.get('id')
             updated_at = mod_asset.get('updated_at')
             dl_url = mod_asset.get('browser_download_url')
-            bundled_mtime = 0.0
-            for cand in [
-                os.path.join(getattr(sys, '_MEIPASS', self.exe_dir), 'spacerust-mod-1.0.0.jar'),
-                os.path.join(self.exe_dir, 'spacerust-mod', 'build', 'libs', 'spacerust-mod-1.0.0.jar'),
-            ]:
-                if os.path.isfile(cand):
-                    bundled_mtime = max(bundled_mtime, os.path.getmtime(cand))
+            bundled_mtime = self._get_bundled_mod_mtime()
             remote_newer = False
             if updated_at:
                 try:
@@ -803,7 +816,7 @@ class SpaceRustClientManager:
                     remote_newer = False
             if dl_url and remote_newer and (cfg.get('remote_mod_asset_id') != asset_id or cfg.get('remote_mod_updated_at') != updated_at):
                 try:
-                    target = os.path.join(self.game_dir, 'mods', 'spacerust-mod-1.0.0.jar')
+                    target = os.path.join(self.game_dir, 'mods', 'spacerust-ui-1.0.0.jar')
                     tmp_mod = target + '.tmp'
                     req = urllib.request.Request(dl_url, headers={'User-Agent': 'SpaceRustLauncher/1.0'})
                     with urllib.request.urlopen(req, timeout=20) as r, open(tmp_mod, 'wb') as out:
@@ -814,7 +827,7 @@ class SpaceRustClientManager:
                             'remote_mod_asset_id': asset_id,
                             'remote_mod_updated_at': updated_at,
                         })
-                        self.log(f"Downloaded cloud mod update ({release.get('tag_name')}): {target}")
+                        self.log(f"Downloaded cloud UI mod update ({release.get('tag_name')}): {target}")
                 except Exception as e:
                     self.log(f"Cloud mod update failed: {e}")
 
@@ -892,7 +905,7 @@ class SpaceRustClientManager:
                     f'$s.TargetPath = "{exe_path}"; '
                     f'$s.WorkingDirectory = "{work_dir}"; '
                     f'$s.IconLocation = "{exe_path},0"; '
-                    f'$s.Description = "SpaceRust 1.16.5 Launcher"; '
+                    f'$s.Description = "SpaceRust 1.21.11 Launcher"; '
                     f'$s.Save()'
                 )
                 subprocess.run(["powershell", "-NoProfile", "-Command", ps_script], capture_output=True, timeout=5)
@@ -971,6 +984,49 @@ class SpaceRustClientManager:
                     pass
             raise
 
+    def _merge_tree_missing(self, src_root, dst_root):
+        if not os.path.isdir(src_root):
+            return
+        for root, _, files in os.walk(src_root):
+            rel = os.path.relpath(root, src_root)
+            dst_dir = dst_root if rel == '.' else os.path.join(dst_root, rel)
+            os.makedirs(dst_dir, exist_ok=True)
+            for fn in files:
+                src_f = os.path.join(root, fn)
+                dst_f = os.path.join(dst_dir, fn)
+                try:
+                    if not os.path.isfile(dst_f) or os.path.getsize(src_f) != os.path.getsize(dst_f):
+                        shutil.copy2(src_f, dst_f)
+                except Exception:
+                    pass
+
+    def _normalize_version_json(self, ver_json_path):
+        """Normalize TLauncher/custom version JSON keys (e.g. 'values' -> 'value') for minecraft_launcher_lib."""
+        if not os.path.isfile(ver_json_path):
+            return
+        try:
+            with open(ver_json_path, 'r', encoding='utf-8') as f:
+                jd = json.load(f)
+            changed = False
+            if jd.get('id') != self.version_id:
+                jd['id'] = self.version_id
+                changed = True
+            args = jd.get('arguments')
+            if isinstance(args, dict):
+                for section in ('game', 'jvm'):
+                    arr = args.get(section)
+                    if isinstance(arr, list):
+                        for item in arr:
+                            if isinstance(item, dict) and 'values' in item and 'value' not in item:
+                                item['value'] = item.pop('values')
+                                changed = True
+            if changed:
+                with open(ver_json_path, 'w', encoding='utf-8') as f:
+                    json.dump(jd, f, indent=2)
+                self.log(f"Normalized version JSON arguments: {ver_json_path}")
+        except Exception as e:
+            self.log(f"Version JSON normalization warning: {e}")
+
     def verify_and_prepare(self, progress_callback=None):
         self._cancel_event.clear()
         self._pause_event.set()
@@ -981,103 +1037,74 @@ class SpaceRustClientManager:
 
         notify(self._msg('checking'), 10)
         self.ensure_directories()
+        self.sync_menu_videos()
         self.create_desktop_shortcut()
 
         ver_dir = os.path.join(self.game_dir, 'versions', self.version_id)
         ver_jar = os.path.join(ver_dir, f"{self.version_id}.jar")
         ver_json = os.path.join(ver_dir, f"{self.version_id}.json")
 
-        # 1. If files already exist in .spacerust, we are ready!
+        # 1. If 1.21.11 version already exists in game_dir, ensure mods synced and launch!
         if os.path.isfile(ver_jar) and os.path.isfile(ver_json):
+            self._normalize_version_json(ver_json)
             self.sync_latest_mod()
             notify(self._msg('ready'), 100)
             return True
 
-        # 2. Check if a portable 'data' folder exists next to the launcher exe/script
-        portable_data = os.path.join(self.exe_dir, 'data')
-        if os.path.isdir(portable_data):
-            notify(self._msg('unpacking_dir'), 30)
-            self.log(f"Copying portable data from {portable_data} to {self.game_dir}...")
-            try:
-                for item in os.listdir(portable_data):
-                    src_item = os.path.join(portable_data, item)
-                    dst_item = os.path.join(self.game_dir, item)
-                    if os.path.isdir(src_item):
-                        shutil.copytree(src_item, dst_item, dirs_exist_ok=True)
-                    else:
-                        shutil.copy2(src_item, dst_item)
-                self.sync_latest_mod()
-                if os.path.isfile(ver_jar) and os.path.isfile(ver_json):
-                    notify(self._msg('ready'), 100)
-                    return True
-            except Exception as e:
-                self.log(f"Error copying portable data: {e}")
-
-        # 3. If local .minecraft has Fabric 1.16.5, seed from it
+        # 2. Seed Fabric 1.21.11 from local .minecraft if available (fast merge of missing libs/assets)
         local_mc = os.path.expandvars(r'%APPDATA%\.minecraft')
-        local_src_ver = os.path.join(local_mc, 'versions', 'Fabric 1.16.5')
-
+        local_src_ver = os.path.join(local_mc, 'versions', 'Fabric 1.21.11')
         if os.path.isdir(local_src_ver):
-            notify(self._msg('init_cache'), 40)
+            notify(self._msg('init_cache'), 35)
             shutil.copytree(local_src_ver, ver_dir, dirs_exist_ok=True)
             for f in os.listdir(ver_dir):
-                if 'Fabric 1.16.5' in f:
-                    new_f = f.replace('Fabric 1.16.5', self.version_id)
+                if 'Fabric 1.21.11' in f:
+                    new_f = f.replace('Fabric 1.21.11', self.version_id)
                     old_p = os.path.join(ver_dir, f)
                     new_p = os.path.join(ver_dir, new_f)
                     if not os.path.exists(new_p):
                         os.rename(old_p, new_p)
-            if os.path.isfile(ver_json):
-                with open(ver_json, 'r', encoding='utf-8') as jf:
-                    jd = json.load(jf)
-                jd['id'] = self.version_id
-                with open(ver_json, 'w', encoding='utf-8') as jf:
-                    json.dump(jd, jf, indent=2)
+            self._normalize_version_json(ver_json)
 
-            local_libs = os.path.join(local_mc, 'libraries')
-            lib_dir = os.path.join(self.game_dir, 'libraries')
-            if os.path.isdir(local_libs) and (not os.path.exists(lib_dir) or len(os.listdir(lib_dir)) == 0):
-                shutil.copytree(local_libs, lib_dir, dirs_exist_ok=True)
-
-            local_assets = os.path.join(local_mc, 'assets')
-            asset_dir = os.path.join(self.game_dir, 'assets')
-            if os.path.isdir(local_assets) and (not os.path.exists(asset_dir) or len(os.listdir(asset_dir)) == 0):
-                shutil.copytree(local_assets, asset_dir, dirs_exist_ok=True)
+            notify(self._msg('init_cache'), 60)
+            self._merge_tree_missing(os.path.join(local_mc, 'libraries'), os.path.join(self.game_dir, 'libraries'))
+            notify(self._msg('init_cache'), 85)
+            self._merge_tree_missing(os.path.join(local_mc, 'assets'), os.path.join(self.game_dir, 'assets'))
 
             self.sync_latest_mod()
             notify(self._msg('ready_short'), 100)
             return True
 
-        # 4. Auto-download from GitHub Release (RustMe-style cloud bootstrap)
-        cloud_url = self._get_client_zip_url()
-        notify(self._msg('first_launch'), 5)
-        self.log(f"Downloading game client from {cloud_url}...")
-
-        temp_zip = os.path.join(self.game_dir, 'client_download.tmp.zip')
+        # 3. Auto-install Fabric 1.21.11 cleanly via minecraft_launcher_lib (for friends without .minecraft cache)
+        notify(self._msg('first_launch'), 15)
         try:
-            self.download_file_with_progress(cloud_url, temp_zip, notify)
-            notify(self._msg('extracting'), 90)
-            self.log("Extracting client package...")
-            self._extract_zip_package(temp_zip, preserve_options=True)
-            if os.path.isfile(temp_zip):
-                os.remove(temp_zip)
+            java21 = self.find_java()
+            minecraft_launcher_lib.fabric.install_fabric(
+                '1.21.11',
+                self.game_dir,
+                loader_version='0.19.2',
+                java=java21
+            )
+            installed_ver = os.path.join(self.game_dir, 'versions', 'fabric-loader-0.19.2-1.21.11')
+            if os.path.isdir(installed_ver):
+                shutil.copytree(installed_ver, ver_dir, dirs_exist_ok=True)
+                for f in os.listdir(ver_dir):
+                    if 'fabric-loader-0.19.2-1.21.11' in f:
+                        old_p = os.path.join(ver_dir, f)
+                        new_p = os.path.join(ver_dir, f.replace('fabric-loader-0.19.2-1.21.11', self.version_id))
+                        if not os.path.exists(new_p):
+                            os.rename(old_p, new_p)
+                if os.path.isfile(ver_json):
+                    with open(ver_json, 'r', encoding='utf-8') as jf:
+                        jd = json.load(jf)
+                    jd['id'] = self.version_id
+                    with open(ver_json, 'w', encoding='utf-8') as jf:
+                        json.dump(jd, jf, indent=2)
             self.sync_latest_mod()
             notify(self._msg('done_launch'), 100)
             return True
-        except DownloadCancelledError:
-            if os.path.isfile(temp_zip):
-                try:
-                    os.remove(temp_zip)
-                except Exception:
-                    pass
-            raise
         except Exception as e:
-            if os.path.isfile(temp_zip):
-                try:
-                    os.remove(temp_zip)
-                except Exception:
-                    pass
-            self.log(f"Cloud download failed: {e}")
+            self.log(f"Fabric 1.21.11 install failed: {e}")
             raise RuntimeError(self._msg('dl_failed', err=e))
 
     def _get_client_zip_url(self):
@@ -1148,15 +1175,7 @@ class SpaceRustClientManager:
                 repaired_from_portable = os.path.isfile(ver_jar) and os.path.isfile(ver_json)
 
             if not repaired_from_portable:
-                cloud_url = self._get_client_zip_url()
-                notify(self._msg('repair_downloading'), 8)
-                self.log(f"Repairing client from {cloud_url}...")
-                self.download_file_with_progress(cloud_url, temp_zip, notify)
-                notify(self._msg('repair_extracting'), 90)
-                self.log("Extracting repair package...")
-                self._extract_zip_package(temp_zip, preserve_options=True)
-                if os.path.isfile(temp_zip):
-                    os.remove(temp_zip)
+                self.verify_and_prepare(progress_callback=progress_callback)
 
             self.sync_latest_mod(force=True)
             notify(self._msg('repair_done'), 100)
