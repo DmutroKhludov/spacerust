@@ -91,6 +91,14 @@ public class RustDeployableData {
             return new Box(x - 0.45, y, z - 0.35, x + 0.45, y + 0.55, z + 0.35);
         } else if (type == RustDeployableType.LARGE_BOX) {
             return new Box(x - 0.9, y, z - 0.5, x + 0.9, y + 0.8, z + 0.5);
+        } else if (type == RustDeployableType.CAMPFIRE) {
+            return new Box(x - 0.45, y, z - 0.45, x + 0.45, y + 0.35, z + 0.45);
+        } else if (type == RustDeployableType.FURNACE) {
+            return new Box(x - 0.55, y, z - 0.55, x + 0.55, y + 1.45, z + 0.55);
+        } else if (type == RustDeployableType.SLEEPING_BAG) {
+            return new Box(x - 0.5, y, z - 0.9, x + 0.5, y + 0.2, z + 0.9);
+        } else if (type == RustDeployableType.WORKBENCH_1 || type == RustDeployableType.WORKBENCH_2 || type == RustDeployableType.WORKBENCH_3) {
+            return new Box(x - 0.8, y, z - 0.45, x + 0.8, y + 1.1, z + 0.45);
         }
         return new Box(x - 0.3, y, z - 0.3, x + 0.3, y + 0.5, z + 0.3);
     }

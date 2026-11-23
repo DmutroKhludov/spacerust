@@ -15,6 +15,13 @@ public enum RustDeployableType {
     SMALL_BOX("Маленький ящик", "deploy_small_box", "small_box.png", 100.0f, false, false, "salvage_large_wood_box_open_001", "salvage_large_wood_box_close_001"),
     LARGE_BOX("Большой деревянный ящик", "deploy_large_box", "large_box.png", 250.0f, false, false, "salvage_large_wood_box_open_001", "salvage_large_wood_box_close_001"),
 
+    CAMPFIRE("Костер", "deploy_campfire", "campfire.png", 100.0f, false, false, "wood_hit", null),
+    FURNACE("Печь", "deploy_furnace", "furnace.png", 500.0f, false, false, "door_knock", null),
+    SLEEPING_BAG("Спальный мешок", "deploy_sleeping_bag", "sleeping_bag.png", 100.0f, false, false, "inventory_pickup_wood", null),
+    WORKBENCH_1("Верстак 1 уровня", "deploy_workbench1", "workbench1.png", 500.0f, false, false, "inventory_pickup_wood", null),
+    WORKBENCH_2("Верстак 2 уровня", "deploy_workbench2", "workbench2.png", 750.0f, false, false, "inventory_pickup_wood", null),
+    WORKBENCH_3("Верстак 3 уровня", "deploy_workbench3", "workbench3.png", 1000.0f, false, false, "inventory_pickup_wood", null),
+
     KEY_LOCK("Соло замок", "lock_key_locked", "key_lock.png", 100.0f, false, false, "keylock_unlock", "keylock_lock"),
     CODE_LOCK("Кодовый замок", "lock_code_locked", "code_lock.png", 200.0f, false, false, "keylock_unlock", "keylock_lock");
 

@@ -26,6 +26,11 @@ public class RustRecoilManager {
     private static int currentBurstShot = 0;
     private static long lastShotTime = 0;
     private static float accumulatedPitchRecovery = 0f;
+    private static float visualKick = 0f;
+
+    public static float getVisualKick() {
+        return visualKick;
+    }
 
     public static void init() {
         try (InputStream in = RustRecoilManager.class.getResourceAsStream("/assets/spacerust/data/recoil-profiles.json")) {
@@ -91,10 +96,12 @@ public class RustRecoilManager {
             client.player.pitch -= pitchKick;
             client.player.yaw += yawKick;
             accumulatedPitchRecovery += pitchKick * 0.4f; // Recovers 40% of pitch
+            visualKick = 1.0f;
         }
     }
 
     public static void tick(MinecraftClient client) {
+        visualKick = Math.max(0f, visualKick - 0.18f);
         if (client.player == null) return;
         long now = System.currentTimeMillis();
         // Recoil recovery: smoothly return aim after burst ends

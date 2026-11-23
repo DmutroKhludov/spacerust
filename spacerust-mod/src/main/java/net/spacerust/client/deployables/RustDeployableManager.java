@@ -105,6 +105,18 @@ public class RustDeployableManager {
             return RustDeployableType.CODE_LOCK;
         } else if (held.getItem() == Items.TRIPWIRE_HOOK || name.contains("key_lock") || name.contains("соло замок") || name.contains("замок")) {
             return RustDeployableType.KEY_LOCK;
+        } else if (held.getItem() == Items.CAMPFIRE || name.contains("костер") || name.contains("campfire")) {
+            return RustDeployableType.CAMPFIRE;
+        } else if (held.getItem() == Items.FURNACE || name.contains("печь") || name.contains("furnace")) {
+            return RustDeployableType.FURNACE;
+        } else if (held.getItem() == Items.WHITE_BED || name.contains("спальник") || name.contains("спальный мешок") || name.contains("sleeping_bag")) {
+            return RustDeployableType.SLEEPING_BAG;
+        } else if (name.contains("верстак 1") || name.contains("workbench 1") || (held.getItem() == Items.CRAFTING_TABLE && name.contains("верстак 1"))) {
+            return RustDeployableType.WORKBENCH_1;
+        } else if (name.contains("верстак 2") || name.contains("workbench 2") || (held.getItem() == Items.SMITHING_TABLE && name.contains("верстак 2"))) {
+            return RustDeployableType.WORKBENCH_2;
+        } else if (name.contains("верстак 3") || name.contains("workbench 3")) {
+            return RustDeployableType.WORKBENCH_3;
         }
         return null;
     }

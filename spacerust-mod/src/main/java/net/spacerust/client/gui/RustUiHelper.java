@@ -403,4 +403,38 @@ public final class RustUiHelper {
             sf.drawCenteredY(matrices, "УЮТ " + comfort + "%", cx + 6, statusY, chipH, 0xFFFFFFFF);
         }
     }
+
+    /**
+     * Renders an authentic rotating 3D Rust Binary Model (.rbm) inside GUI panels (e.g. Crafting Preview).
+     */
+    public static void render3DModelInGui(int centerX, int centerY, float size, float rotY, String modelName) {
+        if (modelName == null) return;
+        net.spacerust.client.building.RbmModel model = net.spacerust.client.building.RbmModel.get(modelName);
+        if (model == null) return;
+
+        MinecraftClient client = MinecraftClient.getInstance();
+        net.minecraft.client.render.VertexConsumerProvider.Immediate immediate = client.getBufferBuilders().getEntityVertexConsumers();
+
+        RenderSystem.pushMatrix();
+        RenderSystem.translatef((float) centerX, (float) centerY, 1050.0F);
+        RenderSystem.scalef(1.0F, 1.0F, -1.0F);
+
+        MatrixStack ms = new MatrixStack();
+        ms.translate(0.0D, 0.0D, 1000.0D);
+        ms.scale(size, size, size);
+
+        // Tilt forward into isometric view and rotate around Y
+        ms.multiply(net.minecraft.util.math.Vec3f.POSITIVE_X.getDegreesQuaternion(20.0F));
+        ms.multiply(net.minecraft.util.math.Vec3f.POSITIVE_Y.getDegreesQuaternion(rotY));
+
+        RenderSystem.enableDepthTest();
+        net.minecraft.client.render.DiffuseLighting.enableGuiDepthLighting();
+
+        model.render(ms, immediate, 0x00F000F0, net.minecraft.client.render.OverlayTexture.DEFAULT_UV, 1.0f, 1.0f, 1.0f, 1.0f);
+        immediate.draw();
+
+        RenderSystem.enableDepthTest();
+        net.minecraft.client.render.DiffuseLighting.disableGuiDepthLighting();
+        RenderSystem.popMatrix();
+    }
 }

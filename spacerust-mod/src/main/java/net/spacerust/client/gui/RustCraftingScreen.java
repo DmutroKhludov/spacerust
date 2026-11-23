@@ -77,6 +77,81 @@ public class RustCraftingScreen extends Screen {
             this.craftSeconds = seconds;
             this.ingredients = ingredients;
         }
+
+        public String get3DModelName() {
+            switch (this.id) {
+                case "campfire": return "deploy_campfire";
+                case "torch": return "held_torch";
+                case "small_box": return "deploy_small_box";
+                case "bed": return "deploy_sleeping_bag";
+                case "build_plan":
+                case "building_plan": return "held_plan";
+                case "wood_hammer": return "held_hammer";
+                case "wood_door": return "door_wood_0";
+                case "sheet_door": return "door_metal_0";
+                case "armored_door": return "door_armored_0";
+                case "garage_door": return "garage_door_0";
+                case "tool_cupboard": return "deploy_tool_cupboard";
+                case "code_lock": return "lock_code_locked";
+                case "key_lock": return "lock_key_locked";
+                case "large_box": return "deploy_large_box";
+                case "furnace": return "deploy_furnace";
+                case "workbench_1": return "deploy_workbench1";
+                case "workbench_2": return "deploy_workbench2";
+                case "stone_hatchet": return "held_stone_hatchet";
+                case "stone_pickaxe": return "held_stone_pickaxe";
+                case "metal_hatchet": return "held_hatchet";
+                case "metal_pickaxe": return "held_pickaxe";
+                case "bandage": return "held_bandage";
+                case "syringe": return "held_syringe";
+                case "bow": return "held_hunting_bow";
+                case "crossbow": return "held_crossbow";
+                case "revolver": return "held_revolver";
+                case "pipe_shotgun": return "held_doublebarrel";
+                case "ak47": return "held_ak";
+                case "thompson": return "held_thompson";
+                case "sar": return "held_sar";
+                case "mp5": return "held_mp5";
+                case "bolt": return "held_bolt";
+                case "pump_shotgun": return "held_pump_shotgun";
+                case "c4": return "held_c4";
+                default: return null;
+            }
+        }
+
+        public float get3DModelScale() {
+            switch (this.id) {
+                case "campfire": return 55.0f;
+                case "furnace": return 30.0f;
+                case "small_box": return 50.0f;
+                case "large_box": return 35.0f;
+                case "tool_cupboard": return 26.0f;
+                case "wood_door":
+                case "sheet_door":
+                case "armored_door": return 26.0f;
+                case "garage_door": return 22.0f;
+                case "code_lock":
+                case "key_lock": return 110.0f;
+                case "build_plan":
+                case "building_plan": return 70.0f;
+                case "wood_hammer": return 110.0f;
+                case "revolver": return 130.0f;
+                case "ak47":
+                case "thompson":
+                case "sar":
+                case "mp5":
+                case "bolt":
+                case "pump_shotgun":
+                case "pipe_shotgun": return 95.0f;
+                case "stone_hatchet":
+                case "stone_pickaxe":
+                case "metal_hatchet":
+                case "metal_pickaxe": return 85.0f;
+                case "bandage":
+                case "syringe": return 110.0f;
+                default: return 50.0f;
+            }
+        }
     }
 
     public static final List<Recipe> ALL_RECIPES = new ArrayList<>();
@@ -522,13 +597,24 @@ public class RustCraftingScreen extends Screen {
             DrawableHelper.fill(matrices, chipX, hdrY + 17, chipX + chipW, hdrY + 32, 0x641D201F);
             bfSmall.drawCenteredY(matrices, "x" + craftQuantity, chipX + 16, hdrY + 17, 15, RustUiHelper.COLOR_TEXT_CREAM);
 
-            // Description Box (itemDesc)
-            int descTop = hdrY + 52;
-            int descH = Math.max(36, L.panelH - 165);
+            // Description & 3D Rotating Model Box
+            int hdrRowY = L.actionY - 76;
+            int descTop = hdrY + 38;
+            int descH = Math.max(50, hdrRowY - descTop - 6);
             DrawableHelper.fill(matrices, L.rightX + 8, descTop, L.rightX + L.rightW - 8, descTop + descH, 0x0BF7EBE1);
-            int lineY = descTop + 6;
+
+            // 3D Rotating Model of the item (1:1 with Rust)
+            String m3d = selectedRecipe.get3DModelName();
+            if (m3d != null) {
+                int previewCenterX = L.rightX + L.rightW / 2;
+                int previewCenterY = descTop + (descH / 2) - 10;
+                float rotY = (System.currentTimeMillis() % 6000L) / 6000.0f * 360.0f;
+                RustUiHelper.render3DModelInGui(previewCenterX, previewCenterY, selectedRecipe.get3DModelScale(), rotY, m3d);
+            }
+
+            // Item Description text beneath 3D preview
+            int lineY = descTop + descH - 16;
             for (String line : wrapText(selectedRecipe.description, L.rightW - 28, rf)) {
-                if (lineY + 10 > descTop + descH - 4) break;
                 rf.draw(matrices, line, L.rightX + 14, lineY, RustUiHelper.COLOR_TEXT_CREAM);
                 lineY += 11;
             }
@@ -541,7 +627,6 @@ public class RustCraftingScreen extends Screen {
             int colHaveW = 48;
             int colNameW = tableW - colAmtW - colNeedW - colHaveW - 3;
 
-            int hdrRowY = L.actionY - 76;
             drawTableRow(matrices, tx, hdrRowY, 13, colAmtW, colNameW, colNeedW, colHaveW,
                     "КОЛ-ВО", "ПРЕДМЕТ", "НУЖНО", "ЕСТЬ",
                     0xAA1D201F, 0x80F7EBE1, 0x80F7EBE1, 0x80F7EBE1);
