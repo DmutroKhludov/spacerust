@@ -340,15 +340,139 @@ class SpaceRustClientManager:
         except Exception:
             return 0.0
 
-    def _fetch_github_json(self, path, timeout=5):
+    def _http_get(self, url, timeout=6, accept=None):
         import urllib.request
-        url = f"https://api.github.com/repos/{GITHUB_REPO}{path}"
-        req = urllib.request.Request(url, headers={
-            'User-Agent': 'SpaceRustLauncher/1.0',
-            'Accept': 'application/vnd.github+json',
-        })
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return json.loads(resp.read().decode('utf-8'))
+        import ssl
+        headers = {'User-Agent': 'SpaceRustLauncher/1.0'}
+        if accept:
+            headers['Accept'] = accept
+        req = urllib.request.Request(url, headers=headers)
+        ctx = None
+        try:
+            import certifi
+            ctx = ssl.create_default_context(cafile=certifi.where())
+        except Exception:
+            ctx = None
+        with urllib.request.urlopen(req, timeout=timeout, context=ctx) as resp:
+            return resp.read().decode('utf-8', errors='replace'), resp.geturl()
+
+    def _fetch_github_json(self, path, timeout=4):
+        raw, _ = self._http_get(
+            f"https://api.github.com/repos/{GITHUB_REPO}{path}",
+            timeout=timeout,
+            accept='application/vnd.github+json',
+        )
+        return json.loads(raw)
+
+    def _fetch_commits_atom(self, limit=8):
+        import xml.etree.ElementTree as ET
+        xml_text, _ = self._http_get(f"https://github.com/{GITHUB_REPO}/commits/main.atom", timeout=6)
+        root = ET.fromstring(xml_text)
+        ns = {'a': 'http://www.w3.org/2005/Atom'}
+        commits = []
+        for entry in root.findall('a:entry', ns)[:limit]:
+            eid = entry.findtext('a:id', '', ns).strip()
+            sha = eid.split('/')[-1] if '/' in eid else eid
+            title = (entry.findtext('a:title', '', ns) or '').strip() or 'Update'
+            updated = (entry.findtext('a:updated', '', ns) or '').strip()
+            author = (entry.findtext('a:author/a:name', '', ns) or '').strip() or 'SpaceRust'
+            link_el = entry.find('a:link', ns)
+            url = link_el.attrib.get('href', '') if link_el is not None else f"https://github.com/{GITHUB_REPO}/commit/{sha}"
+            if sha:
+                commits.append({
+                    'sha': sha,
+                    'short_sha': sha[:7],
+                    'title': title,
+                    'details': [],
+                    'author': author,
+                    'date': updated,
+                    'url': url,
+                })
+        return commits
+
+    def _fetch_latest_release(self):
+        """Fetches latest GitHub Release & assets via REST API, falling back to rate-limit-free Atom + HTML."""
+        try:
+            rel = self._fetch_github_json('/releases/latest', timeout=4)
+            if isinstance(rel, dict):
+                return rel
+        except Exception:
+            pass
+
+        # Fallback without GitHub REST API rate limits
+        import xml.etree.ElementTree as ET
+        import re
+        tag_name = ''
+        rel_name = ''
+        published_at = ''
+        body = ''
+        rel_url = f"https://github.com/{GITHUB_REPO}/releases"
+
+        try:
+            atom_text, _ = self._http_get(f"https://github.com/{GITHUB_REPO}/releases.atom", timeout=6)
+            root = ET.fromstring(atom_text)
+            ns = {'a': 'http://www.w3.org/2005/Atom'}
+            entry = root.find('a:entry', ns)
+            if entry is not None:
+                eid = (entry.findtext('a:id', '', ns) or '').strip()
+                link_el = entry.find('a:link', ns)
+                if link_el is not None and link_el.attrib.get('href'):
+                    rel_url = link_el.attrib['href']
+                    tag_name = rel_url.rstrip('/').split('/')[-1]
+                elif '/' in eid:
+                    tag_name = eid.rstrip('/').split('/')[-1]
+                rel_name = (entry.findtext('a:title', '', ns) or '').strip() or tag_name
+                published_at = (entry.findtext('a:updated', '', ns) or '').strip()
+                raw_html = (entry.findtext('a:content', '', ns) or '').strip()
+                body = re.sub(r'<[^>]+>', ' ', raw_html).strip()
+        except Exception:
+            pass
+
+        if not tag_name:
+            try:
+                _, final_url = self._http_get(f"https://github.com/{GITHUB_REPO}/releases/latest", timeout=6)
+                if '/releases/tag/' in final_url:
+                    tag_name = final_url.rstrip('/').split('/')[-1]
+                    rel_url = final_url
+                    rel_name = rel_name or tag_name
+            except Exception:
+                pass
+
+        if not tag_name:
+            return None
+
+        assets = []
+        try:
+            exp_html, _ = self._http_get(
+                f"https://github.com/{GITHUB_REPO}/releases/expanded_assets/{tag_name}",
+                timeout=6,
+            )
+            seen_names = set()
+            pattern = re.compile(rf'href="(/{re.escape(GITHUB_REPO)}/releases/download/[^"]+)"')
+            for m in pattern.finditer(exp_html):
+                href = m.group(1)
+                name = href.split('/')[-1]
+                if not name or name in seen_names:
+                    continue
+                seen_names.add(name)
+                assets.append({
+                    'id': f"{tag_name}:{name}:{published_at}",
+                    'name': name,
+                    'updated_at': published_at,
+                    'browser_download_url': f"https://github.com{href}",
+                    'size': 0,
+                })
+        except Exception as e:
+            self.log(f"Expanded assets fetch failed: {e}")
+
+        return {
+            'tag_name': tag_name,
+            'name': rel_name or tag_name,
+            'body': body,
+            'published_at': published_at,
+            'html_url': rel_url,
+            'assets': assets,
+        }
 
     def _get_bundled_mod_mtime(self):
         bundled_mtime = 0.0
@@ -373,58 +497,66 @@ class SpaceRustClientManager:
             self._save_config({'seen_commit_sha': str(commit_sha)})
             return {"status": "ok", "seen_commit_sha": str(commit_sha)}
         try:
-            commits_data = self._fetch_github_json('/commits?sha=main&per_page=1', timeout=4)
-            if isinstance(commits_data, list) and commits_data:
-                sha = commits_data[0].get('sha') or ''
-                if sha:
-                    self._save_config({'seen_commit_sha': sha})
-                    return {"status": "ok", "seen_commit_sha": sha}
+            commits = self._fetch_commits_atom(limit=1)
+            if commits:
+                sha = commits[0]['sha']
+                self._save_config({'seen_commit_sha': sha})
+                return {"status": "ok", "seen_commit_sha": sha}
         except Exception:
             pass
         return {"status": "ok"}
 
-    def check_github_updates(self):
-        """Checks GitHub Releases and main branch commits for launcher & client updates."""
+    def check_github_updates(self, force=False):
+        """Checks GitHub Releases and main branch commits without failing on REST API rate limits."""
+        import time
+        cache = getattr(self, '_github_cache', None)
+        if not force and cache and (time.monotonic() - cache[0]) < 45.0:
+            return cache[1]
+
         cfg = self._load_config()
         commits = []
         latest_release = None
         release_obj = None
-        offline = False
+        release_err = None
+        commits_err = None
 
+        # 1. Fetch commits (prefer rate-limit-free Atom feed, try REST API only for extra details when unthrottled)
         try:
+            commits = self._fetch_commits_atom(limit=8)
+        except Exception as e:
+            commits_err = e
+            self.log(f"GitHub Atom commits failed: {e}")
+
+        if not commits:
             try:
-                release_obj = self._fetch_github_json('/releases/latest', timeout=5)
-            except Exception:
-                rels = self._fetch_github_json('/releases?per_page=1', timeout=5)
-                if isinstance(rels, list) and rels:
-                    release_obj = rels[0]
-        except Exception as e:
-            offline = True
-            self.log(f"GitHub release check failed: {e}")
+                raw_commits = self._fetch_github_json('/commits?sha=main&per_page=8', timeout=4)
+                if isinstance(raw_commits, list):
+                    for item in raw_commits:
+                        sha = item.get('sha') or ''
+                        cinfo = item.get('commit') or {}
+                        raw_msg = (cinfo.get('message') or '').strip()
+                        lines = [ln.strip() for ln in raw_msg.splitlines() if ln.strip()]
+                        author_info = cinfo.get('author') or {}
+                        commits.append({
+                            'sha': sha,
+                            'short_sha': sha[:7],
+                            'title': lines[0] if lines else 'Update',
+                            'details': lines[1:4],
+                            'author': author_info.get('name') or 'SpaceRust',
+                            'date': author_info.get('date') or '',
+                            'url': item.get('html_url') or f"https://github.com/{GITHUB_REPO}/commit/{sha}",
+                        })
+                    commits_err = None
+            except Exception as e:
+                commits_err = e
+                self.log(f"GitHub REST commits failed: {e}")
 
+        # 2. Fetch latest release & assets (REST API with Atom+HTML rate-limit-free fallback)
         try:
-            raw_commits = self._fetch_github_json('/commits?sha=main&per_page=8', timeout=5)
-            if isinstance(raw_commits, list):
-                for item in raw_commits:
-                    sha = item.get('sha') or ''
-                    cinfo = item.get('commit') or {}
-                    raw_msg = (cinfo.get('message') or '').strip()
-                    lines = [ln.strip() for ln in raw_msg.splitlines() if ln.strip()]
-                    title = lines[0] if lines else 'Update'
-                    details = lines[1:4]
-                    author_info = cinfo.get('author') or {}
-                    commits.append({
-                        'sha': sha,
-                        'short_sha': sha[:7],
-                        'title': title,
-                        'details': details,
-                        'author': author_info.get('name') or 'Developer',
-                        'date': author_info.get('date') or '',
-                        'url': item.get('html_url') or f"https://github.com/{GITHUB_REPO}/commit/{sha}",
-                    })
-                offline = False
+            release_obj = self._fetch_latest_release()
         except Exception as e:
-            self.log(f"GitHub commits check failed: {e}")
+            release_err = e
+            self.log(f"GitHub release check failed: {e}")
 
         launcher_update = {'available': False}
         mod_update = {'available': False}
@@ -493,9 +625,10 @@ class SpaceRustClientManager:
         seen_sha = cfg.get('seen_commit_sha') or ''
         has_new_commit = bool(latest_sha and latest_sha != seen_sha)
         has_binary_update = bool(launcher_update.get('available') or mod_update.get('available'))
+        is_offline = bool(not commits and not latest_release)
 
-        return {
-            'status': 'offline' if (offline and not commits and not latest_release) else 'ok',
+        result = {
+            'status': 'offline' if is_offline else 'ok',
             'repo': GITHUB_REPO,
             'launcher_version': LAUNCHER_VERSION,
             'is_frozen': bool(getattr(sys, 'frozen', False)),
@@ -509,6 +642,9 @@ class SpaceRustClientManager:
             'has_binary_update': has_binary_update,
             'has_any_update': bool(has_new_commit or has_binary_update),
         }
+        if not is_offline:
+            self._github_cache = (time.monotonic(), result)
+        return result
 
     def apply_github_update(self, progress_callback=None):
         """Downloads and applies available mod and/or SpaceRust.exe updates from GitHub Releases."""
@@ -519,7 +655,7 @@ class SpaceRustClientManager:
                 progress_callback(stage, percent)
 
         try:
-            info = self.check_github_updates()
+            info = self.check_github_updates(force=True)
             if info.get('status') == 'offline':
                 return {'status': 'error', 'message': self._msg('update_err', err='GitHub offline')}
 
@@ -595,12 +731,8 @@ class SpaceRustClientManager:
     def check_cloud_updates(self):
         """Check GitHub Releases (latest) for updated mod JAR or menu_videos.zip."""
         import urllib.request
-        try:
-            api_url = "https://api.github.com/repos/DmutroKhludov/spacerust/releases/latest"
-            req = urllib.request.Request(api_url, headers={'User-Agent': 'SpaceRustLauncher/1.0'})
-            with urllib.request.urlopen(req, timeout=4) as resp:
-                release = json.loads(resp.read().decode('utf-8'))
-        except Exception:
+        release = self._fetch_latest_release()
+        if not isinstance(release, dict):
             return
 
         cfg = self._load_config()

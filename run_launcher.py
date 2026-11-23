@@ -444,9 +444,9 @@ class LauncherApi:
         except Exception:
             return False
 
-    def check_updates(self):
+    def check_updates(self, force=False):
         try:
-            return self._manager.check_github_updates()
+            return self._manager.check_github_updates(force=bool(force))
         except Exception as e:
             return {"status": "error", "message": str(e)}
 

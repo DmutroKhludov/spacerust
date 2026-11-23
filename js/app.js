@@ -841,7 +841,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const a = api();
         if (a && typeof a.check_updates === 'function') {
             try {
-                const res = await a.check_updates();
+                const res = await a.check_updates(!!manual);
                 renderGithubUpdates(res);
                 if (manual) {
                     if (res.status === 'offline') showToast(t('github.offline'), 'error');
