@@ -444,6 +444,13 @@ class LauncherApi:
         except Exception:
             return False
 
+    def cancel_download(self):
+        try:
+            self._manager.cancel_download()
+            return True
+        except Exception:
+            return False
+
     def check_updates(self, force=False):
         try:
             return self._manager.check_github_updates(force=bool(force))

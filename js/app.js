@@ -26,7 +26,10 @@ document.addEventListener('DOMContentLoaded', () => {
         optGC: localStorage.getItem('sr_opt_gc') !== 'false',
         lang: localStorage.getItem('sr_lang') || 'ru',
         isLaunching: false,
-        isPaused: false
+        isRepairing: false,
+        isUpdating: false,
+        isPaused: false,
+        isCancelled: false
     };
 
     const VALID_LANGS = ['ru', 'uk', 'en'];
@@ -66,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadPct = $('load-pct');
     const btnPause = $('btn-dl-pause');
     const btnResume = $('btn-dl-resume');
+    const btnCancel = $('btn-dl-cancel');
 
     const drawer = $('settings-drawer');
     const drawerBackdrop = $('settings-backdrop');
@@ -348,21 +352,33 @@ document.addEventListener('DOMContentLoaded', () => {
             return showToast(t('settings.folderExeOnly'));
         }
         STATE.isRepairing = true;
+        STATE.isCancelled = false;
         closeDrawer();
         btnPlay?.classList.add('loading-state');
         btnPlay?.classList.remove('update-ready');
         loadLine.classList.remove('done', 'paused');
         btnPause.disabled = false;
         btnResume.disabled = true;
+        if (btnCancel) btnCancel.disabled = false;
         window.updateLaunchProgress(t('settings.repairRunning'), 3);
         try {
             const res = await a.repair_game();
-            if (res && res.status === 'ok') {
+            if (res && res.status === 'cancelled') {
+                const alreadyCancelled = STATE.isCancelled;
+                STATE.isRepairing = false;
+                STATE.isCancelled = false;
+                btnPlay?.classList.remove('loading-state');
+                setPaused(false);
+                setIdleLine();
+                if (!alreadyCancelled) showToast(t('play.toastCancelled'));
+            } else if (res && res.status === 'ok') {
+                STATE.isCancelled = false;
                 loadLine.classList.add('done');
                 loadFill.style.width = '100%';
                 loadPct.textContent = '100%';
                 btnPause.disabled = true;
                 btnResume.disabled = true;
+                if (btnCancel) btnCancel.disabled = true;
                 showToast(t('settings.repairDone'), 'success');
                 setTimeout(() => {
                     STATE.isRepairing = false;
@@ -372,6 +388,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }, 2200);
             } else {
                 STATE.isRepairing = false;
+                STATE.isCancelled = false;
                 btnPlay?.classList.remove('loading-state');
                 setPaused(false);
                 setIdleLine();
@@ -381,6 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (err) {
             STATE.isRepairing = false;
+            STATE.isCancelled = false;
             btnPlay?.classList.remove('loading-state');
             setPaused(false);
             setIdleLine();
@@ -514,6 +532,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function setIdleLine() {
+        STATE.isPaused = false;
         loadLine.classList.remove('paused', 'done');
         loadFill.style.width = '0%';
         loadTitle.textContent = '';
@@ -522,12 +541,14 @@ document.addEventListener('DOMContentLoaded', () => {
         btnPause.disabled = true;
         btnResume.disabled = true;
         btnResume.classList.remove('active');
+        if (btnCancel) btnCancel.disabled = true;
         syncPlayButtonMode();
     }
 
     let lastProgressPct = 0;
 
     window.updateLaunchProgress = function (text, percent) {
+        if (STATE.isCancelled || (!STATE.isLaunching && !STATE.isRepairing && !STATE.isUpdating)) return;
         const pct = Math.max(0, Math.min(100, Math.round(percent)));
         lastProgressPct = pct;
         loadFill.style.width = `${pct}%`;
@@ -547,7 +568,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     btnPause?.addEventListener('click', async () => {
-        if ((!STATE.isLaunching && !STATE.isRepairing) || STATE.isPaused) return;
+        if ((!STATE.isLaunching && !STATE.isRepairing && !STATE.isUpdating) || STATE.isPaused) return;
         setPaused(true);
         const a = api();
         if (a && a.pause_download) await a.pause_download();
@@ -555,11 +576,30 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     btnResume?.addEventListener('click', async () => {
-        if ((!STATE.isLaunching && !STATE.isRepairing) || !STATE.isPaused) return;
+        if ((!STATE.isLaunching && !STATE.isRepairing && !STATE.isUpdating) || !STATE.isPaused) return;
         setPaused(false);
         const a = api();
         if (a && a.resume_download) await a.resume_download();
         showToast(t('play.toastResumed'), 'success');
+    });
+
+    btnCancel?.addEventListener('click', async () => {
+        if ((!STATE.isLaunching && !STATE.isRepairing && !STATE.isUpdating) || STATE.isCancelled) return;
+        STATE.isCancelled = true;
+        if (btnCancel) btnCancel.disabled = true;
+        btnPause.disabled = true;
+        btnResume.disabled = true;
+        const a = api();
+        if (a && a.cancel_download) {
+            try { await a.cancel_download(); } catch (_) {}
+        }
+        STATE.isLaunching = false;
+        STATE.isRepairing = false;
+        STATE.isUpdating = false;
+        btnPlay?.classList.remove('loading-state');
+        setPaused(false);
+        setIdleLine();
+        showToast(t('play.toastCancelled'));
     });
 
     function finishLaunch(delay) {
@@ -576,6 +616,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return new Promise((resolve) => {
             let p = 5;
             const tick = setInterval(() => {
+                if (STATE.isCancelled) {
+                    clearInterval(tick);
+                    resolve({ status: 'cancelled' });
+                    return;
+                }
                 if (STATE.isPaused) return;
                 p += 4 + Math.random() * 6;
                 if (p >= 100) {
@@ -601,10 +646,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         STATE.isLaunching = true;
+        STATE.isCancelled = false;
         btnPlay.classList.add('loading-state');
         loadLine.classList.remove('done', 'paused');
         btnPause.disabled = false;
         btnResume.disabled = true;
+        if (btnCancel) btnCancel.disabled = false;
         window.updateLaunchProgress(t('play.checkingFiles'), 3);
 
         try {
@@ -613,10 +660,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? await a.launch_client(STATE.ramMB, STATE.nickname)
                 : await simulateLaunch();
 
+            if (res && res.status === 'cancelled') {
+                const alreadyCancelled = STATE.isCancelled;
+                btnPlay.classList.remove('loading-state');
+                STATE.isLaunching = false;
+                STATE.isCancelled = false;
+                setPaused(false);
+                setIdleLine();
+                if (!alreadyCancelled) showToast(t('play.toastCancelled'));
+                return;
+            }
+
             if (res && res.status === 'error') {
                 btnPlay.classList.remove('loading-state');
                 btnPlayText.textContent = t('play.idle');
                 STATE.isLaunching = false;
+                STATE.isCancelled = false;
                 setPaused(false);
                 setIdleLine();
                 const shortErr = String(res.message || '').split('\n')[0] || t('play.toastErr');
@@ -625,6 +684,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            STATE.isCancelled = false;
             loadLine.classList.add('done');
             loadFill.style.width = '100%';
             loadTitle.textContent = t('play.stageRunning');
@@ -633,6 +693,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btnPlayText.textContent = t('play.stageRunning');
             btnPause.disabled = true;
             btnResume.disabled = true;
+            if (btnCancel) btnCancel.disabled = true;
             showToast(t('play.toastLaunched'), 'success');
             finishLaunch(4000);
         } catch (err) {
@@ -640,6 +701,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btnPlay.classList.remove('loading-state');
             btnPlayText.textContent = t('play.idle');
             STATE.isLaunching = false;
+            STATE.isCancelled = false;
             setPaused(false);
             setIdleLine();
             showToast(t('play.toastErr'), 'error');
@@ -955,18 +1017,36 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         STATE.isUpdating = true;
+        STATE.isCancelled = false;
         btnPlay?.classList.add('loading-state');
         loadLine.classList.remove('done', 'paused');
+        btnPause.disabled = false;
+        btnResume.disabled = true;
+        if (btnCancel) btnCancel.disabled = false;
         window.updateLaunchProgress(t('github.applying'), 5);
         try {
             const res = await a.apply_update();
-            if (res && res.status === 'restart_required') {
+            if (res && res.status === 'cancelled') {
+                const alreadyCancelled = STATE.isCancelled;
+                STATE.isUpdating = false;
+                STATE.isCancelled = false;
+                btnPlay?.classList.remove('loading-state');
+                setPaused(false);
+                setIdleLine();
+                if (!alreadyCancelled) showToast(t('play.toastCancelled'));
+            } else if (res && res.status === 'restart_required') {
                 loadLine.classList.add('done');
+                btnPause.disabled = true;
+                btnResume.disabled = true;
+                if (btnCancel) btnCancel.disabled = true;
                 showToast(t('github.restarting'), 'success');
             } else if (res && res.status === 'ok') {
                 STATE.updateAvailable = false;
                 btnPlay?.classList.remove('loading-state');
                 loadLine.classList.add('done');
+                btnPause.disabled = true;
+                btnResume.disabled = true;
+                if (btnCancel) btnCancel.disabled = true;
                 showToast(t('github.updatedMod'), 'success');
                 setTimeout(setIdleLine, 2000);
                 await fetchGithubUpdates(false);
@@ -987,6 +1067,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast(t('github.offline'), 'error');
         } finally {
             STATE.isUpdating = false;
+            STATE.isCancelled = false;
             syncPlayButtonMode();
         }
     }

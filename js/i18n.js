@@ -46,6 +46,7 @@ window.SPACERUST_I18N = {
 
         'load.resumeTitle': 'Продолжить загрузку',
         'load.pauseTitle': 'Пауза загрузки',
+        'load.cancelTitle': 'Отменить загрузку',
 
         'play.patchPrefix': 'ПАТЧ:',
         'play.idle': 'ИГРАТЬ',
@@ -61,6 +62,7 @@ window.SPACERUST_I18N = {
         'play.nickMin': 'Укажите никнейм (минимум 3 символа)',
         'play.toastPaused': 'Загрузка приостановлена',
         'play.toastResumed': 'Загрузка продолжена',
+        'play.toastCancelled': 'Загрузка отменена',
         'play.toastLaunched': 'Игра запущена! Открывается SpaceRust...',
         'play.toastErr': 'Ошибка запуска игры',
         'play.alertErr': '⚠️ НЕ УДАЛОСЬ ЗАПУСТИТЬ ИГРУ:\n\n{msg}',
@@ -172,6 +174,7 @@ window.SPACERUST_I18N = {
 
         'load.resumeTitle': 'Продовжити завантаження',
         'load.pauseTitle': 'Пауза завантаження',
+        'load.cancelTitle': 'Скасувати завантаження',
 
         'play.patchPrefix': 'ПАТЧ:',
         'play.idle': 'ГРАТИ',
@@ -187,6 +190,7 @@ window.SPACERUST_I18N = {
         'play.nickMin': 'Вкажіть нікнейм (мінімум 3 символи)',
         'play.toastPaused': 'Завантаження призупинено',
         'play.toastResumed': 'Завантаження продовжено',
+        'play.toastCancelled': 'Завантаження скасовано',
         'play.toastLaunched': 'Гру запущено! Відкривається SpaceRust...',
         'play.toastErr': 'Помилка запуску гри',
         'play.alertErr': '⚠️ НЕ ВДАЛОСЯ ЗАПУСТИТИ ГРУ:\n\n{msg}',
@@ -298,6 +302,7 @@ window.SPACERUST_I18N = {
 
         'load.resumeTitle': 'Resume download',
         'load.pauseTitle': 'Pause download',
+        'load.cancelTitle': 'Cancel download',
 
         'play.patchPrefix': 'PATCH:',
         'play.idle': 'PLAY',
@@ -313,6 +318,7 @@ window.SPACERUST_I18N = {
         'play.nickMin': 'Enter a nickname (at least 3 characters)',
         'play.toastPaused': 'Download paused',
         'play.toastResumed': 'Download resumed',
+        'play.toastCancelled': 'Download cancelled',
         'play.toastLaunched': 'Game launched! Opening SpaceRust...',
         'play.toastErr': 'Game launch error',
         'play.alertErr': '⚠️ FAILED TO LAUNCH GAME:\n\n{msg}',

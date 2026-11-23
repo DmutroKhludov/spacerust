@@ -39,6 +39,7 @@ BACKEND_MESSAGES = {
         'repair_extracting': 'Восстановление файлов клиента...',
         'repair_done': 'Клиент восстановлен и готов к запуску!',
         'repair_failed': 'Не удалось восстановить игру:\n{err}',
+        'dl_cancelled': 'Загрузка отменена.',
     },
     'uk': {
         'mb': 'МБ',
@@ -67,6 +68,7 @@ BACKEND_MESSAGES = {
         'repair_extracting': 'Відновлення файлів клієнта...',
         'repair_done': 'Клієнт відновлено та готово до запуску!',
         'repair_failed': 'Не вдалося відновити гру:\n{err}',
+        'dl_cancelled': 'Завантаження скасовано.',
     },
     'en': {
         'mb': 'MB',
@@ -95,8 +97,13 @@ BACKEND_MESSAGES = {
         'repair_extracting': 'Restoring client files...',
         'repair_done': 'Client repaired and ready to launch!',
         'repair_failed': 'Failed to repair game:\n{err}',
+        'dl_cancelled': 'Download cancelled.',
     },
 }
+
+
+class DownloadCancelledError(Exception):
+    pass
 
 
 class SpaceRustClientManager:
@@ -115,6 +122,7 @@ class SpaceRustClientManager:
         self.log_file = os.path.join(self.game_dir, 'launcher.log')
         self._pause_event = threading.Event()
         self._pause_event.set()
+        self._cancel_event = threading.Event()
         if getattr(sys, 'frozen', False):
             self.exe_dir = os.path.dirname(sys.executable)
         else:
@@ -230,6 +238,10 @@ class SpaceRustClientManager:
         self._pause_event.clear()
 
     def resume_download(self):
+        self._pause_event.set()
+
+    def cancel_download(self):
+        self._cancel_event.set()
         self._pause_event.set()
 
     def log(self, text):
@@ -664,14 +676,19 @@ class SpaceRustClientManager:
 
     def apply_github_update(self, progress_callback=None):
         """Downloads and applies available mod and/or SpaceRust.exe updates from GitHub Releases."""
+        self._cancel_event.clear()
         self._pause_event.set()
         def notify(stage, percent):
             self.log(f"{stage} ({percent}%)")
             if progress_callback:
                 progress_callback(stage, percent)
 
+        tmp_mod = None
+        new_exe = None
         try:
             info = self.check_github_updates(force=True)
+            if self._cancel_event.is_set():
+                raise DownloadCancelledError(self._msg('dl_cancelled'))
             if info.get('status') == 'offline':
                 return {'status': 'error', 'message': self._msg('update_err', err='GitHub offline')}
 
@@ -740,6 +757,15 @@ class SpaceRustClientManager:
                 return {'status': 'ok', 'updated': 'mod', 'message': self._msg('update_done')}
 
             return {'status': 'up_to_date', 'message': self._msg('update_none')}
+        except DownloadCancelledError as e:
+            for stale in (tmp_mod, new_exe):
+                if stale and os.path.isfile(stale):
+                    try:
+                        os.remove(stale)
+                    except Exception:
+                        pass
+            self.log(f"Update cancelled: {e}")
+            return {'status': 'cancelled', 'message': str(e)}
         except Exception as e:
             self.log(f"Update error: {e}")
             return {'status': 'error', 'message': self._msg('update_err', err=str(e))}
@@ -877,59 +903,76 @@ class SpaceRustClientManager:
     def download_file_with_progress(self, url, dest_path, notify):
         import time
         import urllib.request
+        if self._cancel_event.is_set():
+            raise DownloadCancelledError(self._msg('dl_cancelled'))
         self.log(f"Connecting to {url}...")
         req = urllib.request.Request(url, headers={'User-Agent': 'SpaceRustLauncher/1.0'})
-        with urllib.request.urlopen(req, timeout=30) as resp, open(dest_path, 'wb') as out_f:
-            total_str = resp.headers.get('Content-Length')
-            total_size = int(total_str) if total_str else 0
-            downloaded = 0
-            chunk_size = 1024 * 256
-            last_pct = -1
-            win_start = time.monotonic()
-            win_bytes = 0
-            last_report = 0.0
-            speed_str = f"0.0 {self._msg('mbs')}"
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp, open(dest_path, 'wb') as out_f:
+                total_str = resp.headers.get('Content-Length')
+                total_size = int(total_str) if total_str else 0
+                downloaded = 0
+                chunk_size = 1024 * 256
+                last_pct = -1
+                win_start = time.monotonic()
+                win_bytes = 0
+                last_report = 0.0
+                speed_str = f"0.0 {self._msg('mbs')}"
 
-            while True:
-                if not self._pause_event.is_set():
-                    pct_now = last_pct if last_pct > 0 else 0
-                    notify(self._msg('paused', pct=pct_now), pct_now)
-                    self._pause_event.wait()
-                    win_start = time.monotonic()
-                    win_bytes = 0
-                    last_report = 0.0
-                chunk = resp.read(chunk_size)
-                if not chunk:
-                    break
-                out_f.write(chunk)
-                n = len(chunk)
-                downloaded += n
-                win_bytes += n
+                while True:
+                    if self._cancel_event.is_set():
+                        raise DownloadCancelledError(self._msg('dl_cancelled'))
+                    if not self._pause_event.is_set():
+                        pct_now = last_pct if last_pct > 0 else 0
+                        notify(self._msg('paused', pct=pct_now), pct_now)
+                        self._pause_event.wait()
+                        if self._cancel_event.is_set():
+                            raise DownloadCancelledError(self._msg('dl_cancelled'))
+                        win_start = time.monotonic()
+                        win_bytes = 0
+                        last_report = 0.0
+                    chunk = resp.read(chunk_size)
+                    if self._cancel_event.is_set():
+                        raise DownloadCancelledError(self._msg('dl_cancelled'))
+                    if not chunk:
+                        break
+                    out_f.write(chunk)
+                    n = len(chunk)
+                    downloaded += n
+                    win_bytes += n
 
-                now = time.monotonic()
-                elapsed = now - win_start
-                if elapsed >= 0.4:
-                    bps = win_bytes / elapsed
-                    if bps >= 1024 * 1024:
-                        speed_str = f"{bps / (1024 * 1024):.1f} {self._msg('mbs')}"
-                    else:
-                        speed_str = f"{bps / 1024:.0f} {self._msg('kbs')}"
-                    win_start = now
-                    win_bytes = 0
+                    now = time.monotonic()
+                    elapsed = now - win_start
+                    if elapsed >= 0.4:
+                        bps = win_bytes / elapsed
+                        if bps >= 1024 * 1024:
+                            speed_str = f"{bps / (1024 * 1024):.1f} {self._msg('mbs')}"
+                        else:
+                            speed_str = f"{bps / 1024:.0f} {self._msg('kbs')}"
+                        win_start = now
+                        win_bytes = 0
 
-                pct = int((downloaded / total_size) * 85) + 5 if total_size > 0 else 50
-                if pct != last_pct or (now - last_report) >= 0.4:
-                    last_pct = pct
-                    last_report = now
-                    mb_done = downloaded / (1024 * 1024)
-                    mb_unit = self._msg('mb')
-                    if total_size > 0:
-                        mb_total = total_size / (1024 * 1024)
-                        notify(f"{mb_done:.0f} / {mb_total:.0f} {mb_unit} · {speed_str}", pct)
-                    else:
-                        notify(f"{mb_done:.0f} {mb_unit} · {speed_str}", pct)
+                    pct = int((downloaded / total_size) * 85) + 5 if total_size > 0 else 50
+                    if pct != last_pct or (now - last_report) >= 0.4:
+                        last_pct = pct
+                        last_report = now
+                        mb_done = downloaded / (1024 * 1024)
+                        mb_unit = self._msg('mb')
+                        if total_size > 0:
+                            mb_total = total_size / (1024 * 1024)
+                            notify(f"{mb_done:.0f} / {mb_total:.0f} {mb_unit} · {speed_str}", pct)
+                        else:
+                            notify(f"{mb_done:.0f} {mb_unit} · {speed_str}", pct)
+        except DownloadCancelledError:
+            if os.path.isfile(dest_path):
+                try:
+                    os.remove(dest_path)
+                except Exception:
+                    pass
+            raise
 
     def verify_and_prepare(self, progress_callback=None):
+        self._cancel_event.clear()
         self._pause_event.set()
         def notify(stage, percent):
             self.log(f"{stage} ({percent}%)")
@@ -1021,6 +1064,13 @@ class SpaceRustClientManager:
             self.sync_latest_mod()
             notify(self._msg('done_launch'), 100)
             return True
+        except DownloadCancelledError:
+            if os.path.isfile(temp_zip):
+                try:
+                    os.remove(temp_zip)
+                except Exception:
+                    pass
+            raise
         except Exception as e:
             if os.path.isfile(temp_zip):
                 try:
@@ -1055,6 +1105,7 @@ class SpaceRustClientManager:
 
     def repair_client(self, progress_callback=None):
         """Re-verifies and repairs SpaceRust client files, mod JAR, libraries, assets, and runtime."""
+        self._cancel_event.clear()
         self._pause_event.set()
         def notify(stage, percent):
             self.log(f"[Repair] {stage} ({percent}%)")
@@ -1110,6 +1161,19 @@ class SpaceRustClientManager:
             self.sync_latest_mod(force=True)
             notify(self._msg('repair_done'), 100)
             return {'status': 'ok', 'message': self._msg('repair_done')}
+        except DownloadCancelledError as e:
+            if os.path.isfile(temp_zip):
+                try:
+                    os.remove(temp_zip)
+                except Exception:
+                    pass
+            ver_dir = os.path.join(self.game_dir, 'versions', self.version_id)
+            ver_jar = os.path.join(ver_dir, f"{self.version_id}.jar")
+            ver_json = os.path.join(ver_dir, f"{self.version_id}.json")
+            if os.path.isdir(ver_dir) and not (os.path.isfile(ver_jar) and os.path.isfile(ver_json)):
+                shutil.rmtree(ver_dir, ignore_errors=True)
+            self.log(f"Repair cancelled: {e}")
+            return {'status': 'cancelled', 'message': str(e)}
         except Exception as e:
             if os.path.isfile(temp_zip):
                 try:
@@ -1125,6 +1189,9 @@ class SpaceRustClientManager:
             # 1. Check and prepare client files FIRST (downloads from cloud if needed)
             try:
                 self.verify_and_prepare(progress_callback=progress_callback)
+            except DownloadCancelledError as e:
+                self.log(f"Launch download cancelled: {e}")
+                return {"status": "cancelled", "message": str(e)}
             except Exception as e:
                 return {"status": "error", "message": str(e)}
 
