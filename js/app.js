@@ -104,12 +104,6 @@ document.addEventListener('DOMContentLoaded', () => {
     $('btn-notify')?.addEventListener('click', () => {
         switchTab('news');
         if (typeof markGithubSeen === 'function') markGithubSeen();
-        const latestTitle = STATE.githubData?.commits?.[0]?.title;
-        if (latestTitle) {
-            showToast(t('github.newCommitToast', { title: latestTitle }), 'success');
-        } else {
-            showToast(t('topbar.notifyToast'), 'success');
-        }
     });
 
     // ==========================================
@@ -453,6 +447,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // GAME LOADING LINE + PLAY
     // ==========================================
+    function syncPlayButtonMode() {
+        if (!btnPlay || !btnPlayText) return;
+        if (loadLine.classList.contains('done')) {
+            btnPlay.classList.remove('update-ready');
+            btnPlayText.textContent = t('play.stageRunning');
+            return;
+        }
+        if (STATE.isLaunching || STATE.isUpdating) return;
+        if (STATE.updateAvailable) {
+            btnPlay.classList.add('update-ready');
+            btnPlayText.textContent = t('github.btnUpdate');
+        } else {
+            btnPlay.classList.remove('update-ready');
+            btnPlayText.textContent = t('play.idle');
+        }
+    }
+
     function setIdleLine() {
         loadLine.classList.remove('paused', 'done');
         loadFill.style.width = '0%';
@@ -462,7 +473,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnPause.disabled = true;
         btnResume.disabled = true;
         btnResume.classList.remove('active');
-        if (btnPlayText && !STATE.isLaunching) btnPlayText.textContent = t('play.idle');
+        syncPlayButtonMode();
     }
 
     let lastProgressPct = 0;
@@ -505,7 +516,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function finishLaunch(delay) {
         setTimeout(() => {
             btnPlay.classList.remove('loading-state');
-            btnPlayText.textContent = t('play.idle');
             STATE.isLaunching = false;
             setPaused(false);
             setIdleLine();
@@ -533,6 +543,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function handleLaunchGame() {
         if (STATE.isLaunching || STATE.isUpdating) return;
+        if (STATE.updateAvailable) {
+            return handleApplyUpdate();
+        }
         if (!STATE.nickname || STATE.nickname.length < 3) {
             showToast(t('play.nickMin'), 'error');
             return;
@@ -635,16 +648,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (loadLine.classList.contains('done')) {
             loadTitle.textContent = t('play.stageRunning');
             loadStage.textContent = t('play.msgRunning');
-            if (btnPlayText) btnPlayText.textContent = t('play.stageRunning');
-        } else if (STATE.isLaunching) {
+            syncPlayButtonMode();
+        } else if (STATE.isLaunching || STATE.isUpdating) {
             loadTitle.textContent = STATE.isPaused ? t('play.loadPaused') : t('play.loadActive');
             if (btnPlayText) {
                 btnPlayText.textContent = lastProgressPct >= 100
                     ? t('play.btnStarting')
                     : t('play.btnProgress', { pct: lastProgressPct });
             }
-        } else if (btnPlayText) {
-            btnPlayText.textContent = t('play.idle');
+        } else {
+            syncPlayButtonMode();
         }
 
         if (syncBackend) {
@@ -682,20 +695,13 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(syncLanguage, 650);
 
     // ==========================================
-    // GITHUB UPDATES (RELEASES + COMMITS + SELF-UPDATE)
+    // GITHUB UPDATES (LIVE PATCHES + PLAY/UPDATE BUTTON)
     // ==========================================
     STATE.githubData = null;
-    STATE.lastToastedSha = '';
-    STATE.bannerDismissedSha = '';
     STATE.isUpdating = false;
+    STATE.updateAvailable = false;
 
     const btnNotify = $('btn-notify');
-    const updateBanner = $('update-banner');
-    const updateBannerBadge = $('update-banner-badge');
-    const updateBannerTitle = $('update-banner-title');
-    const updateBannerSub = $('update-banner-sub');
-    const btnBannerAction = $('btn-banner-action');
-    const btnBannerDismiss = $('btn-banner-dismiss');
     const btnCheckUpdates = $('btn-check-updates');
     const githubSyncBadge = $('github-sync-badge');
     const githubPatchesList = $('github-patches-list');
@@ -740,7 +746,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function renderGithubUpdates(data, allowToast = true) {
+    function renderGithubUpdates(data) {
         if (!data || typeof data !== 'object') return;
         STATE.githubData = data;
 
@@ -750,6 +756,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const latestSha = data.latest_commit_sha || commits[0]?.sha || '';
         const localSeen = localStorage.getItem('sr_seen_sha') || '';
         const isUnseenCommit = !!(latestSha && ((data.has_new_commit && latestSha !== localSeen) || (!api() && latestSha !== localSeen)));
+
+        STATE.updateAvailable = hasBinaryUpdate;
+        syncPlayButtonMode();
 
         if (githubSyncBadge) {
             githubSyncBadge.classList.remove('ok', 'err');
@@ -818,38 +827,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btnNotify) {
             btnNotify.classList.toggle('has-updates', hasBinaryUpdate || isUnseenCommit);
         }
-
-        if (updateBanner) {
-            const dismissed = !!(latestSha && STATE.bannerDismissedSha === latestSha && !hasBinaryUpdate);
-            const shouldShow = (hasBinaryUpdate || isUnseenCommit) && !dismissed && data.status !== 'offline';
-            updateBanner.classList.toggle('show', shouldShow);
-            updateBanner.classList.toggle('binary-ready', hasBinaryUpdate);
-
-            if (shouldShow) {
-                if (hasBinaryUpdate) {
-                    const tag = data.launcher_update?.tag_name || data.mod_update?.tag_name || 'GitHub';
-                    if (updateBannerBadge) updateBannerBadge.textContent = 'RELEASE';
-                    if (updateBannerTitle) updateBannerTitle.textContent = t('github.bannerReleaseTitle', { tag });
-                    if (updateBannerSub) updateBannerSub.textContent = commits[0]?.title || rel?.name || t('github.bannerTitle');
-                    if (btnBannerAction) btnBannerAction.textContent = t('github.btnUpdate');
-                } else {
-                    if (updateBannerBadge) updateBannerBadge.textContent = 'GITHUB';
-                    if (updateBannerTitle) updateBannerTitle.textContent = t('github.bannerTitle');
-                    if (updateBannerSub) updateBannerSub.textContent = `#${data.latest_commit_short || ''} · ${commits[0]?.title || ''}`;
-                    if (btnBannerAction) btnBannerAction.textContent = t('github.btnView');
-                }
-            }
-        }
-
-        if (allowToast && (hasBinaryUpdate || isUnseenCommit) && latestSha && STATE.lastToastedSha !== latestSha) {
-            STATE.lastToastedSha = latestSha;
-            const summary = commits[0]?.title || rel?.name || 'GitHub';
-            showToast(t('github.newCommitToast', { title: summary }), 'info');
-        }
     }
 
     window.onGithubUpdates = function (data) {
-        renderGithubUpdates(data, true);
+        renderGithubUpdates(data);
     };
 
     async function fetchGithubUpdates(manual = false) {
@@ -861,7 +842,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (a && typeof a.check_updates === 'function') {
             try {
                 const res = await a.check_updates();
-                renderGithubUpdates(res, !manual);
+                renderGithubUpdates(res);
                 if (manual) {
                     if (res.status === 'offline') showToast(t('github.offline'), 'error');
                     else if (!res.has_binary_update && !res.has_new_commit) showToast(t('github.upToDate'), 'success');
@@ -871,7 +852,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('check_updates error', err);
             }
         }
-        // Browser preview fallback directly via GitHub public CORS API
         try {
             const [relResp, comResp] = await Promise.all([
                 fetch('https://api.github.com/repos/DmutroKhludov/spacerust/releases/latest'),
@@ -907,11 +887,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 has_new_commit: !!(commits[0]?.sha && commits[0].sha !== localStorage.getItem('sr_seen_sha')),
                 has_binary_update: false,
             };
-            renderGithubUpdates(payload, !manual);
+            renderGithubUpdates(payload);
             if (manual && !payload.has_new_commit) showToast(t('github.upToDate'), 'success');
             return payload;
         } catch (err) {
-            renderGithubUpdates({ status: 'offline', commits: [] }, false);
+            renderGithubUpdates({ status: 'offline', commits: [] });
             if (manual) showToast(t('github.offline'), 'error');
             return { status: 'offline' };
         }
@@ -920,13 +900,13 @@ document.addEventListener('DOMContentLoaded', () => {
     async function handleApplyUpdate() {
         if (STATE.isUpdating || STATE.isLaunching) return;
         const a = api();
-        if (!STATE.githubData?.has_binary_update || !a || typeof a.apply_update !== 'function') {
-            switchTab('news');
-            markGithubSeen();
+        if (!a || typeof a.apply_update !== 'function') {
+            STATE.updateAvailable = false;
+            syncPlayButtonMode();
             return;
         }
         STATE.isUpdating = true;
-        if (btnBannerAction) btnBannerAction.disabled = true;
+        btnPlay?.classList.add('loading-state');
         loadLine.classList.remove('done', 'paused');
         window.updateLaunchProgress(t('github.applying'), 5);
         try {
@@ -935,35 +915,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadLine.classList.add('done');
                 showToast(t('github.restarting'), 'success');
             } else if (res && res.status === 'ok') {
+                STATE.updateAvailable = false;
+                btnPlay?.classList.remove('loading-state');
                 loadLine.classList.add('done');
                 showToast(t('github.updatedMod'), 'success');
-                setTimeout(setIdleLine, 2500);
+                setTimeout(setIdleLine, 2000);
                 await fetchGithubUpdates(false);
             } else if (res && res.status === 'up_to_date') {
+                STATE.updateAvailable = false;
+                btnPlay?.classList.remove('loading-state');
                 setIdleLine();
                 showToast(t('github.upToDate'), 'success');
                 await fetchGithubUpdates(false);
             } else {
+                btnPlay?.classList.remove('loading-state');
                 setIdleLine();
                 showToast((res && res.message) || t('github.offline'), 'error');
             }
         } catch (err) {
+            btnPlay?.classList.remove('loading-state');
             setIdleLine();
             showToast(t('github.offline'), 'error');
         } finally {
             STATE.isUpdating = false;
-            if (btnBannerAction) btnBannerAction.disabled = false;
+            syncPlayButtonMode();
         }
     }
 
-    btnBannerAction?.addEventListener('click', handleApplyUpdate);
-    btnBannerDismiss?.addEventListener('click', () => {
-        STATE.bannerDismissedSha = STATE.githubData?.latest_commit_sha || 'dismissed';
-        updateBanner?.classList.remove('show');
-    });
     btnCheckUpdates?.addEventListener('click', () => fetchGithubUpdates(true));
 
-    // Trigger initial check when running in browser preview (EXE triggers from on_started + also safe fallback)
+    // Trigger initial check (EXE also triggers from on_started)
     window.addEventListener('pywebviewready', () => fetchGithubUpdates(false));
     setTimeout(() => { if (!STATE.githubData) fetchGithubUpdates(false); }, 1800);
 

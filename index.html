@@ -67,21 +67,7 @@
         <!-- ===================== CONTENT ===================== -->
         <main class="content">
             <!-- ---------- TAB: HOME ---------- -->
-            <section class="tab-view active-view" id="view-home">
-                <div class="update-banner" id="update-banner">
-                    <div class="update-banner-left">
-                        <span class="update-badge" id="update-banner-badge">GITHUB</span>
-                        <div class="update-banner-info">
-                            <div class="update-banner-title" id="update-banner-title" data-i18n="github.bannerTitle">Доступно обновление на GitHub</div>
-                            <div class="update-banner-sub" id="update-banner-sub"></div>
-                        </div>
-                    </div>
-                    <div class="update-banner-actions">
-                        <button class="update-btn primary" id="btn-banner-action" data-i18n="github.btnUpdate">ОБНОВИТЬ</button>
-                        <button class="update-btn close" id="btn-banner-dismiss" title="×">&times;</button>
-                    </div>
-                </div>
-            </section>
+            <section class="tab-view active-view" id="view-home"></section>
 
             <!-- ---------- TAB: PATCHES / NEWS ---------- -->
             <section class="tab-view" id="view-news">
@@ -186,7 +172,8 @@
                 <div class="play-caption"><span data-i18n="play.patchPrefix">ПАТЧ:</span> <span id="patch-version-label">v2.5.0</span></div>
                 <button class="btn-play" id="btn-play">
                     <span id="btn-play-text" data-i18n="play.idle">ИГРАТЬ</span>
-                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    <svg class="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    <svg class="icon-update" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
                 </button>
             </div>
         </footer>

@@ -540,6 +540,17 @@ body.no-anim * { transition: none !important; }
 .btn-play:hover { filter: brightness(1.1); box-shadow: 0 8px 30px rgba(226, 85, 60, 0.55), inset 0 1px 0 rgba(255,255,255,0.2); }
 .btn-play:hover svg { transform: translateX(3px); }
 .btn-play:active { transform: translateY(1px); }
+.btn-play.update-ready {
+    background: linear-gradient(180deg, #82bd37 0%, #57871e 100%);
+    box-shadow: 0 6px 22px rgba(110, 155, 47, 0.38), inset 0 1px 0 rgba(255,255,255,0.22);
+}
+.btn-play.update-ready:hover {
+    filter: brightness(1.08);
+    box-shadow: 0 8px 30px rgba(140, 198, 63, 0.55), inset 0 1px 0 rgba(255,255,255,0.25);
+}
+.btn-play .icon-update { display: none; }
+.btn-play.update-ready:not(.loading-state) .icon-play { display: none; }
+.btn-play.update-ready:not(.loading-state) .icon-update { display: block; }
 .btn-play::after {
     content: '';
     position: absolute;
@@ -984,109 +995,8 @@ body.is-maximized .resize-edge { display: none; }
 }
 
 /* =========================================================
-   GITHUB AUTO-UPDATE BANNER & LIVE PATCH FEED
+   GITHUB LIVE PATCH FEED
    ========================================================= */
-.update-banner {
-    position: absolute;
-    top: 16px;
-    left: 50%;
-    transform: translateX(-50%) translateY(-10px);
-    width: min(640px, calc(100% - 40px));
-    padding: 10px 14px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    background: rgba(16, 17, 20, 0.92);
-    border: 1px solid var(--line-strong);
-    border-left: 3px solid var(--amber-bright);
-    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.6);
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
-}
-.update-banner.show {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-    transform: translateX(-50%) translateY(0);
-}
-.update-banner.binary-ready {
-    border-left-color: var(--green-bright);
-}
-.update-banner-left {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-width: 0;
-    flex: 1;
-}
-.update-badge {
-    flex-shrink: 0;
-    padding: 3px 8px;
-    background: rgba(201, 144, 47, 0.18);
-    border: 1px solid rgba(201, 144, 47, 0.45);
-    color: var(--amber-bright);
-    font-family: var(--font-cond);
-    font-weight: 800;
-    font-size: 10.5px;
-    letter-spacing: 0.9px;
-}
-.update-banner.binary-ready .update-badge {
-    background: rgba(110, 155, 47, 0.22);
-    border-color: rgba(140, 198, 63, 0.5);
-    color: var(--green-bright);
-}
-.update-banner-info {
-    min-width: 0;
-    flex: 1;
-}
-.update-banner-title {
-    font-family: var(--font-cond);
-    font-weight: 800;
-    font-size: 14px;
-    letter-spacing: 0.4px;
-    color: #fff;
-}
-.update-banner-sub {
-    font-size: 11.5px;
-    color: var(--text-dim);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.update-banner-actions {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-shrink: 0;
-}
-.update-btn.primary {
-    height: 28px;
-    padding: 0 12px;
-    background: var(--red);
-    color: #fff;
-    font-family: var(--font-cond);
-    font-weight: 800;
-    font-size: 12px;
-    letter-spacing: 0.6px;
-    transition: background 0.15s ease;
-}
-.update-btn.primary:hover { background: var(--red-bright); }
-.update-banner.binary-ready .update-btn.primary { background: var(--green); }
-.update-banner.binary-ready .update-btn.primary:hover { background: var(--green-bright); color: #111; }
-.update-btn.primary:disabled { opacity: 0.5; cursor: progress; }
-.update-btn.close {
-    width: 26px;
-    height: 28px;
-    font-size: 18px;
-    line-height: 1;
-    color: var(--text-muted);
-    transition: color 0.15s ease, background 0.15s ease;
-}
-.update-btn.close:hover { color: #fff; background: rgba(255,255,255,0.08); }
-
 .news-head-row {
     display: flex;
     align-items: flex-end;
