@@ -137,7 +137,7 @@ public class RbmModel {
         Matrix3f normMat = matrices.peek().getNormal();
 
         for (Submesh sub : submeshes) {
-            RenderLayer layer = (a < 0.99f) ? RenderLayer.getEntityTranslucent(sub.texture) : RenderLayer.getEntityCutout(sub.texture);
+            RenderLayer layer = (a < 0.99f) ? RenderLayer.getEntityTranslucent(sub.texture) : RenderLayer.getEntityCutoutNoCull(sub.texture);
             VertexConsumer vc = consumers.getBuffer(layer);
             float[] v = sub.vertices;
             int count = sub.vertexCount;

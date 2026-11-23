@@ -56,7 +56,7 @@ public class SpaceRustClient implements ClientModInitializer {
 
         // 3. Register Rust Building World Renderer (models & hologram preview)
         RustBuildingManager.init();
-        WorldRenderEvents.LAST.register(context -> {
+        WorldRenderEvents.AFTER_ENTITIES.register(context -> {
             RustBuildingManager.renderAll(context.matrixStack(), context.consumers(), context.camera(), context.tickDelta());
         });
 

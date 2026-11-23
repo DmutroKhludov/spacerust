@@ -43,8 +43,20 @@ public enum RustBuildingPiece {
     }
 
     public Box createBoundingBox(double x, double y, double z) {
-        double hw = width / 2.0;
-        double hd = depth / 2.0;
+        return createBoundingBox(x, y, z, 0f);
+    }
+
+    public Box createBoundingBox(double x, double y, double z, float yaw) {
+        double w = width;
+        double d = depth;
+        float normYaw = (yaw % 360f + 360f) % 360f;
+        if ((normYaw > 45 && normYaw < 135) || (normYaw > 225 && normYaw < 315)) {
+            double temp = w;
+            w = d;
+            d = temp;
+        }
+        double hw = w / 2.0;
+        double hd = d / 2.0;
         return new Box(x - hw, y, z - hd, x + hw, y + height, z + hd);
     }
 }

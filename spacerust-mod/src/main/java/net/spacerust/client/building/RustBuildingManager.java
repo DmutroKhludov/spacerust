@@ -53,7 +53,7 @@ public class RustBuildingManager {
         }
 
         public Box getBoundingBox() {
-            return piece.createBoundingBox(x, y, z);
+            return piece.createBoundingBox(x, y, z, yaw);
         }
     }
 
@@ -157,8 +157,8 @@ public class RustBuildingManager {
 
     private static Vec3d calculateSnap(Vec3d hitPos, RustBuildingPiece piece, float yaw) {
         double snapDist = 2.2;
-        BuildingPieceData bestPiece = null;
         Vec3d bestSnap = null;
+        Float bestYaw = null;
         double bestDist = snapDist;
 
         for (BuildingPieceData b : pieces) {
@@ -168,18 +168,21 @@ public class RustBuildingManager {
 
             if (piece.isWall) {
                 if (b.piece.isFoundation) {
-                    // Wall connects to 4 edges of foundation
+                    // Wall connects to 4 edges of foundation with matching yaw
                     Vec3d[] edges = {
                             new Vec3d(b.x, b.y + 0.5, b.z - 1.5), // North
                             new Vec3d(b.x, b.y + 0.5, b.z + 1.5), // South
                             new Vec3d(b.x - 1.5, b.y + 0.5, b.z), // West
                             new Vec3d(b.x + 1.5, b.y + 0.5, b.z)  // East
                     };
-                    for (Vec3d edge : edges) {
+                    float[] yaws = { 0f, 180f, 90f, 270f };
+                    for (int i = 0; i < edges.length; i++) {
+                        Vec3d edge = edges[i];
                         double d = edge.distanceTo(hitPos);
                         if (d < bestDist) {
                             bestDist = d;
                             bestSnap = edge;
+                            bestYaw = yaws[i];
                         }
                     }
                 } else if (b.piece.isWall) {
@@ -189,6 +192,7 @@ public class RustBuildingManager {
                     if (d < bestDist) {
                         bestDist = d;
                         bestSnap = top;
+                        bestYaw = b.yaw;
                     }
                 }
             } else if (piece == RustBuildingPiece.FLOOR || piece == RustBuildingPiece.FLOOR_TRIANGLE) {
@@ -198,6 +202,7 @@ public class RustBuildingManager {
                     if (d < bestDist) {
                         bestDist = d;
                         bestSnap = top;
+                        bestYaw = b.yaw;
                     }
                 } else if (b.piece == RustBuildingPiece.FLOOR) {
                     Vec3d[] floorEdges = {
@@ -234,6 +239,9 @@ public class RustBuildingManager {
         }
 
         if (bestSnap != null) {
+            if (bestYaw != null) {
+                previewYaw = bestYaw;
+            }
             return bestSnap;
         }
 
@@ -244,8 +252,24 @@ public class RustBuildingManager {
         return new Vec3d(gx, gy, gz);
     }
 
+    private static long lastPlaceTime = 0;
+
     public static boolean tryPlaceCurrentPreview(MinecraftClient client) {
         if (!isHoldingBuildingPlan(client) || previewPos == null) return false;
+
+        long now = System.currentTimeMillis();
+        if (now - lastPlaceTime < 250) return false;
+
+        // Prevent duplicate placement on same position
+        for (BuildingPieceData existing : pieces) {
+            if (existing.piece == selectedPiece
+                    && Math.abs(existing.x - previewPos.x) < 0.15
+                    && Math.abs(existing.y - previewPos.y) < 0.15
+                    && Math.abs(existing.z - previewPos.z) < 0.15) {
+                return false;
+            }
+        }
+        lastPlaceTime = now;
 
         // Deduct 20 Wood from inventory
         if (!hasResource(client.player, Items.OAK_PLANKS, 20) && !hasResource(client.player, Items.OAK_WOOD, 20)) {
@@ -340,30 +364,48 @@ public class RustBuildingManager {
                 // Standing on foundation / floor top
                 if (b.piece.isFoundation || b.piece == RustBuildingPiece.FLOOR) {
                     double topY = b.y + b.piece.height;
-                    if (player.getY() >= topY - 0.4 && player.getVelocity().y <= 0) {
-                        player.setPosition(player.getX(), topY, player.getZ());
-                        player.setOnGround(true);
-                        player.setVelocity(player.getVelocity().x, 0, player.getVelocity().z);
+                    if (player.getY() >= topY - 0.25 && player.getY() <= topY + 0.4 && player.getVelocity().y <= 0) {
+                        if (player.getY() < topY) {
+                            player.setPosition(player.getX(), topY, player.getZ());
+                            player.setVelocity(player.getVelocity().x, Math.max(0, player.getVelocity().y), player.getVelocity().z);
+                            player.setOnGround(true);
+                        }
+                    } else if (player.getY() < topY - 0.25) {
+                        pushPlayerOutOfBox(player, pBox, bBox);
                     }
                 }
-                // Wall pushing (cannot pass through wall)
+                // Wall collision: gentle overlap push, no teleportation
                 else if (b.piece.isWall) {
-                    Vec3d pPos = player.getPos();
-                    Vec3d wCenter = new Vec3d(b.x, b.y, b.z);
-                    Vec3d diff = pPos.subtract(wCenter);
-                    if (Math.abs(diff.x) > Math.abs(diff.z)) {
-                        double pushX = Math.signum(diff.x) * (b.piece.width / 2.0 + 0.35);
-                        player.setPosition(b.x + pushX, player.getY(), player.getZ());
-                    } else {
-                        double pushZ = Math.signum(diff.z) * (b.piece.depth / 2.0 + 0.35);
-                        player.setPosition(player.getX(), player.getY(), b.z + pushZ);
-                    }
+                    pushPlayerOutOfBox(player, pBox, bBox);
                 }
             }
         }
     }
 
+    private static void pushPlayerOutOfBox(PlayerEntity player, Box pBox, Box bBox) {
+        double overlapX1 = pBox.maxX - bBox.minX;
+        double overlapX2 = bBox.maxX - pBox.minX;
+        double overlapZ1 = pBox.maxZ - bBox.minZ;
+        double overlapZ2 = bBox.maxZ - pBox.minZ;
+
+        double minOverlapX = (overlapX1 < overlapX2) ? -overlapX1 : overlapX2;
+        double minOverlapZ = (overlapZ1 < overlapZ2) ? -overlapZ1 : overlapZ2;
+
+        if (Math.abs(minOverlapX) < Math.abs(minOverlapZ)) {
+            player.setPosition(player.getX() + minOverlapX, player.getY(), player.getZ());
+            if (minOverlapX * player.getVelocity().x < 0) {
+                player.setVelocity(0, player.getVelocity().y, player.getVelocity().z);
+            }
+        } else {
+            player.setPosition(player.getX(), player.getY(), player.getZ() + minOverlapZ);
+            if (minOverlapZ * player.getVelocity().z < 0) {
+                player.setVelocity(player.getVelocity().x, player.getVelocity().y, 0);
+            }
+        }
+    }
+
     public static void renderAll(MatrixStack matrices, VertexConsumerProvider consumers, net.minecraft.client.render.Camera camera, float tickDelta) {
+        MinecraftClient client = MinecraftClient.getInstance();
         Vec3d camPos = camera.getPos();
 
         // 1. Render all placed building pieces
@@ -371,16 +413,22 @@ public class RustBuildingManager {
             String modelName = b.piece.getModelName(b.tier);
             RbmModel model = RbmModel.get(modelName);
             if (model != null) {
+                int light = 0x00F000F0;
+                if (client.world != null) {
+                    light = net.minecraft.client.render.WorldRenderer.getLightmapCoordinates(
+                            client.world,
+                            new net.minecraft.util.math.BlockPos(b.x, b.y + 0.5, b.z)
+                    );
+                }
                 matrices.push();
                 matrices.translate(b.x - camPos.x, b.y - camPos.y, b.z - camPos.z);
                 matrices.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(-b.yaw));
-                model.render(matrices, consumers, 0x00F000F0, OverlayTexture.DEFAULT_UV, 1.0f, 1.0f, 1.0f, 1.0f);
+                model.render(matrices, consumers, light, OverlayTexture.DEFAULT_UV, 1.0f, 1.0f, 1.0f, 1.0f);
                 matrices.pop();
             }
         }
 
         // 2. Render Hologram Preview for Building Plan
-        MinecraftClient client = MinecraftClient.getInstance();
         if (isHoldingBuildingPlan(client) && previewPos != null) {
             String previewModelName = selectedPiece.getModelName(RustBuildingTier.TWIG);
             RbmModel pModel = RbmModel.get(previewModelName);
@@ -392,6 +440,11 @@ public class RustBuildingManager {
                 pModel.render(matrices, consumers, 0x00F000F0, OverlayTexture.DEFAULT_UV, 0.25f, 0.75f, 1.0f, 0.55f);
                 matrices.pop();
             }
+        }
+
+        // 3. Immediately flush buffers so all building quads draw with world matrices & depth test
+        if (consumers instanceof VertexConsumerProvider.Immediate) {
+            ((VertexConsumerProvider.Immediate) consumers).draw();
         }
     }
 }

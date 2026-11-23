@@ -34,6 +34,8 @@ public abstract class MinecraftClientMixin {
         if (RustBuildingManager.isHoldingBuildingPlan(client)) {
             if (RustBuildingManager.tryPlaceCurrentPreview(client)) {
                 ci.cancel();
+            } else if (RustBuildingManager.previewPos != null) {
+                ci.cancel();
             }
         } else if (RustBuildingManager.isHoldingHammer(client) && RustBuildingManager.hoveredBuilding != null) {
             RustBuildingManager.repairPiece(client, RustBuildingManager.hoveredBuilding);
